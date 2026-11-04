@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.9 — Icône de tri + verre de vin
+
+- Le CTA de tri devient une icône seule (barres de tri, entourée d'un rond) — plus compact, s'illumine en bordeaux dès qu'un tri autre que « récent » est actif.
+- Le splash troque le livre pour un verre de vin (même tracé que Dégustations entre amis), toujours avec bulles riesling et cœur or. Le logo PWA (logo.svg) adopte le même verre : crème, verre bordeaux, vin riesling, liseré or — à ré-exporter en PNG 192/512.
+
 ## 0.4.8 — Accueil : CTA de tri façon e-commerce
 
 - Les pastilles font place à un CTA « Trier : » qui ouvre un menu de choix : Le plus récent (défaut), Le plus aimé, De A à Z (titre, insensible à la casse et aux accents). Le titre de section suit le tri.

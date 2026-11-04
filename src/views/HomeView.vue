@@ -18,7 +18,6 @@ const TRIS = [
   { id: "aime", label: "Le plus aimé" },
   { id: "az", label: "De A à Z" },
 ];
-const triLabel = computed(() => TRIS.find((t) => t.id === tri.value)?.label || "");
 
 const fiches = computed(() => store.fichesDuCarnet);
 const results = computed(() =>
@@ -137,10 +136,10 @@ const fichesTri = computed(() => {
           {{ tri === "recent" ? "Dernièrement dans le carnet" : tri === "aime" ? "Les plus aimés du carnet" : "Le carnet de A à Z" }}
         </p>
         <div class="relative">
-          <button @click="triOpen = !triOpen"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-hairline bg-surface text-xs font-semibold">
-            <span class="text-muted">Trier :</span> {{ triLabel }}
-            <Ic name="chevron" class="w-3.5 h-3.5 text-muted transition" :class="triOpen ? 'rotate-180' : ''" :sw="2" />
+          <button @click="triOpen = !triOpen" title="Choisir le tri"
+            class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
+            :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
+            <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
           </button>
           <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
             style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
