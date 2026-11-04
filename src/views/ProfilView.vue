@@ -105,6 +105,9 @@ function toggleTheme() {
 }
 const exportCarnet = computed(() => store.carnets.find((c) => c.id === exportCarnetId.value) || null);
 const moi = computed(() => store.profil.prenom);
+// La carte « Contacter le développeur » est réservée aux admins (de n'importe quel carnet)
+const estAdminQuelconque = computed(() => Object.values(store.roles).some((r) => r === "admin"));
+
 const badges = computed(() => {
   const mesFiches = store.fiches.filter((f) => f.auteur === moi.value);
   const mesFlashes = store.flashes.filter((f) => f.auteur === moi.value);
@@ -242,7 +245,7 @@ async function exporterJSON() {
       </button>
     </div>
 
-    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+    <div v-if="estAdminQuelconque" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Un souci avec l'app ?</p>
       <p class="text-[11px] text-muted mb-2.5 leading-relaxed">
         Bug, question, suggestion — écris au développeur, il répond vite :
