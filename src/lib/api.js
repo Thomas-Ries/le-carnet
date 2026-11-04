@@ -3,7 +3,7 @@
 // les sessions côté serveur, jamais le prénom seul.
 import * as demo from "./demo.js";
 
-export const state = { demoMode: false };
+export const state = { demoMode: false, connexionPerdue: false };
 
 const DEVICE_KEY = "lc-device";
 
@@ -33,11 +33,22 @@ function fallback(err) {
   return demo.load();
 }
 
+// Perte de connexion en cours de session : la mutation n'a pas atteint le serveur.
+// On l'indique à part du mode démo "normal" (dev local / pas de worker).
+let etaitDemo = false;
+function fallbackConnexion(err) {
+  if (!etaitDemo) state.connexionPerdue = true;
+  return fallback(err);
+}
+
 // Lecture complète : carnets de cet appareil + rôles
 export async function bootstrap(deviceId) {
   try {
-    return await api("/api/bootstrap?device=" + encodeURIComponent(deviceId));
+    const r = await api("/api/bootstrap?device=" + encodeURIComponent(deviceId));
+    etaitDemo = false;
+    return r;
   } catch (e) {
+    etaitDemo = true;
     return fallback(e);
   }
 }
@@ -46,7 +57,7 @@ async function mutate(action, payload) {
   try {
     return await api("/api/mutate", { action, deviceId: getDeviceId(), ...payload });
   } catch (e) {
-    const db = fallback(e);
+    const db = fallbackConnexion(e);
     return demoMutate(db, action, payload);
   }
 }

@@ -242,6 +242,18 @@ async function exporterJSON() {
       </button>
     </div>
 
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Un souci avec l'app ?</p>
+      <p class="text-[11px] text-muted mb-2.5 leading-relaxed">
+        Bug, question, suggestion — écris au développeur, il répond vite :
+      </p>
+      <a href="mailto:thomasries.dev@gmail.com?subject=Le%20Carnet"
+        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
+        :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
+        <Ic name="user" class="w-4 h-4" /> thomasries.dev@gmail.com
+      </a>
+    </div>
+
     <p class="text-[11px] text-muted text-center leading-relaxed">
       Tes données t'appartiennent — export disponible à tout moment.<br />
       Le Carnet · V{{ pkg.version }}

@@ -58,7 +58,12 @@ onMounted(async () => {
 
   <template v-else>
     <!-- Bandeau mode démo -->
-    <div v-if="store.demoMode" class="w-full py-1.5 text-center text-[10px] uppercase tracking-widest sticky top-0 z-30"
+    <div v-if="store.demoMode && store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30"
+      :style="{ background: '#7A2E3E', color: '#fff' }">
+      Connexion au serveur perdue — tes dernières actions restent sur cet appareil uniquement.
+      Si ça persiste, préviens l'admin de ton carnet ( Profil → Contacter le développeur ).
+    </div>
+    <div v-else-if="store.demoMode" class="w-full py-1.5 text-center text-[10px] uppercase tracking-widest sticky top-0 z-30"
       :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)' }">
       Mode démo — tout reste sur cet appareil
     </div>

@@ -20,6 +20,7 @@ export const useCarnetStore = defineStore("carnet", {
     flashes: [],
     roles: {}, // { carnetId: "admin" | "member" }
     installEvent: null, // événement beforeinstallprompt (Android/Chrome) — capturé par App.vue
+    connexionPerdue: false, // true = une mutation n'a pas atteint le serveur (bascule démo en cours de session)
   }),
 
   getters: {
@@ -51,6 +52,7 @@ export const useCarnetStore = defineStore("carnet", {
       this.deviceId = api.getDeviceId();
       const data = await api.bootstrap(this.deviceId);
       this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
       this.carnets = data.carnets || [];
       this.fiches = data.fiches || [];
       this.flashes = data.flashes || [];
@@ -117,6 +119,7 @@ export const useCarnetStore = defineStore("carnet", {
         prenom: this.profil.prenom, deviceId: this.deviceId,
       });
       this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
       if (!r.carnet) return null;
       this.carnets.push(r.carnet);
       this.roles[r.carnet.id] = r.role || "admin";
@@ -128,6 +131,7 @@ export const useCarnetStore = defineStore("carnet", {
       const prenom = this.profil.prenom;
       const r = await api.join({ code, prenom, deviceId: this.deviceId });
       this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
       if (!r.carnet) return null;
       if (!this.carnets.some((c) => c.id === r.carnet.id)) this.carnets.push(r.carnet);
       else {
@@ -168,6 +172,7 @@ export const useCarnetStore = defineStore("carnet", {
         deviceId: this.deviceId,
       });
       this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
       this.fiches.unshift(r.fiche);
       return r.fiche;
     },
@@ -194,6 +199,7 @@ export const useCarnetStore = defineStore("carnet", {
         deviceId: this.deviceId,
       });
       this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
       this.flashes.unshift(r.flash);
       return r.flash;
     },
