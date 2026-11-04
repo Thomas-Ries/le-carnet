@@ -27,15 +27,18 @@ async function creer() {
     err.value = "Le code admin doit être saisi deux fois à l'identique.";
     return;
   }
-  const c = await store.creerCarnet(
+  const r = await store.creerCarnet(
     nom.value.trim(),
     codeInvite.value.length === 6 ? codeInvite.value : null,
     codeAdmin.value
   );
-  if (c) {
+  if (r && r.id) {
     modeCreer.value = false; nom.value = ""; codeInvite.value = ""; codeAdmin.value = ""; codeAdmin2.value = "";
     toast("Carnet créé — tu es admin");
-  } else err.value = "Ce code existe déjà, choisis-en un autre.";
+  } else {
+    // Le serveur a refusé (ou code dupliqué) : message réel, rien n'est créé en local
+    err.value = (r && r.error) || "Ce code existe déjà, choisis-en un autre.";
+  }
 }
 function copier() {
   navigator.clipboard?.writeText(lien.value);

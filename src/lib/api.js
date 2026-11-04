@@ -24,7 +24,14 @@ async function api(path, body) {
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(String(res.status));
+  if (!res.ok) {
+    // Le statut et le corps d'erreur voyagent avec l'exception : la mutate()
+    // distingue un REFUS serveur (4xx) d'une vraie panne réseau.
+    const err = new Error(String(res.status));
+    err.status = res.status;
+    try { err.body = await res.json(); } catch (e) { /* pas de corps */ }
+    throw err;
+  }
   return res.json();
 }
 
@@ -55,8 +62,17 @@ export async function bootstrap(deviceId) {
 
 async function mutate(action, payload) {
   try {
-    return await api("/api/mutate", { action, deviceId: getDeviceId(), ...payload });
+    const r = await api("/api/mutate", { action, deviceId: getDeviceId(), ...payload });
+    // Le serveur vient de répondre : plus de bandeau « connexion perdue ».
+    if (state.connexionPerdue) state.connexionPerdue = false;
+    return r;
   } catch (e) {
+    // 4xx = refus du serveur (validation, droits, doublon) : on remonte l'erreur à
+    // l'appelant. On ne bascule JAMAIS en démo sur un refus — sinon l'action réussit
+    // en local, invisible pour le carnet, avec un toast de fausse réussite.
+    if (e && e.status >= 400 && e.status < 500) {
+      return e.body || { error: "refusé par le serveur (" + e.status + ")" };
+    }
     const db = fallbackConnexion(e);
     return demoMutate(db, action, payload);
   }

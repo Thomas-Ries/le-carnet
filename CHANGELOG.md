@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.16 — Plus de fausse réussite locale sur un refus serveur
+
+- Un refus du serveur (4xx : validation, droits, doublon de prénom ou de code) remonte maintenant à l'interface avec son message réel — il ne bascule plus jamais silencieusement en mode démo avec un toast de réussite. Seule une vraie panne réseau fait basculer en local.
+- Le bandeau « connexion perdue » disparaît dès qu'une mutation atteint à nouveau le serveur.
+
 ## 0.4.15 — Correctif création de carnet (V0.2 enfin complète côté UI)
 
 - L'écran « Créer un carnet » était resté V0.1 : un seul champ code envoyé comme codeAdmin manquant → 400 « champs invalides » → bandeau « connexion perdue » + bascule démo, le carnet n'était créé que sur l'appareil. Mise à jour au design V0.2 : code d'invitation (optionnel, généré si vide) + code admin à double saisie. En démo, un code d'invitation est généré si le champ est vide.
