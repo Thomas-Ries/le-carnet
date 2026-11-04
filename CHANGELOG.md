@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.4.3 — Splash animé + correctif icône active
+## 0.4.4 — Vrai correctif icône active + splash 3,5 s
 
-- Splashscreen repensé, fun et animé (2,5 s) : carnet bordeaux qui pop, bulles riesling qui montent, petit cœur or qui s'échappe, titre en cascade, les trois cercles (En famille / Entre amis / Pour le boulot), barre riesling qui glisse et la phrase fondatrice « Punaise, c'était bon ! » en or penché.
-- Correctif icônes : les icônes remplies (état actif de la nav) utilisent maintenant fill-rule evenodd — le petit rond du pin et l'objectif de la caméra ne disparaissent plus au changement de couleur.
+- Icônes actives : un seul `<path>` par icône (au lieu de chemins découpés) pour que le fill-rule evenodd fonctionne réellement — le rond du pin et l'objectif de la caméra restent des trous une fois l'icône remplie.
+- Splashscreen à 3,5 secondes (une de plus pour profiter des animations).
+
+## 0.4.3 — Splash animé
+
+- Splashscreen repensé, fun et animé : carnet bordeaux qui pop, bulles riesling qui montent, petit cœur or qui s'échappe, titre en cascade, les trois cercles (En famille / Entre amis / Pour le boulot), barre riesling qui glisse et la phrase fondatrice « Punaise, c'était bon ! » en or penché.
 
 ## 0.4.2 — Bandeau perte de connexion + carte support
 

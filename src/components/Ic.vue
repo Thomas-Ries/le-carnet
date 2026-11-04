@@ -8,17 +8,15 @@ const props = defineProps({
   filled: { type: Boolean, default: false },
 });
 const path = computed(() => ICONS[props.name] || "");
-const multi = computed(() => path.value.includes("M") && path.value.trim().split(/\s(?=M)/).length > 1);
-const paths = computed(() =>
-  multi.value ? path.value.trim().split(/\s(?=M)/) : [path.value]
-);
 </script>
 
 <template>
-  <!-- fill-rule evenodd : quand l'icône est remplie (état actif), les formes internes
-       restent des trous — le petit rond du pin et l'objectif de la caméra ne disparaissent plus -->
+  <!-- Un seul <path> pour toute l'icône (tous les sous-chemins ensemble) :
+       fill-rule evenodd perce alors les formes internes — le petit rond du pin
+       et l'objectif de la caméra restent des trous même sur l'icône active (remplie).
+       Découper en plusieurs <path> (ancien code) annulait l'effet du evenodd. -->
   <svg :class="$props.class" viewBox="0 0 24 24" :fill="filled ? 'currentColor' : 'none'" fill-rule="evenodd" clip-rule="evenodd" stroke="currentColor"
     :stroke-width="sw" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path v-for="(d, i) in paths" :key="i" :d="d" />
+    <path :d="path" />
   </svg>
 </template>

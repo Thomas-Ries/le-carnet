@@ -38,8 +38,8 @@ export const useCarnetStore = defineStore("carnet", {
 
   actions: {
     async boot() {
-      // Splash 2,5 s
-      setTimeout(() => (this.splash = false), 2500);
+      // Splash 3,5 s
+      setTimeout(() => (this.splash = false), 3500);
       try {
         const p = JSON.parse(localStorage.getItem(LS.profil) || "null");
         if (p) this.profil = p;
