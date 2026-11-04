@@ -11,7 +11,14 @@ const toast = inject("toast");
 const q = ref("");
 const flashComplet = ref(null);
 const menuCarnets = ref(false);
-const tri = ref("recent"); // recent | aime — toggle de tri, pattern Ma Cave (EnviesView)
+const tri = ref("recent"); // recent | aime | az — tri façon e-commerce (CTA + menu)
+const triOpen = ref(false);
+const TRIS = [
+  { id: "recent", label: "Le plus récent", defaut: true },
+  { id: "aime", label: "Le plus aimé" },
+  { id: "az", label: "De A à Z" },
+];
+const triLabel = computed(() => TRIS.find((t) => t.id === tri.value)?.label || "");
 
 const fiches = computed(() => store.fichesDuCarnet);
 const results = computed(() =>
@@ -24,11 +31,16 @@ const results = computed(() =>
 const flashes = computed(() => store.flashesDuCarnet);
 const miens = (f) => f.auteur === store.profil.prenom;
 
-/* Tri : plus récents (défaut, ordre du carnet) ou plus aimés (cœurs décroissants, égalité → récent) */
+/* Tri : plus récent (défaut, ordre du carnet) / plus aimé (cœurs décroissants) / A à Z (titre) */
 const fichesTri = computed(() => {
   if (tri.value === "aime") {
     return [...fiches.value].sort(
       (a, b) => (b.reacts?.length || 0) - (a.reacts?.length || 0) || (a.date < b.date ? 1 : -1)
+    );
+  }
+  if (tri.value === "az") {
+    return [...fiches.value].sort((a, b) =>
+      (a.titre || "").localeCompare(b.titre || "", "fr", { sensitivity: "base" })
     );
   }
   return fiches.value;
@@ -119,17 +131,27 @@ const fichesTri = computed(() => {
         </button>
       </div>
 
-      <!-- Tri : pastilles toggle, pattern Ma Cave (Récents / Aimés) -->
-      <div v-if="fiches.length" class="flex items-center justify-between mb-2 gap-2">
+      <!-- Tri : CTA façon e-commerce — un bouton qui ouvre le choix du tri -->
+      <div v-if="fiches.length" class="flex items-center justify-between mb-2 gap-2 relative">
         <p class="text-xs uppercase tracking-widest text-muted shrink-0">
-          {{ tri === "recent" ? "Dernièrement dans le carnet" : "Les plus aimés du carnet" }}
+          {{ tri === "recent" ? "Dernièrement dans le carnet" : tri === "aime" ? "Les plus aimés du carnet" : "Le carnet de A à Z" }}
         </p>
-        <div class="flex gap-1.5">
-          <button v-for="t in [['recent', 'Récents'], ['aime', 'Aimés']]" :key="t[0]" @click="tri = t[0]"
-            class="px-3 py-1.5 rounded-full border text-xs font-semibold transition"
-            :class="tri === t[0] ? 'border-accent text-accent bg-surface' : 'border-hairline bg-surface text-muted'">
-            {{ t[1] }}
+        <div class="relative">
+          <button @click="triOpen = !triOpen"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-hairline bg-surface text-xs font-semibold">
+            <span class="text-muted">Trier :</span> {{ triLabel }}
+            <Ic name="chevron" class="w-3.5 h-3.5 text-muted transition" :class="triOpen ? 'rotate-180' : ''" :sw="2" />
           </button>
+          <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
+            style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
+            <button v-for="t in TRIS" :key="t.id"
+              @click="tri = t.id; triOpen = false"
+              class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+              :style="{ color: t.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: t.id === tri ? 'var(--c-soft)' : 'transparent' }">
+              <span>{{ t.label }}<span v-if="t.defaut" class="text-[10px] text-muted ml-1">défaut</span></span>
+              <Ic v-if="t.id === tri" name="check" class="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
       <div class="space-y-2">

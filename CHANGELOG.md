@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.8 — Accueil : CTA de tri façon e-commerce
+
+- Les pastilles font place à un CTA « Trier : » qui ouvre un menu de choix : Le plus récent (défaut), Le plus aimé, De A à Z (titre, insensible à la casse et aux accents). Le titre de section suit le tri.
+
 ## 0.4.7 — Profil : invitation remontée
 
 - La carte « Inviter dans un carnet » remonte juste sous l'installation de l'app, au-dessus de « Réglages & données » : le partage du carnet est le geste de croissance nº1, il doit rester visible en haut du profil.
