@@ -69,18 +69,20 @@ export const useCarnetStore = defineStore("carnet", {
       return this.roles[carnetId] === "admin";
     },
 
-    purgerFlashesExpires() {
+    async purgerFlashesExpires() {
       const limite = Date.now() - 7 * 86400000;
       const expires = this.flashes.filter((f) => new Date(f.date).getTime() < limite);
       for (const f of expires) {
         // Flash commenté -> fiche "en attente" (note 0, à titrer/noter par l'auteur)
         if (f.com) {
-          const r = await api.addFiche({
-            carnets: f.carnets, type: "adresse", cat: null, titre: f.com.slice(0, 60),
-            lieu: "", note: 0, com: f.com, photo: f.photo, recette: null,
-            auteur: f.auteur, date: f.date, demandeRecette: [],
-          }).catch(() => null);
-          if (r && r.fiche) this.fiches.unshift(r.fiche);
+          try {
+            const r = await api.addFiche({
+              carnets: f.carnets, type: "adresse", cat: null, titre: f.com.slice(0, 60),
+              lieu: "", note: 0, com: f.com, photo: f.photo, recette: null,
+              auteur: f.auteur, date: f.date, demandeRecette: [],
+            });
+            if (r && r.fiche) this.fiches.unshift(r.fiche);
+          } catch (e) { /* réseau KO : le flash restera, nouvelle tentative au boot suivant */ }
         }
         api.deleteFlash(f.id).catch(() => null);
       }
