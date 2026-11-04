@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* Charte double thème — tokens CSS (light / dark) */
+:root {
+  --c-bg: #FAF6F1;
+  --c-surface: #FFFFFF;
+  --c-ink: #2B2320;
+  --c-accent: #7A2E3E;
+  --c-gold: #A8842C;
+  --c-riesling: #D9C589;
+  --c-green: #4A7856;
+  --c-muted: #8A7F76;
+  --c-soft: rgba(217, 197, 137, 0.18);
+  --c-hairline: rgba(122, 46, 62, 0.14);
+}
+.dark {
+  --c-bg: #1E1714;
+  --c-surface: #292119;
+  --c-ink: #F1E8DC;
+  --c-accent: #C9738A;
+  --c-gold: #C9A24B;
+  --c-riesling: #D9C589;
+  --c-green: #7FA98C;
+  --c-muted: #A2937F;
+  --c-soft: rgba(217, 197, 137, 0.14);
+  --c-hairline: rgba(241, 232, 220, 0.14);
+}
+
+@theme inline {
+  --color-cream: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-ink: var(--c-ink);
+  --color-accent: var(--c-accent);
+  --color-gold: var(--c-gold);
+  --color-riesling: var(--c-riesling);
+  --color-green: var(--c-green);
+  --color-muted: var(--c-muted);
+  --color-soft: var(--c-soft);
+  --color-hairline: var(--c-hairline);
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+/* Anti zoom iOS sur champs + double-tap */
+html, body { touch-action: manipulation; }
+input, select, textarea { font-size: 16px !important; }
+
+/* Scroll lock pendant les overlays */
+body.no-scroll { overflow: hidden; overscroll-behavior: none; }
+
+/* Splash */
+@keyframes lcbar { from { width: 0 } to { width: 100% } }
+@keyframes lcfade { from { opacity: 1 } to { opacity: 0 } }
+
+/* Focus charte */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--c-gold); outline-offset: 2px; }
