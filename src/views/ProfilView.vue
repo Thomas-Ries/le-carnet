@@ -105,7 +105,12 @@ function toggleTheme() {
 }
 const exportCarnet = computed(() => store.carnets.find((c) => c.id === exportCarnetId.value) || null);
 const moi = computed(() => store.profil.prenom);
-// La carte « Contacter le développeur » est réservée aux admins (de n'importe quel carnet)
+// Support : ouvre le client mail sans afficher l'adresse en clair à l'écran
+function contacterSupport() {
+  window.location.href = "mailto:thomasries.dev@gmail.com?subject=" + encodeURIComponent("Le Carnet — support");
+}
+
+// La carte « Contacter le support » est réservée aux admins (de n'importe quel carnet)
 const estAdminQuelconque = computed(() => Object.values(store.roles).some((r) => r === "admin"));
 
 const badges = computed(() => {
@@ -248,13 +253,13 @@ async function exporterJSON() {
     <div v-if="estAdminQuelconque" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Un souci avec l'app ?</p>
       <p class="text-[11px] text-muted mb-2.5 leading-relaxed">
-        Bug, question, suggestion — écris au développeur, il répond vite :
+        Bug, question, suggestion — le support répond vite :
       </p>
-      <a href="mailto:thomasries.dev@gmail.com?subject=Le%20Carnet"
+      <button @click="contacterSupport"
         class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
         :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
-        <Ic name="user" class="w-4 h-4" /> thomasries.dev@gmail.com
-      </a>
+        <Ic name="user" class="w-4 h-4" /> Contacter le support
+      </button>
     </div>
 
     <p class="text-[11px] text-muted text-center leading-relaxed">
