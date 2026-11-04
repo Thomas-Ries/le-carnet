@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.21 — Récupération admin sur un nouvel appareil (réinstallation)
+- Problème : désinstaller/réinstaller la PWA (ou effacer les données) donne un nouvel UUID appareil — rejoindre son propre carnet avec son prénom est refusé (doublon, règle V0.4.13) et l'écran admin ne montre rien (aucun carnet lié au nouvel appareil) : l'admin perdait l'accès sans récupération possible.
+- Worker verifyAdmin : identification par code d'invitation en plus de l'id de carnet ; renvoie le carnet complet ; prénom de session = existant, sinon celui envoyé, sinon le nom admin du carnet.
+- JoinView : sur « prénom déjà pris », bloc « C'est toi, sur un nouvel appareil ? » — code d'invitation (déjà saisi) + code admin → session admin restaurée.
+- Mode démo : même résolution par code d'invitation.
+
 ## 0.4.20 — Invitation partageable WhatsApp / SMS
 - Les cartes d'invitation (Mes carnets + Profil) passent de l'unique « Copier le lien » à trois boutons : WhatsApp, SMS, Copier.
 - Le message part prêt à envoyer : « [Prénom] t'invite dans le carnet « [Nom] » sur Le Carnet — code 123456. Rejoins-le : [lien] » — lien et code voyagent dans le message.

@@ -143,6 +143,19 @@ export const useCarnetStore = defineStore("carnet", {
       return r.carnet;
     },
 
+    async recupererAdmin(codeInvite, codeAdmin, prenom) {
+      // Admin sur un nouvel appareil (réinstallation) : le code d'invitation + le code
+      // admin restaurent la session admin. Le serveur renvoie le carnet complet.
+      const r = await api.verifyAdmin({ codeInvite, code: codeAdmin, prenom, deviceId: this.deviceId });
+      if (!r || !r.ok) return r || { error: "Code admin refusé." };
+      if (r.carnet) {
+        if (!this.carnets.some((c) => c.id === r.carnet.id)) this.carnets.push(r.carnet);
+        this.roles[r.carnet.id] = "admin";
+        this.switchCarnet(r.carnet.id);
+      }
+      return r;
+    },
+
     async verifyAdmin(carnetId, code) {
       const r = await api.verifyAdmin({ carnetId, code, deviceId: this.deviceId });
       if (r && r.ok) {

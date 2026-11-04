@@ -292,15 +292,26 @@ export default {
           }
 
           case "verifyAdmin": {
+            // Identification par id (appareil qui voit déjà le carnet) OU par code
+            // d'invitation (récupération admin sur un nouvel appareil, après réinstallation).
             if (!isCode(p.code)) return json({ error: "code invalide" }, 400);
-            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            const c = p.carnetId
+              ? await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first()
+              : isCode(p.codeInvite)
+                ? await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(p.codeInvite).first()
+                : null;
             if (!c) return json({ error: "carnet introuvable" }, 404);
             if (!(await verifyCode(p.code, c.admin_code_hash))) return json({ ok: false }, 200);
             const s = await sessionOf(c.id);
+            // Prénom de la session : l'existante, sinon celui envoyé, sinon le nom de l'admin du carnet.
             await db.prepare(
               `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
-            ).bind(device, c.id, s ? s.prenom : cleanPrenom(p.prenom), "admin", now).run();
-            return json({ ok: true, role: "admin" });
+            ).bind(device, c.id, s ? s.prenom : (cleanPrenom(p.prenom) || c.admin), "admin", now).run();
+            const { results: membres } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(c.id).all();
+            return json({
+              ok: true, role: "admin",
+              carnet: { id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) },
+            });
           }
 
           case "regenerateInvite": {

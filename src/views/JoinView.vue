@@ -15,6 +15,9 @@ const prenom = ref(store.profil.prenom || "");
 const code = ref((route.params.code || "").replace(/\D/g, "").slice(0, 6));
 const err = ref("");
 const dupErr = ref("");
+const codeAdmin = ref("");
+const recupErr = ref("");
+const recupOK = ref(false);
 const connu = computed(() => store.carnets.find((c) => c.code === code.value));
 
 function goStep2() {
@@ -42,6 +45,21 @@ async function rejoindre() {
     err.value = "Carnet introuvable — vérifie le code.";
   }
 }
+
+// C'est moi sur un nouvel appareil (réinstallation) : le prénom est refusé en doublon
+// mais le code d'invitation + le code admin restaurant la session admin.
+async function reprendre() {
+  if (codeAdmin.value.length !== 6) return;
+  recupErr.value = "";
+  const r = await store.recupererAdmin(code.value, codeAdmin.value, prenom.value.trim());
+  if (r && r.ok) {
+    recupOK.value = true;
+    toast("Carnet repris — tu es de retour en admin");
+    router.push("/");
+  } else {
+    recupErr.value = (r && r.error) || "Code admin refusé — vérifie les 6 chiffres.";
+  }
+}
 </script>
 
 <template>
@@ -60,6 +78,22 @@ async function rejoindre() {
         class="w-full rounded-xl px-4 py-4 text-base bg-surface outline-none mb-3 text-center"
         :style="dupErr ? 'border-color: var(--c-accent); background: var(--c-soft)' : 'border: 1px solid var(--c-hairline)'" />
       <p v-if="dupErr" class="text-xs text-accent text-center -mt-1 mb-3 leading-relaxed">{{ dupErr }}</p>
+
+      <!-- Reprise admin : le prénom existe déjà dans le carnet ET c'est le tien (nouvel appareil) -->
+      <div v-if="dupErr && !recupOK" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+        <p class="text-[11px] text-muted leading-relaxed mb-2.5">
+          C'est toi, sur un nouvel appareil ? Entre ton code admin — celui choisi à la création du carnet —
+          pour reprendre ta place.
+        </p>
+        <input v-model="codeAdmin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code admin"
+          @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-4 py-3 text-lg text-center tracking-[.3em] bg-bg border border-hairline outline-none mb-2" />
+        <p v-if="recupErr" class="text-xs text-accent text-center mb-2">{{ recupErr }}</p>
+        <button @click="reprendre" :disabled="codeAdmin.length !== 6"
+          class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40">
+          Reprendre mon carnet
+        </button>
+      </div>
       <button @click="goStep2" :disabled="!prenom.trim()"
         class="w-full rounded-xl py-4 text-sm font-semibold text-white bg-accent disabled:opacity-40">
         Continuer

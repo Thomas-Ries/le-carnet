@@ -98,7 +98,9 @@ function demoMutate(db, action, p) {
       return { carnet: c, role: p.prenom === c.admin ? "admin" : "member" };
     }
     case "verifyAdmin": {
-      const c = db.carnets.find((x) => x.id === p.carnetId);
+      const c = p.carnetId
+        ? db.carnets.find((x) => x.id === p.carnetId)
+        : db.carnets.find((x) => x.code === String(p.codeInvite));
       return { ok: !!c && String(c.adminCode) === String(p.code) };
     }
     case "regenerateInvite": {
