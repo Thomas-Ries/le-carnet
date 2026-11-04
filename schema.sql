@@ -1,12 +1,9 @@
--- Le Carnet — schéma D1 (Cloudflare)
--- Exécuter dans le dashboard Cloudflare : Storage & Databases > D1 > Console
-
 CREATE TABLE IF NOT EXISTS Carnets (
   id TEXT PRIMARY KEY,
   nom TEXT NOT NULL,
-  code TEXT UNIQUE NOT NULL,          -- code carnet 6 chiffres (invitation)
+  code TEXT UNIQUE NOT NULL,
   admin TEXT NOT NULL,
-  admin_code TEXT NOT NULL,           -- V1 réelle : hasher (SHA-256 + sel)
+  admin_code TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 
@@ -20,18 +17,17 @@ CREATE TABLE IF NOT EXISTS Membres (
 CREATE TABLE IF NOT EXISTS Fiches (
   id TEXT PRIMARY KEY,
   auteur TEXT NOT NULL,
-  type TEXT NOT NULL,                -- 'adresse' | 'recette'
+  type TEXT NOT NULL,
   cat TEXT,
   titre TEXT NOT NULL,
   lieu TEXT,
-  note INTEGER NOT NULL,              -- 70-100
+  note INTEGER NOT NULL,
   com TEXT,
-  photo TEXT,                         -- dataURL compressée (V1) — R2 en V2
+  photo TEXT,
   recette TEXT,
   created_at TEXT NOT NULL
 );
 
--- Une fiche peut appartenir à N carnets
 CREATE TABLE IF NOT EXISTS FichesCarnets (
   fiche_id TEXT NOT NULL REFERENCES Fiches(id),
   carnet_id TEXT NOT NULL REFERENCES Carnets(id),
@@ -50,7 +46,7 @@ CREATE TABLE IF NOT EXISTS Flashes (
   auteur TEXT NOT NULL,
   photo TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  expires_at TEXT NOT NULL            -- +7 jours
+  expires_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS FlashReactions (
