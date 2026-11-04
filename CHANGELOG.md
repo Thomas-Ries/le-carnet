@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.22 — Fix icône iOS : carré plein opaque
+- Les PNG 192/512 précédents avaient des coins arrondis TRANSPARENTS : iOS ne supporte pas la transparence sur les icônes d'écran d'accueil (remplacée par du blanc) et rognait le motif. PNG régénérés en carré PLEIN OPAQUE bordeaux bord à bord (iOS arrondit lui-même), motif ramené dans la zone de sécurité maskable (cercle interne 80 %).
+- index.html : apple-touch-icon passe du SVG (ignoré par iOS pour l'écran d'accueil) à /icons/icon-192.png.
+
 ## 0.4.21 — Récupération admin sur un nouvel appareil (réinstallation)
 - Problème : désinstaller/réinstaller la PWA (ou effacer les données) donne un nouvel UUID appareil — rejoindre son propre carnet avec son prénom est refusé (doublon, règle V0.4.13) et l'écran admin ne montre rien (aucun carnet lié au nouvel appareil) : l'admin perdait l'accès sans récupération possible.
 - Worker verifyAdmin : identification par code d'invitation en plus de l'id de carnet ; renvoie le carnet complet ; prénom de session = existant, sinon celui envoyé, sinon le nom admin du carnet.
