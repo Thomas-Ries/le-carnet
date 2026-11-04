@@ -121,6 +121,8 @@ export default {
       }
     }
 
-    return new Response("Not found", { status: 404, headers: CORS });
+    // Toute autre requête : servir les fichiers statiques du déploiement
+    // (Pages passe les assets via env.ASSETS quand un _worker.js existe)
+    return env.ASSETS.fetch(request);
   },
 };
