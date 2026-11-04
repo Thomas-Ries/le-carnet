@@ -30,6 +30,10 @@ onMounted(refreshNotif);
 
 async function toggleNotif() {
   if (notifBusy.value) return;
+  if (store.demoMode) {
+    toast("Les notifications sont actives une fois l'app install\u00e9e en ligne \u2014 pas en mode d\u00e9mo");
+    return;
+  }
   notifBusy.value = true;
   try {
     const reg = await navigator.serviceWorker.ready;
@@ -160,15 +164,18 @@ async function exporterJSON() {
       </div>
     </div>
 
-    <div v-if="notifSupported && !store.demoMode" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+    <div v-if="notifSupported" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Notifications</p>
-      <button @click="toggleNotif" :disabled="notifBusy"
+      <p v-if="store.demoMode" class="text-[11px] text-muted mb-2.5 leading-relaxed rounded-xl px-3 py-2.5 bg-soft text-accent">
+        Flashes, adresses not\u00e9es, rappel J-6. \u00c0 activer une fois l'app install\u00e9e en ligne \u2014 pas disponible en mode d\u00e9mo.
+      </p>
+      <button @click="toggleNotif" :disabled="notifBusy || store.demoMode"
         class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
         :style="{ background: notifOn ? 'var(--c-soft)' : 'transparent', border: '1px solid var(--c-hairline)' }">
         <span class="flex items-center gap-2.5 text-sm">
           <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
           <span class="text-left leading-tight">
-            <span class="block font-semibold">{{ notifOn ? "Activ\u00e9es" : "D\u00e9sactiv\u00e9es" }}</span>
+            <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activ\u00e9es" : "D\u00e9sactiv\u00e9es" }}</span>
             <span class="block text-[10px] text-muted">Flashes, adresses not\u00e9es, rappel J-6 \u2014 r\u00e9glage propre \u00e0 cet appareil</span>
           </span>
         </span>
