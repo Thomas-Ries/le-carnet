@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS Flashes (
   carnet_id TEXT NOT NULL REFERENCES Carnets(id),
   auteur TEXT NOT NULL,
   photo TEXT NOT NULL,
+  com TEXT,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
 );

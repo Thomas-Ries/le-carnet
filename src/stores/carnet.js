@@ -72,7 +72,18 @@ export const useCarnetStore = defineStore("carnet", {
     purgerFlashesExpires() {
       const limite = Date.now() - 7 * 86400000;
       const expires = this.flashes.filter((f) => new Date(f.date).getTime() < limite);
-      expires.forEach((f) => api.deleteFlash(f.id));
+      for (const f of expires) {
+        // Flash commenté -> fiche "en attente" (note 0, à titrer/noter par l'auteur)
+        if (f.com) {
+          const r = await api.addFiche({
+            carnets: f.carnets, type: "adresse", cat: null, titre: f.com.slice(0, 60),
+            lieu: "", note: 0, com: f.com, photo: f.photo, recette: null,
+            auteur: f.auteur, date: f.date, demandeRecette: [],
+          }).catch(() => null);
+          if (r && r.fiche) this.fiches.unshift(r.fiche);
+        }
+        api.deleteFlash(f.id).catch(() => null);
+      }
       this.flashes = this.flashes.filter((f) => !expires.includes(f));
     },
 
@@ -170,10 +181,11 @@ export const useCarnetStore = defineStore("carnet", {
       this.fiches = this.fiches.filter((f) => f.id !== id);
     },
 
-    async flasher(carnetIds, photo) {
+    async flasher(carnetIds, photo, com) {
       const r = await api.addFlash({
         carnets: carnetIds,
         photo,
+        com: com || null,
         auteur: this.profil.prenom,
         date: new Date().toISOString(),
         deviceId: this.deviceId,
@@ -181,6 +193,13 @@ export const useCarnetStore = defineStore("carnet", {
       this.demoMode = api.state.demoMode;
       this.flashes.unshift(r.flash);
       return r.flash;
+    },
+
+    async commenterFlash(id, com) {
+      const r = await api.commentFlash(id, com);
+      const fl = this.flashes.find((f) => f.id === id);
+      if (fl && !(r && r.error)) fl.com = r.com !== undefined ? r.com : com;
+      return r;
     },
 
     async completerFlash(id, patch) {
@@ -205,27 +224,6 @@ export const useCarnetStore = defineStore("carnet", {
       const r = await api.demandeRecette(id, this.profil.prenom);
       const i = this.fiches.findIndex((f) => f.id === id);
       if (i !== -1) this.fiches[i].demandeRecette = r.fiche.demandeRecette;
-    },
-
-    async quitterCarnet(carnetId) {
-      const r = await api.leaveCarnet(carnetId, this.profil.prenom);
-      this.demoMode = api.state.demoMode;
-      if (r && r.error) return r;
-      // Le carnet et tout son contenu disparaissent du fil de cet appareil
-      this.carnets = this.carnets.filter((c) => c.id !== carnetId);
-      delete this.roles[carnetId];
-      this.fiches = this.fiches
-        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
-        .filter((f) => f.carnets.length > 0);
-      this.flashes = this.flashes
-        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
-        .filter((f) => f.carnets.length > 0);
-      if (this.carnetId === carnetId) {
-        const suivant = this.carnets[0]?.id || null;
-        this.carnetId = suivant;
-        if (suivant) localStorage.setItem(LS.carnetId, suivant);
-      }
-      return { ok: true };
     },
 
     async retirerMembre(carnetId, membre) {

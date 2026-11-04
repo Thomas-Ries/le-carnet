@@ -41,15 +41,18 @@ function onFile(e) {
 }
 const confirmSuppr = ref(false);
 const pop = ref(false);
+const note = ref(80);
 
 function startEdit() {
   titre.value = fiche.value.titre;
   com.value = fiche.value.com || "";
+  note.value = fiche.value.note || 80;
   photoModif.value = undefined;
   edit.value = true;
 }
 async function saveEdit() {
   const patch = { titre: titre.value.trim(), com: com.value.trim() };
+  if (!fiche.value.note) patch.note = note.value;
   if (photoModif.value !== undefined) patch.photo = photoModif.value;
   await store.majFiche(fiche.value.id, patch);
   edit.value = false;
@@ -78,11 +81,16 @@ async function supprimer() {
 
     <div class="flex items-start justify-between gap-3 mb-1">
       <h1 class="text-xl font-serif leading-tight">{{ fiche.titre }}</h1>
-      <span class="shrink-0 text-base font-semibold text-accent">{{ fiche.note }} · <span class="text-xs font-normal text-muted">{{ noteLabel(fiche.note) }}</span></span>
+      <span v-if="fiche.note" class="shrink-0 text-base font-semibold text-accent">{{ fiche.note }} · <span class="text-xs font-normal text-muted">{{ noteLabel(fiche.note) }}</span></span>
+      <span v-else class="shrink-0 text-xs font-medium text-muted" style="border: 1px dashed var(--c-hairline); border-radius: 9999px; padding: 2px 8px;">à noter</span>
     </div>
     <p class="text-xs text-muted mb-3 flex items-center gap-1">
       <span v-if="fiche.cat" class="rounded-full px-2 py-0.5 bg-soft text-accent text-[10px] font-medium">{{ fiche.cat }}</span>
       <span v-if="fiche.lieu">· {{ fiche.lieu }}</span>
+    </p>
+
+    <p v-if="!fiche.note && !edit" class="text-[11px] mb-3 rounded-xl px-3 py-2.5 bg-soft text-accent">
+      Fiche en attente : elle vient d'un flash — mets-lui un titre et une note en l'éditant.
     </p>
 
     <div v-if="edit" class="space-y-2 mb-4">
@@ -100,6 +108,14 @@ async function supprimer() {
           class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Annuler</button>
         <button v-else-if="fiche.photo" @click="photoModif = ''"
           class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Retirer</button>
+      </div>
+      <div v-if="!fiche.note" class="rounded-xl p-3.5 bg-surface border border-hairline">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] uppercase tracking-widest text-muted">Ta note</span>
+          <span class="text-sm font-semibold text-accent">{{ note }} · {{ noteLabel(note) }}</span>
+        </div>
+        <input type="range" min="70" max="100" v-model.number="note" class="w-full accent-[#7A2E3E]" />
+        <div class="flex justify-between text-[10px] text-muted mt-1"><span>70</span><span>85</span><span>100</span></div>
       </div>
       <div class="flex gap-2">
         <button @click="edit = false" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">Annuler</button>

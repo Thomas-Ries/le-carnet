@@ -78,6 +78,22 @@ export default {
         const { results: demandes } = await db.prepare(
           `SELECT fiche_id, prenom FROM DemandesRecette`
         ).all();
+        // Flashes expirés : commentés -> fiche "en attente" (note 0), sinon purge
+        const { results: expiresRaw } = await db.prepare(
+          `SELECT * FROM Flashes WHERE expires_at <= datetime('now')`
+        ).all();
+        for (const fl of expiresRaw) {
+          if (fl.com) {
+            const fid = "conv-" + fl.id;
+            await db.prepare(
+              `INSERT OR IGNORE INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+            ).bind(fid, fl.auteur, "adresse", null, fl.com.slice(0, 60), "", 0, fl.com.slice(0, 500), fl.photo || "", null, fl.created_at).run();
+            await db.prepare(`INSERT OR IGNORE INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(fid, fl.carnet_id).run();
+            await db.prepare(`INSERT OR IGNORE INTO FicheLikes (fiche_id, prenom) SELECT ?, prenom FROM FlashReactions WHERE flash_id=?`).bind(fid, fl.id).run();
+          }
+          await db.prepare(`DELETE FROM FlashReactions WHERE flash_id=?`).bind(fl.id).run();
+          await db.prepare(`DELETE FROM Flashes WHERE id=?`).bind(fl.id).run();
+        }
         const { results: flashesRaw } = await db.prepare(
           `SELECT * FROM Flashes WHERE carnet_id IN ${inClause(carnetIds.length)} AND expires_at > datetime('now')`
         ).bind(...bindIds()).all();
@@ -103,7 +119,7 @@ export default {
           reacts: likesByFiche[f.id] || [], demandeRecette: demByFiche[f.id] || [],
         }));
         const flashes = flashesRaw.map((fl) => ({
-          id: fl.id, carnets: [fl.carnet_id], auteur: fl.auteur, photo: fl.photo,
+          id: fl.id, carnets: [fl.carnet_id], auteur: fl.auteur, photo: fl.photo, com: fl.com || null,
           date: fl.created_at, reacts: reactsByFlash[fl.id] || [],
         }));
 
@@ -250,12 +266,11 @@ export default {
             })() : null;
             if (!adminNimporte && !s) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
             await db.prepare(
-              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo) WHERE id=?`
+              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note) WHERE id=?`
             ).bind(patch.titre != null ? cleanText(patch.titre, 60) : null,
               patch.com != null ? cleanText(patch.com, 500) : null,
               patch.recette != null ? cleanText(patch.recette, 4000) : null,
               patch.note != null ? Math.min(100, Math.max(70, parseInt(patch.note, 10) || 80)) : null,
-              patch.photo !== undefined ? String(patch.photo).slice(0, 400000) : null,
               p.id).run();
             return json({ ok: true });
           }
@@ -284,9 +299,20 @@ export default {
             const id = crypto.randomUUID();
             const expires = new Date(Date.now() + 7 * 864e5).toISOString();
             await db.prepare(
-              `INSERT INTO Flashes (id, carnet_id, auteur, photo, created_at, expires_at) VALUES (?,?,?,?,?,?)`
-            ).bind(id, fl.carnetId, s.prenom, typeof fl.photo === "string" ? fl.photo.slice(0, 400000) : "", now, expires).run();
-            return json({ flash: { id, carnets: [fl.carnetId], auteur: s.prenom, photo: fl.photo, date: now, reacts: [] } });
+              `INSERT INTO Flashes (id, carnet_id, auteur, photo, com, created_at, expires_at) VALUES (?,?,?,?,?,?,?)`
+            ).bind(id, fl.carnetId, s.prenom, typeof fl.photo === "string" ? fl.photo.slice(0, 400000) : "",
+              typeof fl.com === "string" ? fl.com.slice(0, 500) : null, now, expires).run();
+            return json({ flash: { id, carnets: [fl.carnetId], auteur: s.prenom, photo: fl.photo, com: fl.com || null, date: now, reacts: [] } });
+          }
+
+          case "commentFlash": {
+            const fl = await db.prepare(`SELECT * FROM Flashes WHERE id=?`).bind(p.id).first();
+            if (!fl) return json({ error: "introuvable" }, 404);
+            const s = await sessionOf(fl.carnet_id);
+            if (!s || s.prenom !== fl.auteur) return json({ error: "seul l'auteur peut commenter" }, 403);
+            const com = typeof p.com === "string" ? p.com.slice(0, 500) : null;
+            await db.prepare(`UPDATE Flashes SET com=? WHERE id=?`).bind(com, p.id).run();
+            return json({ ok: true, com });
           }
 
           case "deleteFlash": {

@@ -92,6 +92,7 @@ const prefere = computed(() =>
               </span>
             </span>
             <span class="text-[10px] font-medium text-muted">{{ miens(fl) ? "À toi de noter" : fl.auteur }}</span>
+            <span v-if="fl.com" class="text-[9px] text-muted italic max-w-[64px] truncate leading-tight">« {{ fl.com }} »</span>
           </button>
         </div>
         <p class="text-[10px] text-muted mt-1.5">Éclair = à noter (7 jours). Les autres likent ; toi seul complètes.</p>

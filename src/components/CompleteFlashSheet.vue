@@ -10,6 +10,7 @@ const emit = defineEmits(["close", "done"]);
 const store = useCarnetStore();
 const toast = inject("toast");
 const titre = ref("");
+const com = ref(props.flash.com || "");
 const cat = ref("Resto");
 const note = ref(80);
 const cats = ["Resto", "Caviste", "Bar", "Fromagerie", "Boulangerie", "Recette"];
@@ -19,10 +20,18 @@ async function valider() {
   const type = cat.value === "Recette" ? "recette" : "adresse";
   const fiche = await store.completerFlash(props.flash.id, {
     type, cat: cat.value, titre: titre.value.trim(), lieu: "", note: note.value,
-    com: "", recette: null, demandeRecette: [],
+    com: com.value.trim(), recette: null, demandeRecette: [],
   });
   emit("done", fiche);
   toast("Fiche créée — ceux qui ont aimé le flash sont notifiés");
+}
+
+async function justeCommentaire() {
+  if (!com.value.trim()) return;
+  const r = await store.commenterFlash(props.flash.id, com.value.trim());
+  if (r && r.error) { toast(r.error); return; }
+  emit("close");
+  toast("Commentaire ajouté — le flash finira en fiche après ses 7 jours");
 }
 </script>
 
@@ -41,6 +50,8 @@ async function valider() {
 
       <input v-model="titre" placeholder="C'était où ? Le nom du lieu…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none mb-2.5" />
+      <textarea v-model="com" rows="2" maxlength="500" placeholder="Un mot sur le moment ? (optionnel)"
+        class="w-full rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none mb-3"></textarea>
       <div class="flex flex-wrap gap-1.5 mb-3">
         <button v-for="c in cats" :key="c" @click="cat = c"
           class="rounded-full px-3 py-1.5 text-xs font-medium"
@@ -64,6 +75,10 @@ async function valider() {
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
         :style="{ background: titre.trim() ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
         En faire une fiche notée
+      </button>
+      <button v-if="com.trim() && com.trim() !== (flash.com || '')" @click="justeCommentaire"
+        class="w-full rounded-xl py-3 text-xs font-semibold text-accent bg-soft mt-2">
+        Enregistrer juste le commentaire — le flash reste 7 jours puis devient une fiche à compléter
       </button>
       <p class="text-center text-[10px] text-muted mt-2 flex items-center justify-center gap-1">
         <Ic name="heart" class="w-3 h-3" /> Ceux qui ont aimé ce flash seront notifiés — une seule fois.

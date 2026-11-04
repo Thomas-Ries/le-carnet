@@ -8,6 +8,7 @@ const emit = defineEmits(["close"]);
 const store = useCarnetStore();
 const toast = inject("toast");
 const photo = ref(null);
+const com = ref("");
 const sel = ref([store.carnetId]);
 
 const toggle = (id) => {
@@ -38,9 +39,11 @@ function onFile(e) {
 
 async function envoyer() {
   if (!photo.value) return;
-  await store.flasher(sel.value, photo.value);
+  await store.flasher(sel.value, photo.value, com.value.trim());
   emit("close");
-  toast("Flash envoyé — 7 jours pour le noter");
+  toast(com.value.trim()
+    ? "Flash envoyé — 7 jours puis il devient une fiche à compléter"
+    : "Flash envoyé — 7 jours pour le noter");
 }
 </script>
 
@@ -70,6 +73,9 @@ async function envoyer() {
         </template>
       </label>
       <p class="text-center text-[10px] text-muted mt-1.5 mb-3">1. la photo · 2. le(s) carnet(s) · 3. envoyé</p>
+
+      <textarea v-model="com" rows="2" maxlength="500" placeholder="Un mot ? (optionnel — il garde le flash et en fait une note après 7 jours)"
+        class="w-full rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none mb-3"></textarea>
 
       <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">Pour qui ?</p>
       <div class="flex flex-wrap gap-1.5 mb-4">
