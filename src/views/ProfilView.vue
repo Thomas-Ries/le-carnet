@@ -8,7 +8,10 @@ const store = useCarnetStore();
 const toast = inject("toast");
 const prenom = ref(store.profil.prenom);
 
-const lien = computed(() => store.carnet ? location.origin + location.pathname + "#/join/" + store.carnet.code : "");
+const inviteCarnetId = ref(store.carnetId);
+
+const inviteCarnet = computed(() => store.carnets.find((c) => c.id === inviteCarnetId.value) || null);
+const lien = computed(() => inviteCarnet.value ? location.origin + location.pathname + "#/join/" + inviteCarnet.value.code : "");
 
 function savePrenom() {
   if (!prenom.value.trim()) return;
@@ -76,10 +79,20 @@ function toggleTheme() {
     </div>
 
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter dans « {{ store.carnet?.nom }} »</p>
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter dans un carnet</p>
+      <div class="relative mb-3">
+        <select v-model="inviteCarnetId"
+          class="w-full appearance-none rounded-xl px-3 py-3 pr-9 text-sm bg-bg border border-hairline outline-none cursor-pointer">
+          <option v-for="c in store.carnets" :key="c.id" :value="c.id">{{ c.nom }}</option>
+        </select>
+        <Ic name="chevron" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
+      </div>
+      <p v-if="inviteCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
+        Code à donner à la main : <span class="font-semibold text-accent tracking-widest">{{ inviteCarnet.code }}</span>
+      </p>
       <button @click="navigator.clipboard?.writeText(lien); toast('Lien copié')"
         class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-        <Ic name="share" class="w-4 h-4" /> Copier le lien
+        <Ic name="share" class="w-4 h-4" /> Copier le lien d'invitation
       </button>
     </div>
 
