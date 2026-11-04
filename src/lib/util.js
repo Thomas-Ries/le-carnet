@@ -10,3 +10,20 @@ export const fmtDate = (iso) => {
     return iso;
   }
 };
+
+/* Export JSON : partage natif iOS si dispo (Web Share API), sinon téléchargement — pattern Ma Cave. */
+export async function exporterFichierJSON(nomFichier, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const fichier = new File([blob], nomFichier, { type: "application/json" });
+  if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+    try { await navigator.share({ files: [fichier] }); return "partage"; }
+    catch { return "annule"; }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nomFichier;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return "telecharge";
+}

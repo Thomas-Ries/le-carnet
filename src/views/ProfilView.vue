@@ -3,12 +3,14 @@ import { ref, computed, inject } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
+import { exporterFichierJSON } from "../lib/util.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
 const prenom = ref(store.profil.prenom);
 
 const inviteCarnetId = ref(store.carnetId);
+const exportCarnetId = ref(store.carnetId);
 
 const inviteCarnet = computed(() => store.carnets.find((c) => c.id === inviteCarnetId.value) || null);
 const lien = computed(() => inviteCarnet.value ? location.origin + location.pathname + "#/join/" + inviteCarnet.value.code : "");
@@ -39,6 +41,20 @@ function onAvatar(e) {
 }
 function toggleTheme() {
   store.setDark(!store.dark);
+}
+const exportCarnet = computed(() => store.carnets.find((c) => c.id === exportCarnetId.value) || null);
+async function exporterJSON() {
+  const c = exportCarnet.value;
+  if (!c) return;
+  const fiches = store.fiches.filter((f) => f.carnets.includes(c.id));
+  const nomFichier = "le-carnet-" + c.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".json";
+  const r = await exporterFichierJSON(nomFichier, {
+    exporte_le: new Date().toISOString(),
+    carnet: { nom: c.nom, code: c.code, admin: c.admin, membres: c.membres },
+    fiches,
+  });
+  if (r === "annule") return;
+  toast(r === "partage" ? "Export prêt à partager" : "Export JSON téléchargé");
 }
 </script>
 
@@ -96,8 +112,27 @@ function toggleTheme() {
       </button>
     </div>
 
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Exporter mes données</p>
+      <div class="relative mb-3">
+        <select v-model="exportCarnetId"
+          class="w-full appearance-none rounded-xl px-3 py-3 pr-9 text-sm bg-bg border border-hairline outline-none cursor-pointer">
+          <option v-for="c in store.carnets" :key="c.id" :value="c.id">{{ c.nom }}</option>
+        </select>
+        <Ic name="chevron" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
+      </div>
+      <p v-if="exportCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
+        Fichier JSON du carnet « {{ exportCarnet.nom }} » : fiches, notes et commentaires. Sur iPhone, la feuille de partage natif s'ouvre.
+      </p>
+      <button @click="exporterJSON"
+        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
+        :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
+        <Ic name="share" class="w-4 h-4" /> Exporter en JSON
+      </button>
+    </div>
+
     <p class="text-[11px] text-muted text-center leading-relaxed">
-      Tes données t'appartiennent — export JSON disponible depuis le carnet.<br />
+      Tes données t'appartiennent — export disponible à tout moment.<br />
       Le Carnet · V0.1.0
     </p>
   </div>
