@@ -27,3 +27,16 @@ export async function exporterFichierJSON(nomFichier, data) {
   a.remove();
   return "telecharge";
 }
+
+/* Invitation : message prêt à envoyer + partage WhatsApp / SMS — le lien et le code
+   voyagent dans le message, plus besoin de copier-coller. */
+export const texteInvitation = (prenom, carnet, lien) =>
+  (prenom ? prenom + " t'invite dans" : "Tu es invité dans") +
+  " le carnet « " + carnet.nom + " » sur Le Carnet — code " + carnet.code + ". Rejoins-le : " + lien;
+
+export function partagerWhatsapp(texte) {
+  window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank");
+}
+export function partagerSms(texte) {
+  location.href = "sms:?&body=" + encodeURIComponent(texte);
+}

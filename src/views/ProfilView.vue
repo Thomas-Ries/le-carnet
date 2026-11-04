@@ -4,7 +4,7 @@ import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import InstallCard from "../components/InstallCard.vue";
 import Avatar from "../components/Avatar.vue";
-import { exporterFichierJSON } from "../lib/util.js";
+import { exporterFichierJSON, texteInvitation, partagerWhatsapp, partagerSms } from "../lib/util.js";
 import pkg from "../../package.json";
 import * as api from "../lib/api.js";
 
@@ -75,6 +75,11 @@ const exportCarnetId = ref(store.carnetId);
 
 const inviteCarnet = computed(() => store.carnets.find((c) => c.id === inviteCarnetId.value) || null);
 const lien = computed(() => inviteCarnet.value ? location.origin + location.pathname + "#/join/" + inviteCarnet.value.code : "");
+const texteInvit = computed(() =>
+  inviteCarnet.value ? texteInvitation(store.profil.prenom, inviteCarnet.value, lien.value) : ""
+);
+const whatsappInvite = () => partagerWhatsapp(texteInvit.value);
+const smsInvite = () => partagerSms(texteInvit.value);
 
 const dupErr = ref("");
 function savePrenom() {
@@ -207,10 +212,18 @@ async function exporterJSON() {
       <p v-if="inviteCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
         Code à donner à la main : <span class="font-semibold text-accent tracking-widest">{{ inviteCarnet.code }}</span>
       </p>
-      <button @click="navigator.clipboard?.writeText(lien); toast('Lien copié')"
-        class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-        <Ic name="share" class="w-4 h-4" /> Copier le lien d'invitation
-      </button>
+      <div class="grid grid-cols-3 gap-2">
+        <button @click="whatsappInvite" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+          <Ic name="chat" class="w-4 h-4" /> WhatsApp
+        </button>
+        <button @click="smsInvite" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+          <Ic name="phone" class="w-4 h-4" /> SMS
+        </button>
+        <button @click="navigator.clipboard?.writeText(lien); toast('Lien copié')"
+          class="rounded-xl py-3 text-[13px] font-semibold text-accent border border-hairline flex items-center justify-center gap-1.5">
+          <Ic name="share" class="w-4 h-4" /> Copier
+        </button>
+      </div>
     </div>
 
     <!-- Réglages & données : 3 accordéons natifs (details/summary), état visible même repliés -->

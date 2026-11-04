@@ -4,7 +4,7 @@ import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
-import { exporterFichierJSON } from "../lib/util.js";
+import { exporterFichierJSON, texteInvitation, partagerWhatsapp, partagerSms } from "../lib/util.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -48,6 +48,11 @@ function copier() {
   navigator.clipboard?.writeText(lien.value);
   toast("Lien copié — envoie-le à qui tu veux");
 }
+const texteInvit = computed(() =>
+  store.carnet ? texteInvitation(store.profil.prenom, store.carnet, lien.value) : ""
+);
+const whatsapp = () => partagerWhatsapp(texteInvit.value);
+const sms = () => partagerSms(texteInvit.value);
 const pendingRetrait = ref(null);
 const popinQuitter = ref(false);
 
@@ -162,9 +167,17 @@ async function exporterJSON() {
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter</p>
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
         <p class="text-[11px] text-muted mb-2.5 leading-relaxed">Partage ce lien — ou le code <span class="font-semibold text-accent tracking-widest">{{ store.carnet.code }}</span> à la main. Toute personne invitée peut aussi créer son propre carnet.</p>
-        <button @click="copier" class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-          <Ic name="share" class="w-4 h-4" /> Copier le lien d'invitation
-        </button>
+        <div class="grid grid-cols-3 gap-2">
+          <button @click="whatsapp" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+            <Ic name="chat" class="w-4 h-4" /> WhatsApp
+          </button>
+          <button @click="sms" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+            <Ic name="phone" class="w-4 h-4" /> SMS
+          </button>
+          <button @click="copier" class="rounded-xl py-3 text-[13px] font-semibold text-accent border border-hairline flex items-center justify-center gap-1.5">
+            <Ic name="share" class="w-4 h-4" /> Copier
+          </button>
+        </div>
       </div>
 
       <button v-if="!store.isAdminCarnet(store.carnetId)" @click="popinQuitter = true"

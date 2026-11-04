@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.20 — Invitation partageable WhatsApp / SMS
+- Les cartes d'invitation (Mes carnets + Profil) passent de l'unique « Copier le lien » à trois boutons : WhatsApp, SMS, Copier.
+- Le message part prêt à envoyer : « [Prénom] t'invite dans le carnet « [Nom] » sur Le Carnet — code 123456. Rejoins-le : [lien] » — lien et code voyagent dans le message.
+- Helpers texteInvitation/partagerWhatsapp/partagerSms dans util.js ; icônes chat et phone ajoutées (style Heroicons, zéro emoji).
+
 ## 0.4.19 — Icône PWA alignée sur le splashscreen
 - logo.svg refait au motif exact du splash : badge bordeaux à dégradé (140deg #7A2E3E→#5E2230, coins 27/86), fourchette · verre · couteau en traits blancs, verre plus grand (36/86), gap 2px — mêmes icônes Heroicons que le splash.
 - PNG icon-192/512 : à ré-exporter par Thomas depuis logo.svg (le connecteur GitHub corrompt les binaires).
