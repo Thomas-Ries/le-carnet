@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — Badges d'activité + finitions
+
+- Profil : section « Mon activité » — adresses notées, recettes partagées, flashes en vie, amour reçu (icônes SVG, zéro emoji).
+- Le numéro de version du pied de page du profil suit désormais package.json automatiquement.
+- Édition d'une fiche : le bouton « J'aime » est masqué pendant l'édition (on ne like pas sa propre note en train d'être modifiée).
+
 ## 0.3.0 — Commentaire sur un flash, bascule en note
 
 - Un flash peut recevoir un commentaire optionnel, dès la prise de vue ou plus tard (seul l'auteur, via « Enregistrer juste le commentaire »).

@@ -4,6 +4,7 @@ import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import { exporterFichierJSON } from "../lib/util.js";
+import pkg from "../../package.json";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -43,6 +44,17 @@ function toggleTheme() {
   store.setDark(!store.dark);
 }
 const exportCarnet = computed(() => store.carnets.find((c) => c.id === exportCarnetId.value) || null);
+const moi = computed(() => store.profil.prenom);
+const badges = computed(() => {
+  const mesFiches = store.fiches.filter((f) => f.auteur === moi.value);
+  const mesFlashes = store.flashes.filter((f) => f.auteur === moi.value);
+  return [
+    { ic: "pin", label: "adresses notées", val: mesFiches.filter((f) => f.type === "adresse").length },
+    { ic: "book", label: "recettes partagées", val: mesFiches.filter((f) => f.type === "recette").length },
+    { ic: "bolt", label: "flashes en vie", val: mesFlashes.length },
+    { ic: "heart", label: "amour reçu", val: mesFiches.reduce((n, f) => n + (f.reacts?.length || 0), 0) + mesFlashes.reduce((n, f) => n + (f.reacts?.length || 0), 0) },
+  ];
+});
 async function exporterJSON() {
   const c = exportCarnet.value;
   if (!c) return;
@@ -75,6 +87,21 @@ async function exporterJSON() {
           class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg border border-hairline outline-none" />
         <button v-if="prenom.trim() && prenom !== store.profil.prenom" @click="savePrenom"
           class="mt-2 text-xs font-semibold text-accent">Enregistrer</button>
+      </div>
+    </div>
+
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2.5">Mon activité</p>
+      <div class="grid grid-cols-2 gap-2">
+        <div v-for="b in badges" :key="b.label" class="rounded-xl p-3 flex items-center gap-2.5 bg-soft">
+          <span class="rounded-full w-8 h-8 flex items-center justify-center text-accent shrink-0" style="background: var(--c-surface);">
+            <Ic :name="b.ic" class="w-4 h-4" />
+          </span>
+          <span class="min-w-0">
+            <span class="block text-base font-serif leading-none">{{ b.val }}</span>
+            <span class="block text-[10px] text-muted truncate">{{ b.label }}</span>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -133,7 +160,7 @@ async function exporterJSON() {
 
     <p class="text-[11px] text-muted text-center leading-relaxed">
       Tes données t'appartiennent — export disponible à tout moment.<br />
-      Le Carnet · V0.1.0
+      Le Carnet · V{{ pkg.version }}
     </p>
   </div>
 </template>
