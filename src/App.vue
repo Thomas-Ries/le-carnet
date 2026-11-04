@@ -48,7 +48,11 @@ onMounted(async () => {
        cœur or qui s'échappe, mots du titre en cascade, les trois cercles, phrase finale penchée -->
   <div v-if="store.splash" class="lc-splash">
     <div class="sp-badge">
-      <Ic name="glass" class="w-8 h-8" :sw="1.6" />
+      <div class="flex items-center gap-1">
+        <Ic name="fork" class="w-[17px] h-[17px]" :sw="1.8" />
+        <Ic name="glass" class="w-7 h-7" :sw="1.7" />
+        <Ic name="knife" class="w-[17px] h-[17px]" :sw="1.8" />
+      </div>
       <span class="sp-bub b1"></span><span class="sp-bub b2"></span><span class="sp-bub b3"></span>
       <Ic name="heart" class="sp-heart" :sw="2" filled />
     </div>
