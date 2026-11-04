@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.6 — Accueil : tri Récents / Aimés
+
+- Le filtre « Les préférés d'un proche » laisse place à un toggle de tri en pastilles (pattern Ma Cave) : « Récents » (défaut) ou « Aimés » (cœurs décroissants, égalité au plus récent). Le titre de la section suit le tri.
+
 ## 0.4.5 — Profil : réglages en accordéons
 
 - Le profil gagne un bloc unique « Réglages & données » : Notifications, Exporter mes données et Contacter le support deviennent trois accordéons natifs (details/summary, zéro JavaScript) avec état visible même replié (« activées / désactivées ») et chevron qui pivote.

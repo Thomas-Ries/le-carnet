@@ -10,8 +10,8 @@ const store = useCarnetStore();
 const toast = inject("toast");
 const q = ref("");
 const flashComplet = ref(null);
-const prefereDe = ref(null);
 const menuCarnets = ref(false);
+const tri = ref("recent"); // recent | aime — toggle de tri, pattern Ma Cave (EnviesView)
 
 const fiches = computed(() => store.fichesDuCarnet);
 const results = computed(() =>
@@ -23,9 +23,16 @@ const results = computed(() =>
 );
 const flashes = computed(() => store.flashesDuCarnet);
 const miens = (f) => f.auteur === store.profil.prenom;
-const prefere = computed(() =>
-  prefereDe.value ? fiches.value.filter((f) => f.auteur === prefereDe.value) : []
-);
+
+/* Tri : plus récents (défaut, ordre du carnet) ou plus aimés (cœurs décroissants, égalité → récent) */
+const fichesTri = computed(() => {
+  if (tri.value === "aime") {
+    return [...fiches.value].sort(
+      (a, b) => (b.reacts?.length || 0) - (a.reacts?.length || 0) || (a.date < b.date ? 1 : -1)
+    );
+  }
+  return fiches.value;
+});
 </script>
 
 <template>
@@ -41,7 +48,7 @@ const prefere = computed(() =>
         <div v-if="menuCarnets" class="absolute top-full mt-1 left-0 rounded-xl overflow-hidden z-30 w-44 bg-surface border border-hairline"
           style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
           <button v-for="c in store.carnets" :key="c.id"
-            @click="store.switchCarnet(c.id); menuCarnets = false; prefereDe = null"
+            @click="store.switchCarnet(c.id); menuCarnets = false"
             class="w-full text-left px-3 py-2.5 text-sm flex items-center justify-between"
             :style="{ color: c.id === store.carnetId ? 'var(--c-accent)' : 'var(--c-ink)', background: c.id === store.carnetId ? 'var(--c-soft)' : 'transparent' }">
             {{ c.nom }} <Ic v-if="c.id === store.carnetId" name="check" class="w-3.5 h-3.5" />
@@ -112,19 +119,21 @@ const prefere = computed(() =>
         </button>
       </div>
 
-      <!-- Préférés d'un proche -->
-      <div v-if="fiches.length" class="flex items-center justify-between mb-2">
-        <p class="text-xs uppercase tracking-widest text-muted">Dernièrement dans le carnet</p>
-        <button @click="prefereDe = prefereDe ? null : (store.carnet?.membres.find(m => m !== store.profil.prenom) || null)"
-          class="text-xs font-semibold text-accent">
-          {{ prefereDe ? "Tout le carnet" : "Les préférés d'un proche" }}
-        </button>
+      <!-- Tri : pastilles toggle, pattern Ma Cave (Récents / Aimés) -->
+      <div v-if="fiches.length" class="flex items-center justify-between mb-2 gap-2">
+        <p class="text-xs uppercase tracking-widest text-muted shrink-0">
+          {{ tri === "recent" ? "Dernièrement dans le carnet" : "Les plus aimés du carnet" }}
+        </p>
+        <div class="flex gap-1.5">
+          <button v-for="t in [['recent', 'Récents'], ['aime', 'Aimés']]" :key="t[0]" @click="tri = t[0]"
+            class="px-3 py-1.5 rounded-full border text-xs font-semibold transition"
+            :class="tri === t[0] ? 'border-accent text-accent bg-surface' : 'border-hairline bg-surface text-muted'">
+            {{ t[1] }}
+          </button>
+        </div>
       </div>
       <div class="space-y-2">
-        <FicheRow v-for="f in (prefereDe ? prefere : fiches).slice(0, 8)" :key="f.id" :fiche="f" />
-        <p v-if="prefereDe && !prefere.length" class="text-sm text-muted text-center py-6">
-          {{ prefereDe }} n'a rien noté ici pour l'instant.
-        </p>
+        <FicheRow v-for="f in fichesTri.slice(0, 8)" :key="f.id" :fiche="f" />
       </div>
 
       <p v-if="!fiches.length" class="text-center text-sm text-muted py-8 leading-relaxed">
