@@ -165,3 +165,12 @@ body.no-scroll { overflow: hidden; overscroll-behavior: none; }
 /* Focus charte */
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--c-gold); outline-offset: 2px; }
+
+/* ---------- Accordéons natifs du profil (details/summary) ---------- */
+summary.lc-sum { list-style: none; }
+summary.lc-sum::-webkit-details-marker { display: none; }
+summary.lc-sum {
+  display: flex; align-items: center; gap: 10px; padding: 13px 16px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+summary.lc-sum:active { background: var(--c-soft); }

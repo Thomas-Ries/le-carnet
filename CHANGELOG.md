@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.5 — Profil : réglages en accordéons
+
+- Le profil gagne un bloc unique « Réglages & données » : Notifications, Exporter mes données et Contacter le support deviennent trois accordéons natifs (details/summary, zéro JavaScript) avec état visible même replié (« activées / désactivées ») et chevron qui pivote.
+- La page passe de 8 blocs empilés à 6 — environ un écran de défilement gagné. Support toujours réservé aux admins.
+
 ## 0.4.4 — Vrai correctif icône active + splash 3,5 s
 
 - Icônes actives : un seul `<path>` par icône (au lieu de chemins découpés) pour que le fill-rule evenodd fonctionne réellement — le rond du pin et l'objectif de la caméra restent des trous une fois l'icône remplie.

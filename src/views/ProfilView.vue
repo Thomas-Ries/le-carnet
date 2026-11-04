@@ -60,7 +60,7 @@ async function toggleNotif() {
     notifOn.value = true;
     toast("Notifications activées sur cet appareil");
   } catch (e) {
-    toast("Impossible d’activer les notifications");
+    toast("Impossible d'activer les notifications");
   } finally {
     notifBusy.value = false;
   }
@@ -111,7 +111,12 @@ function contacterSupport() {
 }
 
 // La carte « Contacter le support » est réservée aux admins (de n'importe quel carnet)
-const estAdminQuelconque = computed(() => Object.values(store.roles).some((r) => r === "admin"));
+const estAdminQuelconque = computed(() => Object.values(store.roles).some(r => r === "admin"));
+
+// État des notifications tel qu'affiché replié dans l'accordéon
+const notifEtat = computed(() =>
+  store.demoMode ? "à activer une fois l'app en ligne" : notifOn.value ? "activées" : "désactivées"
+);
 
 const badges = computed(() => {
   const mesFiches = store.fiches.filter((f) => f.auteur === moi.value);
@@ -175,26 +180,86 @@ async function exporterJSON() {
 
     <InstallCard />
 
-    <div v-if="notifSupported" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Notifications</p>
-      <p v-if="store.demoMode" class="text-[11px] text-muted mb-2.5 leading-relaxed rounded-xl px-3 py-2.5 bg-soft text-accent">
-        Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.
-      </p>
-      <button @click="toggleNotif" :disabled="notifBusy || store.demoMode"
-        class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
-        :style="{ background: notifOn ? 'var(--c-soft)' : 'transparent', border: '1px solid var(--c-hairline)' }">
-        <span class="flex items-center gap-2.5 text-sm">
-          <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
-          <span class="text-left leading-tight">
-            <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activées" : "Désactivées" }}</span>
-            <span class="block text-[10px] text-muted">Flashes, adresses notées, rappel J-6 — réglage propre à cet appareil</span>
+    <!-- Réglages & données : 3 accordéons natifs (details/summary), état visible même repliés -->
+    <div class="rounded-2xl bg-surface border border-hairline mb-3 overflow-hidden">
+      <p class="text-[10px] uppercase tracking-widest text-muted pt-4 px-4 mb-1.5">Réglages &amp; données</p>
+
+      <details v-if="notifSupported" class="group border-t border-hairline">
+        <summary class="lc-sum">
+          <Ic name="bolt" class="w-4 h-4 shrink-0" :class="notifOn ? 'text-accent' : 'text-muted'" />
+          <span class="flex-1 text-left leading-tight">
+            <span class="block text-sm font-semibold">Notifications</span>
+            <span class="block text-[10px] text-muted">{{ notifEtat }} — propre à cet appareil</span>
           </span>
-        </span>
-        <span class="relative rounded-full w-11 h-6 transition shrink-0" :style="{ background: notifOn ? '#7A2E3E' : 'var(--c-hairline)' }">
-          <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
-            :style="{ left: notifOn ? '22px' : '2px' }" />
-        </span>
-      </button>
+          <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
+        </summary>
+        <div class="px-4 pb-4">
+          <p v-if="store.demoMode" class="text-[11px] mb-2.5 leading-relaxed rounded-xl px-3 py-2.5 bg-soft text-accent">
+            Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.
+          </p>
+          <button @click="toggleNotif" :disabled="notifBusy || store.demoMode"
+            class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
+            :style="{ background: notifOn ? 'var(--c-soft)' : 'transparent', border: '1px solid var(--c-hairline)' }">
+            <span class="flex items-center gap-2.5 text-sm">
+              <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
+              <span class="text-left leading-tight">
+                <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activées" : "Désactivées" }}</span>
+                <span class="block text-[10px] text-muted">Flashes, adresses notées, rappel J-6</span>
+              </span>
+            </span>
+            <span class="relative rounded-full w-11 h-6 transition shrink-0" :style="{ background: notifOn ? '#7A2E3E' : 'var(--c-hairline)' }">
+              <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
+                :style="{ left: notifOn ? '22px' : '2px' }" />
+            </span>
+          </button>
+        </div>
+      </details>
+
+      <details class="group border-t border-hairline">
+        <summary class="lc-sum">
+          <Ic name="share" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
+          <span class="flex-1 text-left leading-tight">
+            <span class="block text-sm font-semibold">Exporter mes données</span>
+            <span class="block text-[10px] text-muted">fichier JSON du carnet, à tout moment</span>
+          </span>
+          <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
+        </summary>
+        <div class="px-4 pb-4">
+          <div class="relative mb-3">
+            <select v-model="exportCarnetId"
+              class="w-full appearance-none rounded-xl px-3 py-3 pr-9 text-sm bg-bg border border-hairline outline-none cursor-pointer">
+              <option v-for="c in store.carnets" :key="c.id" :value="c.id">{{ c.nom }}</option>
+            </select>
+            <Ic name="chevron" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
+          </div>
+          <p v-if="exportCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
+            Fichier JSON du carnet « {{ exportCarnet.nom }} » : fiches, notes et commentaires. Sur iPhone, la feuille de partage natif s'ouvre.
+          </p>
+          <button @click="exporterJSON"
+            class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
+            :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
+            <Ic name="share" class="w-4 h-4" /> Exporter en JSON
+          </button>
+        </div>
+      </details>
+
+      <details v-if="estAdminQuelconque" class="group border-t border-hairline">
+        <summary class="lc-sum">
+          <Ic name="user" class="w-4 h-4 shrink-0 text-accent" />
+          <span class="flex-1 text-left leading-tight">
+            <span class="block text-sm font-semibold">Un souci avec l'app ?</span>
+            <span class="block text-[10px] text-muted">bug, question, suggestion — le support répond vite</span>
+          </span>
+          <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
+        </summary>
+        <div class="px-4 pb-4">
+          <button @click="contacterSupport"
+            class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
+            :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
+            <Ic name="user" class="w-4 h-4" /> Contacter le support
+          </button>
+        </div>
+      </details>
     </div>
 
     <button @click="toggleTheme"
@@ -228,37 +293,6 @@ async function exporterJSON() {
       <button @click="navigator.clipboard?.writeText(lien); toast('Lien copié')"
         class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
         <Ic name="share" class="w-4 h-4" /> Copier le lien d'invitation
-      </button>
-    </div>
-
-    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Exporter mes données</p>
-      <div class="relative mb-3">
-        <select v-model="exportCarnetId"
-          class="w-full appearance-none rounded-xl px-3 py-3 pr-9 text-sm bg-bg border border-hairline outline-none cursor-pointer">
-          <option v-for="c in store.carnets" :key="c.id" :value="c.id">{{ c.nom }}</option>
-        </select>
-        <Ic name="chevron" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
-      </div>
-      <p v-if="exportCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
-        Fichier JSON du carnet « {{ exportCarnet.nom }} » : fiches, notes et commentaires. Sur iPhone, la feuille de partage natif s'ouvre.
-      </p>
-      <button @click="exporterJSON"
-        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
-        :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-        <Ic name="share" class="w-4 h-4" /> Exporter en JSON
-      </button>
-    </div>
-
-    <div v-if="estAdminQuelconque" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Un souci avec l'app ?</p>
-      <p class="text-[11px] text-muted mb-2.5 leading-relaxed">
-        Bug, question, suggestion — le support répond vite :
-      </p>
-      <button @click="contacterSupport"
-        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
-        :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
-        <Ic name="user" class="w-4 h-4" /> Contacter le support
       </button>
     </div>
 
