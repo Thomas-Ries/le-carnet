@@ -10,7 +10,9 @@ const store = useCarnetStore();
 const toast = inject("toast");
 const modeCreer = ref(false);
 const nom = ref("");
-const code = ref("");
+const codeInvite = ref("");
+const codeAdmin = ref("");
+const codeAdmin2 = ref("");
 const err = ref("");
 
 const lien = computed(() => {
@@ -20,10 +22,20 @@ const lien = computed(() => {
 });
 
 async function creer() {
-  if (!nom.value.trim() || code.value.length !== 6) return;
-  const c = await store.creerCarnet(nom.value.trim(), code.value);
-  if (c) { modeCreer.value = false; nom.value = ""; code.value = ""; toast("Carnet créé — tu es admin"); }
-  else err.value = "Ce code existe déjà, choisis-en un autre.";
+  if (!nom.value.trim() || codeAdmin.value.length !== 6) return;
+  if (codeAdmin.value !== codeAdmin2.value) {
+    err.value = "Le code admin doit être saisi deux fois à l'identique.";
+    return;
+  }
+  const c = await store.creerCarnet(
+    nom.value.trim(),
+    codeInvite.value.length === 6 ? codeInvite.value : null,
+    codeAdmin.value
+  );
+  if (c) {
+    modeCreer.value = false; nom.value = ""; codeInvite.value = ""; codeAdmin.value = ""; codeAdmin2.value = "";
+    toast("Carnet créé — tu es admin");
+  } else err.value = "Ce code existe déjà, choisis-en un autre.";
 }
 function copier() {
   navigator.clipboard?.writeText(lien.value);
@@ -97,17 +109,28 @@ async function exporterJSON() {
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1" />
       <p class="text-[11px] text-muted mb-3">Visible seulement par les membres que tu invites.</p>
 
-      <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code à 6 chiffres</label>
-      <input id="lc-code" v-model="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
-        placeholder="123456"
-        @input="code = code.replace(/\D/g, '').slice(0, 6)"
+      <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Code d'invitation — 6 chiffres</label>
+      <input id="lc-code" v-model="codeInvite" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+        placeholder="123456 (auto si vide)"
+        @input="codeInvite = codeInvite.replace(/\D/g, '').slice(0, 6)"
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
-      <p class="text-[11px] text-muted mb-3">Il sert de code d'invitation ET de code admin sur un autre appareil.</p>
+      <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites. Généré automatiquement si tu laisses vide.</p>
+
+      <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code admin — 6 chiffres</label>
+      <input id="lc-code-admin" v-model="codeAdmin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+        placeholder="654321"
+        @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
+      <input v-model="codeAdmin2" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+        placeholder="Encore une fois pour vérifier"
+        @input="codeAdmin2 = codeAdmin2.replace(/\D/g, '').slice(0, 6)"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+      <p class="text-[11px] text-muted mb-3">Il prouve que c'est toi sur un autre appareil. Ne le donne à personne — garde-le précieusement.</p>
 
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button @click="modeCreer = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
-        <button @click="creer" :disabled="!nom.trim() || code.length !== 6"
+        <button @click="creer" :disabled="!nom.trim() || codeAdmin.length !== 6 || codeAdmin2.length !== 6"
           class="rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Créer</button>
       </div>
     </div>

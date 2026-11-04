@@ -66,7 +66,7 @@ async function mutate(action, payload) {
 function demoMutate(db, action, p) {
   switch (action) {
     case "createCarnet": {
-      const c = { id: demo.uid("c"), nom: p.nom, code: p.codeInvite || p.code, adminCode: p.codeAdmin, admin: p.prenom, membres: [p.prenom] };
+      const c = { id: demo.uid("c"), nom: p.nom, code: p.codeInvite || String(Math.floor(100000 + Math.random() * 900000)), adminCode: p.codeAdmin, admin: p.prenom, membres: [p.prenom] };
       db.carnets.push(c);
       demo.save(db);
       return { carnet: c, role: "admin" };
