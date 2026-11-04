@@ -103,7 +103,7 @@ const prefere = computed(() =>
         <button @click="$router.push('/add?type=adresse')" class="rounded-2xl p-4 text-left bg-surface border border-hairline active:scale-[.98] transition">
           <span class="inline-flex items-center justify-center rounded-full w-9 h-9 mb-2 bg-gold/15 text-gold"><Ic name="pin" /></span>
           <p class="text-lg font-serif">Noter une adresse</p>
-          <p class="text-[11px] leading-tight text-muted mt-0.5">Resto, caviste, bar, fromagerie \u2014 un lieu que tu aimes</p>
+          <p class="text-[11px] leading-tight text-muted mt-0.5">Resto, caviste, bar, fromagerie — un lieu que tu aimes</p>
         </button>
         <button @click="$router.push('/add?type=recette')" class="rounded-2xl p-4 text-left bg-surface border border-hairline active:scale-[.98] transition">
           <span class="inline-flex items-center justify-center rounded-full w-9 h-9 mb-2 bg-gold/15 text-gold"><Ic name="book" /></span>

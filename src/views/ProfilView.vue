@@ -31,7 +31,7 @@ onMounted(refreshNotif);
 async function toggleNotif() {
   if (notifBusy.value) return;
   if (store.demoMode) {
-    toast("Les notifications sont actives une fois l'app install\u00e9e en ligne \u2014 pas en mode d\u00e9mo");
+    toast("Les notifications sont actives une fois l'app installée en ligne — pas en mode démo");
     return;
   }
   notifBusy.value = true;
@@ -44,22 +44,22 @@ async function toggleNotif() {
         await sub.unsubscribe();
       }
       notifOn.value = false;
-      toast("Notifications d\u00e9sactiv\u00e9es");
+      toast("Notifications désactivées");
       return;
     }
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") { toast("Autorisation refus\u00e9e dans les r\u00e9glages du navigateur"); return; }
+    if (perm !== "granted") { toast("Autorisation refusée dans les réglages du navigateur"); return; }
     const r = await fetch("/api/vapid-pub").then((x) => x.json()).catch(() => null);
-    if (!r || !r.publicKey) { toast("Notifications indisponibles c\u00f4t\u00e9 serveur"); return; }
+    if (!r || !r.publicKey) { toast("Notifications indisponibles côté serveur"); return; }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: b64uToUint8(r.publicKey),
     });
     await api.subscribePush(sub.toJSON());
     notifOn.value = true;
-    toast("Notifications activ\u00e9es sur cet appareil");
+    toast("Notifications activées sur cet appareil");
   } catch (e) {
-    toast("Impossible d\u2019activer les notifications");
+    toast("Impossible d’activer les notifications");
   } finally {
     notifBusy.value = false;
   }
@@ -167,7 +167,7 @@ async function exporterJSON() {
     <div v-if="notifSupported" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Notifications</p>
       <p v-if="store.demoMode" class="text-[11px] text-muted mb-2.5 leading-relaxed rounded-xl px-3 py-2.5 bg-soft text-accent">
-        Flashes, adresses not\u00e9es, rappel J-6. \u00c0 activer une fois l'app install\u00e9e en ligne \u2014 pas disponible en mode d\u00e9mo.
+        Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.
       </p>
       <button @click="toggleNotif" :disabled="notifBusy || store.demoMode"
         class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
@@ -175,8 +175,8 @@ async function exporterJSON() {
         <span class="flex items-center gap-2.5 text-sm">
           <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
           <span class="text-left leading-tight">
-            <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activ\u00e9es" : "D\u00e9sactiv\u00e9es" }}</span>
-            <span class="block text-[10px] text-muted">Flashes, adresses not\u00e9es, rappel J-6 \u2014 r\u00e9glage propre \u00e0 cet appareil</span>
+            <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activées" : "Désactivées" }}</span>
+            <span class="block text-[10px] text-muted">Flashes, adresses notées, rappel J-6 — réglage propre à cet appareil</span>
           </span>
         </span>
         <span class="relative rounded-full w-11 h-6 transition shrink-0" :style="{ background: notifOn ? '#7A2E3E' : 'var(--c-hairline)' }">

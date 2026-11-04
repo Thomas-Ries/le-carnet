@@ -191,7 +191,7 @@ export default {
             ).bind(fl.carnet_id, fl.auteur).all();
             sendPushTo(env, db, mes.map((m) => m.device_id), {
               title: "Ton flash expire demain",
-              body: "Il ne reste qu\u2019un jour pour le noter en fiche \u2014 ou pour le faire aimer.",
+              body: "Il ne reste qu’un jour pour le noter en fiche — ou pour le faire aimer.",
               url: "/",
             }).catch(() => {});
             await db.prepare(`UPDATE Flashes SET reminded_at=? WHERE id=?`).bind(new Date().toISOString(), fl.id).run();
@@ -332,8 +332,8 @@ export default {
                 for (const d of await devicesOfCarnet(db, cid, s.prenom)) dests.add(d);
               }
               sendPushTo(env, db, [...dests], {
-                title: s.prenom + " a not\u00e9 une adresse aim\u00e9e",
-                body: "\u00ab " + cleanText(f.titre, 60) + " \u00bb \u2014 va voir, aime-la si tu la fr\u00e9quentes.",
+                title: s.prenom + " a noté une adresse aimée",
+                body: "« " + cleanText(f.titre, 60) + " » — va voir, aime-la si tu la fréquentes.",
                 url: "/fiche/" + id,
               }).catch(() => {});
             })().catch(() => {});
@@ -401,8 +401,8 @@ export default {
             const cnom = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(fl.carnetId).first();
             devicesOfCarnet(db, fl.carnetId, s.prenom).then((devs) =>
               sendPushTo(env, db, devs, {
-                title: s.prenom + " a flash\u00e9",
-                body: "Nouveau flash dans \u00ab " + (cnom ? cnom.nom : "un carnet") + " \u00bb \u2014 7 jours pour l\u2019aimer.",
+                title: s.prenom + " a flashé",
+                body: "Nouveau flash dans « " + (cnom ? cnom.nom : "un carnet") + " » — 7 jours pour l’aimer.",
                 url: "/",
               })
             ).catch(() => {});
