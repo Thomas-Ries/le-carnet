@@ -1,17 +1,35 @@
+DROP TABLE IF EXISTS DemandesRecette;
+DROP TABLE IF EXISTS FlashReactions;
+DROP TABLE IF EXISTS Flashes;
+DROP TABLE IF EXISTS FicheLikes;
+DROP TABLE IF EXISTS FichesCarnets;
+DROP TABLE IF EXISTS Fiches;
+DROP TABLE IF EXISTS Sessions;
+DROP TABLE IF EXISTS Membres;
+DROP TABLE IF EXISTS Carnets;
+
 CREATE TABLE IF NOT EXISTS Carnets (
   id TEXT PRIMARY KEY,
   nom TEXT NOT NULL,
   code TEXT UNIQUE NOT NULL,
   admin TEXT NOT NULL,
-  admin_code TEXT NOT NULL,
+  admin_code_hash TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Membres (
   carnet_id TEXT NOT NULL REFERENCES Carnets(id),
   prenom TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'member',
   PRIMARY KEY (carnet_id, prenom)
+);
+
+CREATE TABLE IF NOT EXISTS Sessions (
+  device_id TEXT NOT NULL,
+  carnet_id TEXT NOT NULL REFERENCES Carnets(id),
+  prenom TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member',
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (device_id, carnet_id)
 );
 
 CREATE TABLE IF NOT EXISTS Fiches (
@@ -64,3 +82,4 @@ CREATE TABLE IF NOT EXISTS DemandesRecette (
 
 CREATE INDEX IF NOT EXISTS idx_liens_carnet ON FichesCarnets(carnet_id);
 CREATE INDEX IF NOT EXISTS idx_flash_expiry ON Flashes(expires_at);
+CREATE INDEX IF NOT EXISTS idx_session_device ON Sessions(device_id);

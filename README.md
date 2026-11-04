@@ -52,3 +52,11 @@ Crème `#FAF6F1` · bordeaux `#7A2E3E` · or `#A8842C` · riesling `#D9C589` · 
 ## Licence
 
 Projet personnel — Thomas Ries.
+
+## Identité, sécurité et récupération des codes (V0.2)
+
+- **Pas de compte, pas de mot de passe** : chaque appareil génère un ID unique (UUID, `localStorage`) au premier lancement. C'est lui — pas le prénom — qui identifie les sessions côté serveur (table `Sessions`).
+- **Sessions par appareil** : chaque (appareil, carnet) a un rôle (`member`/`admin`). Le worker vérifie les droits sur **chaque** mutation : un simple membre ne peut ni retirer quelqu'un, ni régénérer un lien, ni éditer la fiche d'un autre.
+- **Deux codes séparés** : le **code d'invitation** (6 chiffres, partageable, régénérable par l'admin — l'ancien lien meurt, les membres restent) et le **code admin** (personnel, choisi à la création avec double saisie).
+- **Code admin hashé** côté serveur : SHA-256 + sel aléatoire (format `sel$hash` dans `Carnets.admin_code_hash`). Jamais en clair, jamais renvoyé par l'API.
+- **Récupération** : l'appareil de création garde une session admin permanente — tu n'y tapes jamais le code. Pour devenir admin sur un autre appareil : code admin (une fois par appareil). **Si tu perds le code admin** : change-le depuis n'importe quel appareil où la session admin est encore active (Admin → « Changer mon code admin »). Si tu perds à la fois le code ET tous les appareils admin → pas de récupération en V1 (assumé : c'est un carnet familial, pas une banque).

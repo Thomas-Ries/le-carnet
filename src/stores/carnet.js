@@ -12,11 +12,13 @@ export const useCarnetStore = defineStore("carnet", {
     splash: true,
     dark: false,
     demoMode: false,
+    deviceId: null,
     profil: { prenom: "", avatar: null },
     carnetId: null,
     carnets: [],
     fiches: [],
     flashes: [],
+    roles: {}, // { carnetId: "admin" | "member" }
   }),
 
   getters: {
@@ -27,19 +29,14 @@ export const useCarnetStore = defineStore("carnet", {
         .sort((a, b) => (a.date < b.date ? 1 : -1));
     },
     flashesDuCarnet(s) {
-      // 7 jours de vie : expirés filtrés côté affichage + purge au boot
       const limite = Date.now() - 7 * 86400000;
       return s.flashes.filter((f) => f.carnets.includes(s.carnetId) && new Date(f.date).getTime() >= limite);
-    },
-    isAdmin(state) {
-      // En V1 : admin du carnet = créateur ; le code est vérifié à l'écran Admin
-      return (membre) => state.carnet && state.profil.prenom === membre;
     },
   },
 
   actions: {
     async boot() {
-      // Splash 2,5 s (2,1 s de barre + fondu 0,4 s)
+      // Splash 2,5 s
       setTimeout(() => (this.splash = false), 2500);
       try {
         const p = JSON.parse(localStorage.getItem(LS.profil) || "null");
@@ -48,13 +45,28 @@ export const useCarnetStore = defineStore("carnet", {
       this.dark = localStorage.getItem(LS.theme) === "dark";
       document.documentElement.classList.toggle("dark", this.dark);
       const carnetId = localStorage.getItem(LS.carnetId);
-      const data = await api.bootstrap();
+
+      // Identité de l'appareil : UUID persistant, c'est lui qui authentifie
+      this.deviceId = api.getDeviceId();
+      const data = await api.bootstrap(this.deviceId);
       this.demoMode = api.state.demoMode;
       this.carnets = data.carnets || [];
       this.fiches = data.fiches || [];
       this.flashes = data.flashes || [];
+      this.roles = data.roles || {};
+      if (this.demoMode) {
+        // En démo, l'identité locale = prénom du profil
+        this.roles = {};
+        for (const c of this.carnets) {
+          if (c.admin === this.profil.prenom) this.roles[c.id] = "admin";
+        }
+      }
       this.carnetId = this.carnets.some((c) => c.id === carnetId) ? carnetId : this.carnets[0]?.id || null;
       this.purgerFlashesExpires();
+    },
+
+    isAdminCarnet(carnetId) {
+      return this.roles[carnetId] === "admin";
     },
 
     purgerFlashesExpires() {
@@ -84,30 +96,63 @@ export const useCarnetStore = defineStore("carnet", {
       document.documentElement.classList.toggle("dark", this.dark);
     },
 
-    async creerCarnet(nom, code) {
-      // Le créateur choisit son code 6 chiffres : il sert de code carnet (invitation)
-      // ET de code admin (connexion sur un autre appareil).
-      const prenom = this.profil.prenom;
-      const r = await api.createCarnet({ nom, code, adminCode: code, prenom });
+    async creerCarnet(nom, codeInvite, codeAdmin) {
+      // Le créateur choisit son code admin ; le code d'invitation peut être auto-généré.
+      const r = await api.createCarnet({
+        nom, codeInvite, codeAdmin,
+        prenom: this.profil.prenom, deviceId: this.deviceId,
+      });
       this.demoMode = api.state.demoMode;
+      if (!r.carnet) return null;
       this.carnets.push(r.carnet);
-      this.carnetId = r.carnet.id;
-      localStorage.setItem(LS.carnetId, this.carnetId);
+      this.roles[r.carnet.id] = r.role || "admin";
+      this.switchCarnet(r.carnet.id);
       return r.carnet;
     },
 
     async rejoindre(code) {
       const prenom = this.profil.prenom;
-      const c = this.carnets.find((x) => x.code.toUpperCase() === String(code).toUpperCase());
-      if (c) {
-        if (!c.membres.includes(prenom)) c.membres.push(prenom);
-        this.switchCarnet(c.id);
+      const r = await api.join({ code, prenom, deviceId: this.deviceId });
+      this.demoMode = api.state.demoMode;
+      if (!r.carnet) return null;
+      if (!this.carnets.some((c) => c.id === r.carnet.id)) this.carnets.push(r.carnet);
+      else {
+        const i = this.carnets.findIndex((c) => c.id === r.carnet.id);
+        this.carnets[i] = r.carnet;
       }
-      return c || null;
+      this.roles[r.carnet.id] = this.roles[r.carnet.id] || r.role || "member";
+      this.switchCarnet(r.carnet.id);
+      return r.carnet;
+    },
+
+    async verifyAdmin(carnetId, code) {
+      const r = await api.verifyAdmin({ carnetId, code, deviceId: this.deviceId });
+      if (r && r.ok) {
+        this.roles[carnetId] = "admin";
+        return true;
+      }
+      return false;
+    },
+
+    async regenererCodeInvitation(carnetId) {
+      const r = await api.regenerateInvite({ carnetId, deviceId: this.deviceId });
+      const c = this.carnets.find((x) => x.id === carnetId);
+      if (c && r.code) c.code = r.code;
+      return r.code || null;
+    },
+
+    async changerCodeAdmin(carnetId, newCode) {
+      const r = await api.changeAdminCode({ carnetId, newCode, deviceId: this.deviceId });
+      return !!(r && r.ok);
     },
 
     async noter(fiche) {
-      const r = await api.addFiche({ ...fiche, auteur: this.profil.prenom, date: new Date().toISOString().slice(0, 10) });
+      const r = await api.addFiche({
+        ...fiche,
+        auteur: this.profil.prenom,
+        date: new Date().toISOString().slice(0, 10),
+        deviceId: this.deviceId,
+      });
       this.demoMode = api.state.demoMode;
       this.fiches.unshift(r.fiche);
       return r.fiche;
@@ -131,6 +176,7 @@ export const useCarnetStore = defineStore("carnet", {
         photo,
         auteur: this.profil.prenom,
         date: new Date().toISOString(),
+        deviceId: this.deviceId,
       });
       this.demoMode = api.state.demoMode;
       this.flashes.unshift(r.flash);
@@ -138,7 +184,6 @@ export const useCarnetStore = defineStore("carnet", {
     },
 
     async completerFlash(id, patch) {
-      // Le flash devient fiche, puis il s'efface (badge éclair retiré)
       const fl = this.flashes.find((f) => f.id === id);
       const fiche = await this.noter({ ...patch, carnets: fl.carnets, photo: fl.photo });
       await api.deleteFlash(id);
@@ -165,7 +210,8 @@ export const useCarnetStore = defineStore("carnet", {
     async retirerMembre(carnetId, membre) {
       const r = await api.removeMember(carnetId, membre);
       const i = this.carnets.findIndex((c) => c.id === carnetId);
-      if (i !== -1) this.carnets[i].membres = r.carnet.membres;
+      if (i !== -1 && r.carnet) this.carnets[i].membres = r.carnet.membres;
+      return !!r.carnet;
     },
   },
 });
