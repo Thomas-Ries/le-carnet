@@ -74,6 +74,9 @@ function demoMutate(db, action, p) {
     case "join": {
       const c = db.carnets.find((x) => x.code === String(p.code));
       if (!c) return { error: "carnet introuvable" };
+      // Pas de doublon de prénom dans un carnet (même règle que le serveur)
+      const homonyme = (c.membres || []).find((m) => m.toLowerCase() === String(p.prenom || "").toLowerCase());
+      if (homonyme && homonyme !== p.prenom) return { error: "prenom_pris", prenom: homonyme };
       if (!c.membres.includes(p.prenom)) c.membres.push(p.prenom);
       demo.save(db);
       return { carnet: c, role: p.prenom === c.admin ? "admin" : "member" };

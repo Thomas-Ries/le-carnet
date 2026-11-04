@@ -76,9 +76,22 @@ const exportCarnetId = ref(store.carnetId);
 const inviteCarnet = computed(() => store.carnets.find((c) => c.id === inviteCarnetId.value) || null);
 const lien = computed(() => inviteCarnet.value ? location.origin + location.pathname + "#/join/" + inviteCarnet.value.code : "");
 
+const dupErr = ref("");
 function savePrenom() {
-  if (!prenom.value.trim()) return;
-  store.setPrenom(prenom.value.trim());
+  const nv = prenom.value.trim();
+  if (!nv) return;
+  // Pas de doublon avec un autre membre d'un de mes carnets (insensible à la casse)
+  const conflit = store.carnets.some((c) =>
+    (c.membres || []).some(
+      (m) => m.toLowerCase() === nv.toLowerCase() && m !== store.profil.prenom
+    )
+  );
+  if (conflit) {
+    dupErr.value = "« " + nv + " » est déjà pris dans un de tes carnets — ajoute une initiale, ex. " + nv + " M.";
+    return;
+  }
+  dupErr.value = "";
+  store.setPrenom(nv);
   toast("Prénom enregistré");
 }
 function onAvatar(e) {
@@ -157,7 +170,9 @@ async function exporterJSON() {
       </label>
       <div class="flex-1">
         <input v-model="prenom" placeholder="Ton prénom" maxlength="20"
-          class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg border border-hairline outline-none" />
+          class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg outline-none"
+          :style="dupErr ? 'border-color: var(--c-accent); background: var(--c-soft)' : 'border: 1px solid var(--c-hairline)'" />
+        <p v-if="dupErr" class="text-xs text-accent mt-1.5 leading-relaxed">{{ dupErr }}</p>
         <button v-if="prenom.trim() && prenom !== store.profil.prenom" @click="savePrenom"
           class="mt-2 text-xs font-semibold text-accent">Enregistrer</button>
       </div>

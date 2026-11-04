@@ -120,7 +120,7 @@ export const useCarnetStore = defineStore("carnet", {
       });
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
-      if (!r.carnet) return null;
+      if (!r.carnet) return r; // { error: "prenom_pris", ... } remonte jusqu'à JoinView
       this.carnets.push(r.carnet);
       this.roles[r.carnet.id] = r.role || "admin";
       this.switchCarnet(r.carnet.id);
@@ -132,7 +132,7 @@ export const useCarnetStore = defineStore("carnet", {
       const r = await api.join({ code, prenom, deviceId: this.deviceId });
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
-      if (!r.carnet) return null;
+      if (!r.carnet) return r; // { error: "prenom_pris", ... } remonte jusqu'à JoinView
       if (!this.carnets.some((c) => c.id === r.carnet.id)) this.carnets.push(r.carnet);
       else {
         const i = this.carnets.findIndex((c) => c.id === r.carnet.id);

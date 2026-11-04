@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.13 — Prénoms en doublon bloqués
+
+- Un prénom déjà pris dans un carnet est refusé à l'inscription (message sous le champ, retour à l'étape prénom, suggestion d'ajouter une initiale « ex. Sophie M. ») — le doublon ne passe pas tant qu'il n'est pas résolu. Même garde-fou sur le renommage dans le profil, et en mode démo.
+- Côté serveur, le contrôle est insensible à la casse et laisse passer le retour d'un appareil qui porte déjà ce prénom (changement d'appareil du même membre). Raison d'être : le retrait de membre par l'admin cible le prénom — deux homonymes seraient partis ensemble.
+
 ## 0.4.12 — Splash : trio de couverts plus grand et resserré
 
 - Le badge bordeaux passe à 86 px : verre 36 px, fourchette et couteau 23 px, collés au verre (gap 2 px). Le trio domine le splash comme un vrai logo.

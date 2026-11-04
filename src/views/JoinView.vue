@@ -14,17 +14,28 @@ const step = ref(route.params.code ? 2 : 1);
 const prenom = ref(store.profil.prenom || "");
 const code = ref((route.params.code || "").replace(/\D/g, "").slice(0, 6));
 const err = ref("");
+const dupErr = ref("");
 const connu = computed(() => store.carnets.find((c) => c.code === code.value));
 
 function goStep2() {
   if (!prenom.value.trim()) return;
+  dupErr.value = "";
   store.setPrenom(prenom.value.trim());
   step.value = 2;
 }
 async function rejoindre() {
   if (code.value.length !== 6) return;
-  const ok = await store.rejoindre(code.value);
-  if (ok) {
+  const r = await store.rejoindre(code.value);
+  if (r && r.error === "prenom_pris") {
+    // Le prénom est déjà pris dans ce carnet : on repart du champ prénom,
+    // l'inscription ne passe pas tant que le doublon n'est pas résolu.
+    dupErr.value =
+      "« " + prenom.value.trim() + " » est déjà dans ce carnet — ajoute une initiale pour te distinguer, ex. " +
+      prenom.value.trim() + " M.";
+    step.value = 1;
+    return;
+  }
+  if (r) {
     toast("Bienvenue dans « " + store.carnet.nom + " »");
     router.push("/");
   } else {
@@ -46,7 +57,9 @@ async function rejoindre() {
         Bienvenue. Ici, on garde les adresses et recettes qu'on a aimées,<br />entre gens qu'on connaît.
       </p>
       <input v-model="prenom" placeholder="Ton prénom" maxlength="20" autofocus
-        class="w-full rounded-xl px-4 py-4 text-base bg-surface border border-hairline outline-none mb-3 text-center" />
+        class="w-full rounded-xl px-4 py-4 text-base bg-surface outline-none mb-3 text-center"
+        :style="dupErr ? 'border-color: var(--c-accent); background: var(--c-soft)' : 'border: 1px solid var(--c-hairline)'" />
+      <p v-if="dupErr" class="text-xs text-accent text-center -mt-1 mb-3 leading-relaxed">{{ dupErr }}</p>
       <button @click="goStep2" :disabled="!prenom.trim()"
         class="w-full rounded-xl py-4 text-sm font-semibold text-white bg-accent disabled:opacity-40">
         Continuer

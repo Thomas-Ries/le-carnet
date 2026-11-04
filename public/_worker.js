@@ -267,6 +267,15 @@ export default {
             if (!prenom || !isCode(p.code)) return json({ error: "champs invalides" }, 400);
             const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(p.code).first();
             if (!c) return json({ error: "carnet introuvable" }, 404);
+            // Doublon de prénom dans le carnet (insensible à la casse) : refus, sauf retour
+            // d'un appareil qui porte déjà ce prénom là (changement d'appareil du même membre).
+            const maSession = await sessionOf(c.id);
+            const homonyme = await db.prepare(
+              `SELECT prenom FROM Membres WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`
+            ).bind(c.id, prenom).first();
+            if (homonyme && (!maSession || maSession.prenom.toLowerCase() !== prenom.toLowerCase())) {
+              return json({ error: "prenom_pris", prenom: homonyme.prenom }, 409);
+            }
             const deja = await db.prepare(`SELECT 1 FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, prenom).first();
             if (!deja) await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(c.id, prenom).run();
             await db.prepare(
