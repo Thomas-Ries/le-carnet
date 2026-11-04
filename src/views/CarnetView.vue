@@ -3,7 +3,6 @@ import { ref, computed, inject } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
-import ConfirmModal from "../components/ConfirmModal.vue";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -28,29 +27,8 @@ function copier() {
   navigator.clipboard?.writeText(lien.value);
   toast("Lien copié — envoie-le à qui tu veux");
 }
-const pendingRetrait = ref(null);
-
-function retirer(m) { pendingRetrait.value = m; }
-async function confirmerRetrait() {
-  const m = pendingRetrait.value;
-  pendingRetrait.value = null;
+async function retirer(m) {
   if (await store.retirerMembre(store.carnetId, m)) toast(m + " retiré du carnet");
-}
-function exporterJSON() {
-  const c = store.carnet;
-  if (!c) return;
-  const data = {
-    exporte_le: new Date().toISOString(),
-    carnet: { nom: c.nom, code: c.code, admin: c.admin, membres: c.membres },
-    fiches: store.fichesDuCarnet,
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "le-carnet-" + c.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".json";
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast("Export JSON téléchargé");
 }
 </script>
 
@@ -86,10 +64,19 @@ function exporterJSON() {
     <div v-if="modeCreer" class="rounded-2xl p-4 mb-6 bg-surface border border-hairline">
       <p class="text-sm font-semibold mb-1">Nouveau carnet</p>
       <p class="text-[11px] text-muted mb-3">Invité ? Tu peux créer le tien aussi — c'est comme ça que ça grandit.</p>
-      <input v-model="nom" placeholder="Nom du carnet (Famille, Les copains…)" maxlength="24"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-2" />
-      <input v-model="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ton code à 6 chiffres"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-2 tracking-[.3em]" />
+
+      <label for="lc-nom" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Nom du carnet</label>
+      <input id="lc-nom" v-model="nom" placeholder="Famille, Les copains, Boulot…" maxlength="24"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1" />
+      <p class="text-[11px] text-muted mb-3">Visible seulement par les membres que tu invites.</p>
+
+      <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code à 6 chiffres</label>
+      <input id="lc-code" v-model="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+        placeholder="123456"
+        @input="code = code.replace(/\D/g, '').slice(0, 6)"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
+      <p class="text-[11px] text-muted mb-3">Il sert de code d'invitation ET de code admin sur un autre appareil.</p>
+
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button @click="modeCreer = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
@@ -123,21 +110,10 @@ function exporterJSON() {
         </button>
       </div>
 
-      <button @click="exporterJSON"
-        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 mb-4"
-        :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-        <Ic name="share" class="w-4 h-4" /> Exporter « {{ store.carnet.nom }} » en JSON
-      </button>
-
       <p class="text-[11px] text-muted text-center leading-relaxed">
-        Gouvernance façon Family Album : l'admin ajoute ou retire qui il veut.<br />
-        L'export JSON est ton droit : ce carnet vous appartient.
+        L'admin du carnet ajoute ou retire qui il veut.<br />
+        L'admin gère le carnet depuis l'onglet Admin.
       </p>
-      <ConfirmModal :open="!!pendingRetrait"
-        :title="'Retirer ' + (pendingRetrait || '') + ' ?'"
-        text="Il ne verra plus ce carnet. Il garde ses autres carnets."
-        confirmLabel="Retirer"
-        @confirm="confirmerRetrait" @cancel="pendingRetrait = null" />
     </template>
   </div>
 </template>
