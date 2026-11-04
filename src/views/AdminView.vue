@@ -5,6 +5,7 @@ import { useRoute } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
+import ConfirmModal from "../components/ConfirmModal.vue";
 
 const route = useRoute();
 const store = useCarnetStore();
@@ -69,17 +70,11 @@ async function retirer(m) {
         Un membre invité peut créer son propre carnet ailleurs dans l'app —<br />c'est comme ça que Le Carnet grandit, sans rien faire.
       </p>
 
-      <!-- Popin retrait -->
-      <div v-if="retirerDe" class="fixed inset-0 z-50 flex items-end justify-center" style="background: rgba(43,35,32,.45)" @click.self="retirerDe = null">
-        <div class="w-full max-w-sm rounded-t-2xl bg-surface p-5 pb-7">
-          <p class="font-serif text-lg mb-1">Retirer {{ retirerDe }} ?</p>
-          <p class="text-xs text-muted mb-4">Il ne verra plus ce carnet. Il peut toujours y avoir ses autres carnets.</p>
-          <div class="grid grid-cols-2 gap-2">
-            <button @click="retirerDe = null" class="rounded-xl py-3 text-sm font-semibold border border-hairline">Annuler</button>
-            <button @click="retirer(retirerDe)" class="rounded-xl py-3 text-sm font-semibold text-white bg-accent">Retirer</button>
-          </div>
-        </div>
-      </div>
+      <ConfirmModal :open="!!retirerDe"
+        :title="'Retirer ' + (retirerDe || '') + ' ?'"
+        text="Il ne verra plus ce carnet. Il peut toujours y avoir ses autres carnets."
+        confirmLabel="Retirer"
+        @confirm="retirer(retirerDe)" @cancel="retirerDe = null" />
     </template>
   </div>
 </template>

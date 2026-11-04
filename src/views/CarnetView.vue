@@ -3,6 +3,7 @@ import { ref, computed, inject } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
+import ConfirmModal from "../components/ConfirmModal.vue";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -27,8 +28,29 @@ function copier() {
   navigator.clipboard?.writeText(lien.value);
   toast("Lien copié — envoie-le à qui tu veux");
 }
-async function retirer(m) {
+const pendingRetrait = ref(null);
+
+function retirer(m) { pendingRetrait.value = m; }
+async function confirmerRetrait() {
+  const m = pendingRetrait.value;
+  pendingRetrait.value = null;
   if (await store.retirerMembre(store.carnetId, m)) toast(m + " retiré du carnet");
+}
+function exporterJSON() {
+  const c = store.carnet;
+  if (!c) return;
+  const data = {
+    exporte_le: new Date().toISOString(),
+    carnet: { nom: c.nom, code: c.code, admin: c.admin, membres: c.membres },
+    fiches: store.fichesDuCarnet,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "le-carnet-" + c.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Export JSON téléchargé");
 }
 </script>
 
@@ -101,10 +123,21 @@ async function retirer(m) {
         </button>
       </div>
 
+      <button @click="exporterJSON"
+        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 mb-4"
+        :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
+        <Ic name="share" class="w-4 h-4" /> Exporter « {{ store.carnet.nom }} » en JSON
+      </button>
+
       <p class="text-[11px] text-muted text-center leading-relaxed">
         Gouvernance façon Family Album : l'admin ajoute ou retire qui il veut.<br />
-        L'admin gère le carnet depuis l'onglet Admin.
+        L'export JSON est ton droit : ce carnet vous appartient.
       </p>
+      <ConfirmModal :open="!!pendingRetrait"
+        :title="'Retirer ' + (pendingRetrait || '') + ' ?'"
+        text="Il ne verra plus ce carnet. Il garde ses autres carnets."
+        confirmLabel="Retirer"
+        @confirm="confirmerRetrait" @cancel="pendingRetrait = null" />
     </template>
   </div>
 </template>

@@ -3,6 +3,7 @@ import { ref, computed, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
+import ConfirmModal from "../components/ConfirmModal.vue";
 import { noteLabel, fmtDate } from "../lib/util.js";
 
 const route = useRoute();
@@ -104,17 +105,10 @@ async function supprimer() {
       {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
     </p>
 
-    <!-- Popin suppression -->
-    <div v-if="confirmSuppr" class="fixed inset-0 z-50 flex items-end justify-center" style="background: rgba(43,35,32,.45)" @click.self="confirmSuppr = false">
-      <div class="w-full max-w-sm rounded-t-2xl bg-surface p-5 pb-7">
-        <p class="font-serif text-lg mb-1">Supprimer « {{ fiche.titre }} » ?</p>
-        <p class="text-xs text-muted mb-4">Ça l'enlève de tous les carnets. Pas de retour arrière.</p>
-        <div class="grid grid-cols-2 gap-2">
-          <button @click="confirmSuppr = false" class="rounded-xl py-3 text-sm font-semibold border border-hairline">Annuler</button>
-          <button @click="supprimer" class="rounded-xl py-3 text-sm font-semibold text-white bg-accent">Supprimer</button>
-        </div>
-      </div>
-    </div>
+    <ConfirmModal :open="confirmSuppr"
+      :title="'Supprimer « ' + fiche.titre + ' » ?'"
+      text="Ça l'enlève de tous les carnets. Pas de retour arrière."
+      @confirm="supprimer" @cancel="confirmSuppr = false" />
   </div>
   <div v-else class="text-center text-sm text-muted py-10">Fiche introuvable.</div>
 </template>
