@@ -28,6 +28,7 @@
 
 @theme inline {
   --color-cream: var(--c-bg);
+  --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
   --color-ink: var(--c-ink);
   --color-accent: var(--c-accent);
@@ -40,8 +41,54 @@
   --font-serif: Georgia, "Times New Roman", serif;
 }
 
+/* ---------- Coquille responsive (mobile / PWA / iPad / ordi) ---------- */
+:root {
+  --lc-safe-b: env(safe-area-inset-bottom, 0px);
+  --lc-nav-h: 60px;          /* hauteur réelle de la nav (hors safe-area) */
+}
+html, body {
+  touch-action: manipulation;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  min-height: 100dvh;
+}
+body { margin: 0; }
+
+/* Colonne de contenu : large sur téléphone, centrée et aérée sur grand écran */
+.lc-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+  box-sizing: border-box;
+}
+/* iPad et + : colonne plus généreuse, comme une app tablet */
+@media (min-width: 768px) {
+  .lc-shell { max-width: 640px; padding-top: 28px; }
+}
+/* Ordi : la colonne reste centrée, fond légèrement distinct pour lisibilité */
+@media (min-width: 1024px) {
+  .lc-shell { max-width: 720px; }
+}
+
+/* Padding bas du contenu : nav + safe-area + marge */
+.pb-nav { padding-bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 28px); }
+
+/* Nav basse : fixe, même largeur que la colonne, verre dépoli */
+.lc-nav {
+  background: color-mix(in srgb, var(--c-surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--c-hairline);
+  padding-bottom: var(--lc-safe-b);
+}
+.lc-nav-in {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+}
+
 /* Anti zoom iOS sur champs + double-tap */
-html, body { touch-action: manipulation; }
 input, select, textarea { font-size: 16px !important; }
 
 /* Scroll lock pendant les overlays */
@@ -49,7 +96,6 @@ body.no-scroll { overflow: hidden; overscroll-behavior: none; }
 
 /* Splash */
 @keyframes lcbar { from { width: 0 } to { width: 100% } }
-@keyframes lcfade { from { opacity: 1 } to { opacity: 0 } }
 
 /* Focus charte */
 :focus { outline: none; }
