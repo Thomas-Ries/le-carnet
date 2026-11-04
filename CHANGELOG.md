@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2 — Photo ajoutable en édition
+
+- Le mode édition d'une fiche permet désormais d'ajouter une photo après coup (ou d'en changer / retirer une existante) : même capture que la création (redimensionnement 900 px, JPEG 0,72).
+- Côté serveur, `updateFiche` accepte le champ photo (limite 400 ko, chaîne vide = retrait).
+
 ## 0.2.1 — Quitter un carnet
 
 - Bouton « Quitter ce carnet » (visible si tu n'es pas admin) avec popin de confirmation : avertissement explicite — plus aucune notif du groupe, publications retirées du fil, aucune récupération possible, retour uniquement sur nouvelle invitation.

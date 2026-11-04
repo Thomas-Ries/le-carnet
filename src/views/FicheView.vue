@@ -18,16 +18,40 @@ const demandeEnvoyee = computed(() => fiche.value && fiche.value.demandeRecette?
 const edit = ref(false);
 const titre = ref("");
 const com = ref("");
+const photoModif = ref(undefined); // undefined = inchangée, "" = retirée, dataURL = nouvelle
+
+function onFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 900;
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * k;
+      canvas.height = img.height * k;
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      photoModif.value = canvas.toDataURL("image/jpeg", 0.72);
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
 const confirmSuppr = ref(false);
 const pop = ref(false);
 
 function startEdit() {
   titre.value = fiche.value.titre;
   com.value = fiche.value.com || "";
+  photoModif.value = undefined;
   edit.value = true;
 }
 async function saveEdit() {
-  await store.majFiche(fiche.value.id, { titre: titre.value.trim(), com: com.value.trim() });
+  const patch = { titre: titre.value.trim(), com: com.value.trim() };
+  if (photoModif.value !== undefined) patch.photo = photoModif.value;
+  await store.majFiche(fiche.value.id, patch);
   edit.value = false;
   toast("Fiche mise à jour");
 }
@@ -64,6 +88,19 @@ async function supprimer() {
     <div v-if="edit" class="space-y-2 mb-4">
       <input v-model="titre" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="3" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
+      <img v-if="photoModif !== undefined && photoModif" :src="photoModif" alt="" class="w-full rounded-xl max-h-44 object-cover" />
+      <div class="flex gap-2">
+        <label class="flex-1 rounded-xl py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer text-muted"
+          style="border: 1px dashed var(--c-hairline)">
+          <Ic name="camera" class="w-4 h-4" />
+          {{ photoModif ? "Photo prise — taper pour changer" : fiche.photo ? "Changer la photo" : "Ajouter une photo" }}
+          <input type="file" accept="image/*" class="hidden" @change="onFile" />
+        </label>
+        <button v-if="photoModif" @click="photoModif = undefined"
+          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Annuler</button>
+        <button v-else-if="fiche.photo" @click="photoModif = ''"
+          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Retirer</button>
+      </div>
       <div class="flex gap-2">
         <button @click="edit = false" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
         <button @click="saveEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-accent">Enregistrer</button>

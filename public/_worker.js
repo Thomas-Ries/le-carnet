@@ -250,11 +250,12 @@ export default {
             })() : null;
             if (!adminNimporte && !s) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
             await db.prepare(
-              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note) WHERE id=?`
+              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo) WHERE id=?`
             ).bind(patch.titre != null ? cleanText(patch.titre, 60) : null,
               patch.com != null ? cleanText(patch.com, 500) : null,
               patch.recette != null ? cleanText(patch.recette, 4000) : null,
               patch.note != null ? Math.min(100, Math.max(70, parseInt(patch.note, 10) || 80)) : null,
+              patch.photo !== undefined ? String(patch.photo).slice(0, 400000) : null,
               p.id).run();
             return json({ ok: true });
           }
@@ -337,20 +338,6 @@ export default {
               .bind(p.id, prenom, now).run();
             const { results: dem } = await db.prepare(`SELECT prenom FROM DemandesRecette WHERE fiche_id=?`).bind(p.id).all();
             return json({ fiche: { demandeRecette: dem.map((d) => d.prenom) } });
-          }
-
-          case "leaveCarnet": {
-            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
-            if (!c) return json({ ok: true });
-            const s = await sessionOf(c.id);
-            if (!s) return json({ error: "tu n'es pas dans ce carnet" }, 404);
-            if (s.role === "admin" || s.prenom === c.admin) {
-              return json({ error: "L'admin ne peut pas quitter son propre carnet" }, 403);
-            }
-            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND device_id=?`).bind(c.id, device).run();
-            const autre = await db.prepare(`SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).first();
-            if (!autre) await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).run();
-            return json({ ok: true });
           }
 
           case "removeMember": {
