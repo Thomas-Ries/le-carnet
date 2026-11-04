@@ -61,28 +61,22 @@ onMounted(async () => {
       <router-view />
     </main>
 
-    <!-- FAB Flash : caméra + éclair or, à droite au-dessus de la nav (aligné sur la colonne) -->
-    <div v-if="showFab" class="fixed inset-x-0 z-40 pointer-events-none"
-      style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 16px)">
-      <div class="max-w-[720px] mx-auto px-4 flex justify-end">
-    <button @click="flashOpen = true" title="Flash — photo éclair"
-      class="pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition"
-      style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 16px);
-             background: linear-gradient(140deg, #7A2E3E, #5E2230);
-             box-shadow: 0 8px 20px rgba(122,46,62,.45), 0 2px 6px rgba(43,35,32,.25);
-             border: 2px solid var(--c-bg)">
-      <span class="absolute -top-1 -right-1 rounded-full p-1 text-white"
-        style="background: var(--c-gold); border: 1.5px solid var(--c-bg)">
-        <Ic name="bolt" class="w-2.5 h-2.5" />
-      </span>
-      <Ic name="camera" class="w-6 h-6 text-white" />
-    </button>
-      </div>
-    </div>
-
     <!-- Bottom nav : fixe, colonne centrée, safe-area iPhone -->
     <nav v-if="showNav" class="fixed bottom-0 inset-x-0 z-50 lc-nav">
-      <div class="lc-nav-in">
+      <div class="lc-nav-in relative">
+        <!-- FAB Flash : caméra + éclair or, accroché à la nav (suit sa hauteur réelle) -->
+        <button v-if="showFab" @click="flashOpen = true" title="Flash — photo éclair"
+          class="absolute w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition"
+          style="bottom: calc(100% + 14px); right: 16px;
+                 background: linear-gradient(140deg, #7A2E3E, #5E2230);
+                 box-shadow: 0 8px 20px rgba(122,46,62,.45), 0 2px 6px rgba(43,35,32,.25);
+                 border: 2px solid var(--c-bg)">
+          <span class="absolute -top-1 -right-1 rounded-full p-1 text-white"
+            style="background: var(--c-gold); border: 1.5px solid var(--c-bg)">
+            <Ic name="bolt" class="w-2.5 h-2.5" />
+          </span>
+          <Ic name="camera" class="w-6 h-6 text-white" />
+        </button>
         <router-link v-for="n in NAV" :key="n.to" :to="n.to"
           class="flex-1 flex flex-col items-center gap-0.5 py-2.5"
           :style="{ color: route.path === n.to ? 'var(--c-accent)' : 'var(--c-muted)' }">
@@ -96,7 +90,7 @@ onMounted(async () => {
 
     <!-- Toasts maison -->
     <div class="fixed left-1/2 -translate-x-1/2 z-[60] space-y-2 w-max max-w-[90vw] pointer-events-none"
-      style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 88px)">
+      style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 76px)">
       <p v-for="t in toasts" :key="t.id"
         class="rounded-full px-4 py-2.5 text-sm text-white text-center"
         style="background: rgba(43,35,32,.92); box-shadow: 0 6px 18px rgba(43,35,32,.3)">
