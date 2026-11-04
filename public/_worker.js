@@ -243,7 +243,9 @@ export default {
           case "createCarnet": {
             const nom = cleanText(p.nom, 24).trim();
             const prenom = cleanPrenom(p.prenom);
-            if (!nom || !prenom || !isCode(p.codeAdmin)) return json({ error: "champs invalides" }, 400);
+            if (!nom) return json({ error: "Le nom du carnet est manquant." }, 400);
+            if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil, puis recrée ton carnet." }, 400);
+            if (!isCode(p.codeAdmin)) return json({ error: "Le code admin doit contenir exactement 6 chiffres." }, 400);
             let code = isCode(p.codeInvite) ? p.codeInvite : newInviteCode();
             for (let i = 0; i < 5; i++) {
               const dup = await db.prepare(`SELECT id FROM Carnets WHERE code=?`).bind(code).first();
@@ -264,7 +266,8 @@ export default {
 
           case "join": {
             const prenom = cleanPrenom(p.prenom);
-            if (!prenom || !isCode(p.code)) return json({ error: "champs invalides" }, 400);
+            if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil." }, 400);
+            if (!isCode(p.code)) return json({ error: "Le code d'invitation doit contenir exactement 6 chiffres." }, 400);
             const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(p.code).first();
             if (!c) return json({ error: "carnet introuvable" }, 404);
             // Doublon de prénom dans le carnet (insensible à la casse) : refus, sauf retour

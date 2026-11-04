@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.17 — Messages d'erreur explicites sur createCarnet/join
+- Worker : le 400 générique « champs invalides » est remplacé par un message qui nomme le champ fautif (nom du carnet, prénom manquant, code admin/invitation invalide) — typiquement après un effacement des données du site, le prénom du profil est vide et bloquait la création sans explication.
+- CarnetView : garde-fou client — si le prénom du profil est vide, message clair au lieu d'un appel serveur condamné.
+
 ## 0.4.16 — Plus de fausse réussite locale sur un refus serveur
 
 - Un refus du serveur (4xx : validation, droits, doublon de prénom ou de code) remonte maintenant à l'interface avec son message réel — il ne bascule plus jamais silencieusement en mode démo avec un toast de réussite. Seule une vraie panne réseau fait basculer en local.

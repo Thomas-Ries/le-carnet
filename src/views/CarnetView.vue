@@ -23,6 +23,10 @@ const lien = computed(() => {
 
 async function creer() {
   if (!nom.value.trim() || codeAdmin.value.length !== 6) return;
+  if (!store.profil.prenom) {
+    err.value = "Ton prénom est manquant — renseigne-le dans Profil, puis reviens créer ton carnet.";
+    return;
+  }
   if (codeAdmin.value !== codeAdmin2.value) {
     err.value = "Le code admin doit être saisi deux fois à l'identique.";
     return;
