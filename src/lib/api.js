@@ -44,7 +44,7 @@ export async function bootstrap(deviceId) {
 
 async function mutate(action, payload) {
   try {
-    return await api("/api/mutate", { action, ...payload });
+    return await api("/api/mutate", { action, deviceId: getDeviceId(), ...payload });
   } catch (e) {
     const db = fallback(e);
     return demoMutate(db, action, payload);
@@ -85,6 +85,17 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { ok: true };
     }
+    case "leaveCarnet": {
+      const c = db.carnets.find((x) => x.id === p.carnetId);
+      if (!c) return { ok: true };
+      if (c.admin === p.prenom) return { error: "L'admin ne peut pas quitter son propre carnet" };
+      c.membres = c.membres.filter((m) => m !== p.prenom);
+      demo.save(db);
+      return { ok: true };
+    }
+    case "subscribePush":
+    case "unsubscribePush":
+      return { ok: true };
     case "addFiche": {
       const f = { id: demo.uid("f"), reacts: [], photo: null, recette: null, demandeRecette: [], ...p.fiche };
       db.fiches.unshift(f);
@@ -160,3 +171,6 @@ export const deleteFlash = (id) => mutate("deleteFlash", { id });
 export const react = (targetId, prenom, on) => mutate("react", { targetId, prenom, on });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });
+export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });
+export const subscribePush = (sub) => mutate("subscribePush", { sub });
+export const unsubscribePush = (endpoint) => mutate("unsubscribePush", { endpoint });

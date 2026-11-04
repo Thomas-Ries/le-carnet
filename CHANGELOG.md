@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — Notifications push + finitions
+
+- Notifications web push (VAPID, crypto maison aes128gcm/ES256 dans le worker, zéro dépendance) : nouveau flash dans un carnet, adresse notée, rappel J-6 à l'auteur d'un flash qui expire.
+- Gestion dans le profil : carte « Notifications » avec interrupteur, réglage propre à chaque appareil (désactivable à tout moment).
+- Service worker (sw.js) pour recevoir les notifications ; abonnements stockés en base (PushSubscriptions), purgés automatiquement si l'appareil a désinstallé.
+- Tuiles d'accueil explicites : « Noter une adresse » et « Partager une recette ».
+- Photo de fiche affichée en médaillon rond cerclé riesling sur les cards de l'accueil.
+- Réparations silencieuses détectées : leaveCarnet absent du worker/store/api (V0.2.1 incomplète en prod), photo en édition absente du worker (V0.2.2), et deviceId non transmis sur certaines mutations qui basculait l'app en mode démo — tout est corrigé.
+- Schéma : table PushSubscriptions + colonne Flashes.reminded_at → rejouer schema.sql (base vide).
+- Backup : workflow GitHub Actions hebdomadaire d'export D1 vers un bucket R2 (voir .github/workflows/backup-d1.yml).
+
 ## 0.3.1 — Badges d'activité + finitions
 
 - Profil : section « Mon activité » — adresses notées, recettes partagées, flashes en vie, amour reçu (icônes SVG, zéro emoji).

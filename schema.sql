@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS PushSubscriptions;
 DROP TABLE IF EXISTS DemandesRecette;
 DROP TABLE IF EXISTS FlashReactions;
 DROP TABLE IF EXISTS Flashes;
@@ -65,7 +66,8 @@ CREATE TABLE IF NOT EXISTS Flashes (
   photo TEXT NOT NULL,
   com TEXT,
   created_at TEXT NOT NULL,
-  expires_at TEXT NOT NULL
+  expires_at TEXT NOT NULL,
+  reminded_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS FlashReactions (
@@ -79,6 +81,14 @@ CREATE TABLE IF NOT EXISTS DemandesRecette (
   prenom TEXT NOT NULL,
   created_at TEXT NOT NULL,
   PRIMARY KEY (fiche_id, prenom)
+);
+
+CREATE TABLE IF NOT EXISTS PushSubscriptions (
+  device_id TEXT NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_liens_carnet ON FichesCarnets(carnet_id);

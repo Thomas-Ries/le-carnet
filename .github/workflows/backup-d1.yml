@@ -1,0 +1,40 @@
+# Backup hebdomadaire de la base D1 vers un bucket R2 privé.
+# Prérequis (une seule fois) :
+#   1. Créer un bucket R2 privé : `wrangler r2 bucket create le-carnet-backups`
+#   2. Créer un token Cloudflare (profil -> My Profile -> API Tokens) avec :
+#      - D1 : Edit (ou Read suffit pour l'export)
+#      - R2 : Edit
+#   3. Dans ce repo : Settings > Secrets and variables > Actions > New secret : CLOUDFLARE_API_TOKEN
+#   4. Vérifier DATABASE_NAME / DATABASE_ID ci-dessous (Settings > Workers & Pages > D1).
+name: Backup D1
+on:
+  schedule:
+    - cron: "0 3 * * 1" # tous les lundis à 03h UTC
+  workflow_dispatch: {} # déclenchable à la main
+
+concurrency:
+  group: backup-d1
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Installer wrangler
+        run: npm install -g wrangler
+      - name: Exporter la base D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          mkdir -p /tmp/dump
+          wrangler d1 export le-carnet --remote --output "/tmp/dump/le-carnet-$(date -u +\%Y-\%m-\%d).sql" --gzip
+      - name: Envoyer vers R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          FILE=$(ls /tmp/dump/*.sql.gz)
+          wrangler r2 object put "le-carnet-backups/$(basename $FILE)" --file "$FILE"

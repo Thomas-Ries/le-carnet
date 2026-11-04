@@ -1,10 +1,65 @@
 <script setup>
-import { ref, computed, inject } from "vue";
+import { ref, computed, inject, onMounted } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import { exporterFichierJSON } from "../lib/util.js";
 import pkg from "../../package.json";
+import * as api from "../lib/api.js";
+
+const b64uToUint8 = (b64) => {
+  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+};
+const notifSupported = computed(() =>
+  typeof Notification !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
+);
+const notifOn = ref(false);
+const notifBusy = ref(false);
+
+async function refreshNotif() {
+  if (!notifSupported.value) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    notifOn.value = !!sub;
+  } catch (e) { notifOn.value = false; }
+}
+onMounted(refreshNotif);
+
+async function toggleNotif() {
+  if (notifBusy.value) return;
+  notifBusy.value = true;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (notifOn.value) {
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await api.unsubscribePush(sub.endpoint).catch(() => {});
+        await sub.unsubscribe();
+      }
+      notifOn.value = false;
+      toast("Notifications d\u00e9sactiv\u00e9es");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { toast("Autorisation refus\u00e9e dans les r\u00e9glages du navigateur"); return; }
+    const r = await fetch("/api/vapid-pub").then((x) => x.json()).catch(() => null);
+    if (!r || !r.publicKey) { toast("Notifications indisponibles c\u00f4t\u00e9 serveur"); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: b64uToUint8(r.publicKey),
+    });
+    await api.subscribePush(sub.toJSON());
+    notifOn.value = true;
+    toast("Notifications activ\u00e9es sur cet appareil");
+  } catch (e) {
+    toast("Impossible d\u2019activer les notifications");
+  } finally {
+    notifBusy.value = false;
+  }
+}
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -103,6 +158,25 @@ async function exporterJSON() {
           </span>
         </div>
       </div>
+    </div>
+
+    <div v-if="notifSupported && !store.demoMode" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Notifications</p>
+      <button @click="toggleNotif" :disabled="notifBusy"
+        class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
+        :style="{ background: notifOn ? 'var(--c-soft)' : 'transparent', border: '1px solid var(--c-hairline)' }">
+        <span class="flex items-center gap-2.5 text-sm">
+          <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
+          <span class="text-left leading-tight">
+            <span class="block font-semibold">{{ notifOn ? "Activ\u00e9es" : "D\u00e9sactiv\u00e9es" }}</span>
+            <span class="block text-[10px] text-muted">Flashes, adresses not\u00e9es, rappel J-6 \u2014 r\u00e9glage propre \u00e0 cet appareil</span>
+          </span>
+        </span>
+        <span class="relative rounded-full w-11 h-6 transition shrink-0" :style="{ background: notifOn ? '#7A2E3E' : 'var(--c-hairline)' }">
+          <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
+            :style="{ left: notifOn ? '22px' : '2px' }" />
+        </span>
+      </button>
     </div>
 
     <button @click="toggleTheme"

@@ -25,6 +25,68 @@ async function verifyCode(code, stored) {
   return salt + "$" + (await sha256hex(salt + code)) === stored;
 }
 
+// ---------- Web Push (RFC 8291 aes128gcm + RFC 8292 VAPID ES256), 100% WebCrypto ----------
+const wpB64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const wpB64uDec = (s) => Uint8Array.from(atob(String(s).replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+async function wpHkdf(ikm, salt, info, len) {
+  const key = await crypto.subtle.importKey("raw", ikm, { name: "HMAC", hash: "SHA-256", length: 256 }, false, ["sign"]);
+  const base = await crypto.subtle.sign("HMAC", key, new Uint8Array([...salt, ...info, 1]));
+  return new Uint8Array(base.slice(0, len));
+}
+async function wpEncrypt(payload, p256dhB64, authB64) {
+  const plaintext = new Uint8Array([...enc.encode(payload), 2]);
+  const uaPublic = await crypto.subtle.importKey("raw", wpB64uDec(p256dhB64), { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const serverKP = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: uaPublic }, serverKP.privateKey, 256));
+  const serverPubRaw = new Uint8Array(await crypto.subtle.exportKey("raw", serverKP.publicKey));
+  const ikm = await wpHkdf(ecdh, wpB64uDec(authB64),
+    new Uint8Array([...enc.encode("WebPush: info"), 0, ...wpB64uDec(p256dhB64), ...serverPubRaw]), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await wpHkdf(ikm, salt, new Uint8Array([...enc.encode("Content-Encoding: aes128gcm"), 0]), 16);
+  const nonce = await wpHkdf(ikm, salt, new Uint8Array([...enc.encode("Content-Encoding: nonce"), 0]), 12);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce },
+    await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]), plaintext));
+  const rs = new Uint8Array(4); new DataView(rs.buffer).setUint32(0, 4096);
+  return new Uint8Array([...salt, ...rs, 65, ...serverPubRaw, ...ct]);
+}
+async function wpVapidHeader(endpoint, privB64, pubB64) {
+  const unsigned = wpB64u(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" }))) + "." +
+    wpB64u(enc.encode(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "mailto:contact@le-carnet.pages.dev" })));
+  const key = await crypto.subtle.importKey("pkcs8", wpB64uDec(privB64), { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const raw = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, enc.encode(unsigned)));
+  const int2 = (u8) => (u8[0] & 0x80 ? [2, u8.length + 1, 0, ...u8] : [2, u8.length, ...u8]);
+  const ir = int2(raw.slice(0, 32)), is = int2(raw.slice(32));
+  const der = new Uint8Array([0x30, ir.length + is.length, ...ir, ...is]);
+  return { auth: "vapid t=" + unsigned + "." + wpB64u(der), cryptoKey: "p256ecdsa=" + pubB64 };
+}
+async function sendPushTo(env, db, deviceIds, payload) {
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !deviceIds || !deviceIds.length) return;
+  const uniq = [...new Set(deviceIds)];
+  const { results: subs } = await db.prepare(
+    `SELECT * FROM PushSubscriptions WHERE device_id IN (${uniq.map(() => "?").join(",")})`
+  ).bind(...uniq).all();
+  for (const sub of subs) {
+    try {
+      const body = await wpEncrypt(JSON.stringify(payload), sub.p256dh, sub.auth);
+      const v = await wpVapidHeader(sub.endpoint, env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY);
+      const res = await fetch(sub.endpoint, {
+        method: "POST",
+        headers: { TTL: "86400", "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", Authorization: v.auth, "Crypto-Key": v.cryptoKey },
+        body,
+      });
+      if (res.status === 404 || res.status === 410) {
+        await db.prepare(`DELETE FROM PushSubscriptions WHERE endpoint=?`).bind(sub.endpoint).run();
+      }
+    } catch (e) { /* une notif échouée ne doit jamais bloquer la mutation */ }
+  }
+}
+const devicesOfCarnet = async (db, carnetId, exceptPrenom) => {
+  const { results } = await db.prepare(
+    `SELECT DISTINCT device_id, prenom FROM Sessions WHERE carnet_id=?`
+  ).bind(carnetId).all();
+  return results.filter((r) => r.prenom !== exceptPrenom).map((r) => r.device_id);
+};
+
 const isCode = (c) => /^[0-9]{6}$/.test(String(c || ""));
 const cleanPrenom = (p) => String(p || "").trim().slice(0, 20);
 const cleanText = (t, n) => String(t == null ? "" : t).slice(0, n);
@@ -118,6 +180,23 @@ export default {
           date: f.created_at, carnets: carnetsByFiche[f.id] || [],
           reacts: likesByFiche[f.id] || [], demandeRecette: demByFiche[f.id] || [],
         }));
+        // Rappel J-6 : flash qui expire sous 24h, pas encore rappelé -> notification à son auteur
+        if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+          const { results: dues } = await db.prepare(
+            `SELECT * FROM Flashes WHERE reminded_at IS NULL AND expires_at <= datetime('now', '+1 day') AND expires_at > datetime('now')`
+          ).all();
+          for (const fl of dues) {
+            const { results: mes } = await db.prepare(
+              `SELECT DISTINCT device_id FROM Sessions WHERE carnet_id=? AND prenom=?`
+            ).bind(fl.carnet_id, fl.auteur).all();
+            sendPushTo(env, db, mes.map((m) => m.device_id), {
+              title: "Ton flash expire demain",
+              body: "Il ne reste qu\u2019un jour pour le noter en fiche \u2014 ou pour le faire aimer.",
+              url: "/",
+            }).catch(() => {});
+            await db.prepare(`UPDATE Flashes SET reminded_at=? WHERE id=?`).bind(new Date().toISOString(), fl.id).run();
+          }
+        }
         const flashes = flashesRaw.map((fl) => ({
           id: fl.id, carnets: [fl.carnet_id], auteur: fl.auteur, photo: fl.photo, com: fl.com || null,
           date: fl.created_at, reacts: reactsByFlash[fl.id] || [],
@@ -132,6 +211,11 @@ export default {
       } catch (e) {
         return json({ error: "bootstrap: " + String((e && e.message) || e) }, 500);
       }
+    }
+
+    // ---------- Clé publique push ----------
+    if (url.pathname === "/api/vapid-pub" && request.method === "GET") {
+      return json({ publicKey: env.VAPID_PUBLIC_KEY || null });
     }
 
     // ---------- Écriture ----------
@@ -242,6 +326,17 @@ export default {
               const membre = await sessionOf(cid);
               if (membre) await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, cid).run();
             }
+            (async () => {
+              const dests = new Set();
+              for (const cid of (Array.isArray(f.carnets) ? f.carnets : []).slice(0, 20)) {
+                for (const d of await devicesOfCarnet(db, cid, s.prenom)) dests.add(d);
+              }
+              sendPushTo(env, db, [...dests], {
+                title: s.prenom + " a not\u00e9 une adresse aim\u00e9e",
+                body: "\u00ab " + cleanText(f.titre, 60) + " \u00bb \u2014 va voir, aime-la si tu la fr\u00e9quentes.",
+                url: "/fiche/" + id,
+              }).catch(() => {});
+            })().catch(() => {});
             return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: f.cat, titre: f.titre, lieu: f.lieu,
               note, com: f.com, photo: f.photo || null, recette: f.recette || null, date: now,
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
@@ -266,11 +361,12 @@ export default {
             })() : null;
             if (!adminNimporte && !s) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
             await db.prepare(
-              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note) WHERE id=?`
+              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo) WHERE id=?`
             ).bind(patch.titre != null ? cleanText(patch.titre, 60) : null,
               patch.com != null ? cleanText(patch.com, 500) : null,
               patch.recette != null ? cleanText(patch.recette, 4000) : null,
               patch.note != null ? Math.min(100, Math.max(70, parseInt(patch.note, 10) || 80)) : null,
+              patch.photo !== undefined ? String(patch.photo).slice(0, 400000) : null,
               p.id).run();
             return json({ ok: true });
           }
@@ -302,6 +398,14 @@ export default {
               `INSERT INTO Flashes (id, carnet_id, auteur, photo, com, created_at, expires_at) VALUES (?,?,?,?,?,?,?)`
             ).bind(id, fl.carnetId, s.prenom, typeof fl.photo === "string" ? fl.photo.slice(0, 400000) : "",
               typeof fl.com === "string" ? fl.com.slice(0, 500) : null, now, expires).run();
+            const cnom = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(fl.carnetId).first();
+            devicesOfCarnet(db, fl.carnetId, s.prenom).then((devs) =>
+              sendPushTo(env, db, devs, {
+                title: s.prenom + " a flash\u00e9",
+                body: "Nouveau flash dans \u00ab " + (cnom ? cnom.nom : "un carnet") + " \u00bb \u2014 7 jours pour l\u2019aimer.",
+                url: "/",
+              })
+            ).catch(() => {});
             return json({ flash: { id, carnets: [fl.carnetId], auteur: s.prenom, photo: fl.photo, com: fl.com || null, date: now, reacts: [] } });
           }
 
@@ -364,6 +468,35 @@ export default {
               .bind(p.id, prenom, now).run();
             const { results: dem } = await db.prepare(`SELECT prenom FROM DemandesRecette WHERE fiche_id=?`).bind(p.id).all();
             return json({ fiche: { demandeRecette: dem.map((d) => d.prenom) } });
+          }
+
+          case "leaveCarnet": {
+            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!c) return json({ ok: true });
+            const s = await sessionOf(c.id);
+            if (!s) return json({ error: "tu n'es pas dans ce carnet" }, 404);
+            if (s.role === "admin" || s.prenom === c.admin) {
+              return json({ error: "L'admin ne peut pas quitter son propre carnet" }, 403);
+            }
+            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND device_id=?`).bind(c.id, device).run();
+            const autre = await db.prepare(`SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).first();
+            if (!autre) await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).run();
+            return json({ ok: true });
+          }
+
+          case "subscribePush": {
+            const sub = p.sub || {};
+            if (!device || !sub.endpoint || !sub.keys) return json({ error: "abonnement invalide" }, 400);
+            await db.prepare(
+              `INSERT OR REPLACE INTO PushSubscriptions (device_id, endpoint, p256dh, auth, created_at) VALUES (?,?,?,?,?)`
+            ).bind(device, cleanText(sub.endpoint, 500), cleanText(sub.keys.p256dh, 200),
+              cleanText(sub.keys.auth, 100), now).run();
+            return json({ ok: true });
+          }
+
+          case "unsubscribePush": {
+            await db.prepare(`DELETE FROM PushSubscriptions WHERE endpoint=?`).bind(cleanText(p.endpoint, 500)).run();
+            return json({ ok: true });
           }
 
           case "removeMember": {

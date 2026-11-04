@@ -69,20 +69,18 @@ export const useCarnetStore = defineStore("carnet", {
       return this.roles[carnetId] === "admin";
     },
 
-    async purgerFlashesExpires() {
+    purgerFlashesExpires() {
       const limite = Date.now() - 7 * 86400000;
       const expires = this.flashes.filter((f) => new Date(f.date).getTime() < limite);
       for (const f of expires) {
         // Flash commenté -> fiche "en attente" (note 0, à titrer/noter par l'auteur)
         if (f.com) {
-          try {
-            const r = await api.addFiche({
-              carnets: f.carnets, type: "adresse", cat: null, titre: f.com.slice(0, 60),
-              lieu: "", note: 0, com: f.com, photo: f.photo, recette: null,
-              auteur: f.auteur, date: f.date, demandeRecette: [],
-            });
-            if (r && r.fiche) this.fiches.unshift(r.fiche);
-          } catch (e) { /* réseau KO : le flash restera, nouvelle tentative au boot suivant */ }
+          const r = await api.addFiche({
+            carnets: f.carnets, type: "adresse", cat: null, titre: f.com.slice(0, 60),
+            lieu: "", note: 0, com: f.com, photo: f.photo, recette: null,
+            auteur: f.auteur, date: f.date, demandeRecette: [],
+          }).catch(() => null);
+          if (r && r.fiche) this.fiches.unshift(r.fiche);
         }
         api.deleteFlash(f.id).catch(() => null);
       }
@@ -195,6 +193,26 @@ export const useCarnetStore = defineStore("carnet", {
       this.demoMode = api.state.demoMode;
       this.flashes.unshift(r.flash);
       return r.flash;
+    },
+
+    async quitterCarnet(carnetId) {
+      const r = await api.leaveCarnet(carnetId, this.profil.prenom);
+      if (r && r.error) return r;
+      // Le carnet et tout son contenu disparaissent du fil de cet appareil
+      this.carnets = this.carnets.filter((c) => c.id !== carnetId);
+      delete this.roles[carnetId];
+      this.fiches = this.fiches
+        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
+        .filter((f) => f.carnets.length > 0);
+      this.flashes = this.flashes
+        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
+        .filter((f) => f.carnets.length > 0);
+      if (this.carnetId === carnetId) {
+        const suivant = this.carnets[0]?.id || null;
+        this.carnetId = suivant;
+        if (suivant) localStorage.setItem(LS.carnetId, suivant);
+      }
+      return { ok: true };
     },
 
     async commenterFlash(id, com) {
