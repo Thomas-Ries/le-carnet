@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.19 — Icône PWA alignée sur le splashscreen
+- logo.svg refait au motif exact du splash : badge bordeaux à dégradé (140deg #7A2E3E→#5E2230, coins 27/86), fourchette · verre · couteau en traits blancs, verre plus grand (36/86), gap 2px — mêmes icônes Heroicons que le splash.
+- PNG icon-192/512 : à ré-exporter par Thomas depuis logo.svg (le connecteur GitHub corrompt les binaires).
+
 ## 0.4.18 — Fix mutations client : format de payload
 - BUG RACINE (rendu visible par V0.4.16/V0.4.17) : le client envoyait les champs à plat (`{ action, deviceId, ... }`) alors que le worker lisait `body.payload` → TOUTES les mutations du client échouaient en 400 et basculaient en démo avant V0.4.16. Symptôme : « Le nom du carnet est manquant » alors que le nom était saisi.
 - Worker : accepte les deux formats (`payload` imbriqué ou champs à plat) — couvre aussi les vieux bundles PWA encore en cache service worker.
