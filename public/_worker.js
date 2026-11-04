@@ -16,6 +16,8 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/bootstrap" && request.method === "GET") {
+      try {
+        if (!env.DB) return json({ error: "binding DB absent — Settings > Bindings, variable DB" }, 500);
       const { results: carnets } = await env.DB.prepare(
         `SELECT * FROM Carnets`
       ).all();
@@ -38,6 +40,9 @@ export default {
         `SELECT fiche_id, prenom FROM FicheLikes`
       ).all();
       return json({ carnets, membres, fiches, liens, flashes, reacts, likes });
+      } catch (e) {
+        return json({ error: "bootstrap: " + String(e && e.message ? e.message : e) }, 500);
+      }
     }
 
     if (url.pathname === "/api/mutate" && request.method === "POST") {
@@ -121,8 +126,6 @@ export default {
       }
     }
 
-    // Toute autre requête : servir les fichiers statiques du déploiement
-    // (Pages passe les assets via env.ASSETS quand un _worker.js existe)
-    return env.ASSETS.fetch(request);
+    return new Response("Not found", { status: 404, headers: CORS });
   },
 };
