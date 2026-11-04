@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.12 — Splash : trio de couverts plus grand et resserré
+
+- Le badge bordeaux passe à 86 px : verre 36 px, fourchette et couteau 23 px, collés au verre (gap 2 px). Le trio domine le splash comme un vrai logo.
+
 ## 0.4.11 — Couverts du splash et du logo ajustés
 
 - Les couverts sont un peu plus grands et plus rapprochés du verre, sur le splash (badge 72 px) comme sur le logo PWA — le trio fourchette/verre/couteau respire mieux. PNG 192/512 à ré-exporter depuis logo.svg.

@@ -101,7 +101,7 @@ body.no-scroll { overflow: hidden; overscroll-behavior: none; }
   gap: 12px; padding: 0 24px; text-align: center; overflow: hidden;
 }
 .lc-splash .sp-badge {
-  width: 72px; height: 72px; border-radius: 23px;
+  width: 86px; height: 86px; border-radius: 27px;
   background: linear-gradient(140deg, #7A2E3E, #5E2230); color: #fff;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 26px rgba(122, 46, 62, .28);
