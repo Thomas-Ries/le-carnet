@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.3 — Splash animé + correctif icône active
+
+- Splashscreen repensé, fun et animé (2,5 s) : carnet bordeaux qui pop, bulles riesling qui montent, petit cœur or qui s'échappe, titre en cascade, les trois cercles (En famille / Entre amis / Pour le boulot), barre riesling qui glisse et la phrase fondatrice « Punaise, c'était bon ! » en or penché.
+- Correctif icônes : les icônes remplies (état actif de la nav) utilisent maintenant fill-rule evenodd — le petit rond du pin et l'objectif de la caméra ne disparaissent plus au changement de couleur.
+
+## 0.4.2 — Bandeau perte de connexion + carte support
+
+- Bandeau bordeaux « Connexion au serveur perdue » si une action n'atteint plus le serveur en cours de session (les actions restent locales, l'app bascule en démo).
+- Carte « Contacter le support » dans le profil, réservée aux admins : bouton qui ouvre un email pré-rempli (l'adresse n'est jamais affichée en clair dans l'app).
+
 ## 0.4.0 — Notifications push + finitions
 
 - Notifications web push (VAPID, crypto maison aes128gcm/ES256 dans le worker, zéro dépendance) : nouveau flash dans un carnet, adresse notée, rappel J-6 à l'auteur d'un flash qui expire.

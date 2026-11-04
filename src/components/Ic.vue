@@ -15,7 +15,9 @@ const paths = computed(() =>
 </script>
 
 <template>
-  <svg :class="$props.class" viewBox="0 0 24 24" :fill="filled ? 'currentColor' : 'none'" stroke="currentColor"
+  <!-- fill-rule evenodd : quand l'icône est remplie (état actif), les formes internes
+       restent des trous — le petit rond du pin et l'objectif de la caméra ne disparaissent plus -->
+  <svg :class="$props.class" viewBox="0 0 24 24" :fill="filled ? 'currentColor' : 'none'" fill-rule="evenodd" clip-rule="evenodd" stroke="currentColor"
     :stroke-width="sw" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path v-for="(d, i) in paths" :key="i" :d="d" />
   </svg>

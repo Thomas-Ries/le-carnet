@@ -94,8 +94,73 @@ input, select, textarea { font-size: 16px !important; }
 /* Scroll lock pendant les overlays */
 body.no-scroll { overflow: hidden; overscroll-behavior: none; }
 
-/* Splash */
-@keyframes lcbar { from { width: 0 } to { width: 100% } }
+/* ---------- Splash (2,5 s) — fun et animé, façon Dégustations entre amis ---------- */
+.lc-splash {
+  position: fixed; inset: 0; z-index: 70; background: var(--c-bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 0 24px; text-align: center; overflow: hidden;
+}
+.lc-splash .sp-badge {
+  width: 68px; height: 68px; border-radius: 22px;
+  background: linear-gradient(140deg, #7A2E3E, #5E2230); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 26px rgba(122, 46, 62, .28);
+  position: relative; animation: spbadge .6s cubic-bezier(.2, .9, .3, 1.4) both;
+}
+/* bulles riesling qui montent depuis le carnet */
+.lc-splash .sp-bub {
+  position: absolute; bottom: 10px; left: 50%; border-radius: 50%;
+  background: var(--c-riesling); opacity: 0; animation: spbub 1.3s ease-in infinite;
+}
+.lc-splash .sp-bub.b1 { width: 7px; height: 7px; animation-delay: .15s; margin-left: -16px; }
+.lc-splash .sp-bub.b2 { width: 10px; height: 10px; animation-delay: .5s; margin-left: 2px; }
+.lc-splash .sp-bub.b3 { width: 6px; height: 6px; animation-delay: .85s; margin-left: 18px; }
+/* petit cœur or qui s'échappe du carnet */
+.lc-splash .sp-heart {
+  position: absolute; bottom: 12px; left: 50%; margin-left: -7px;
+  width: 14px; height: 14px; color: var(--c-gold); opacity: 0;
+  animation: spheart 2s ease-in .4s infinite;
+}
+.lc-splash .sp-title {
+  font-family: var(--font-serif); font-size: 30px; margin: 0;
+  color: var(--c-ink); line-height: 1;
+}
+.lc-splash .sp-w { display: inline-block; animation: spword .5s cubic-bezier(.2, .8, .3, 1.2) both; }
+.lc-splash .sp-w2 { font-style: italic; color: var(--c-accent); animation-delay: .18s; }
+.lc-splash .sp-sub {
+  font-size: 10px; letter-spacing: .25em; text-transform: uppercase;
+  color: var(--c-muted); animation: spfade .5s ease .35s both;
+}
+/* les trois cercles du Carnet */
+.lc-splash .sp-tags { display: flex; gap: 8px; animation: spfade .5s ease .55s both; }
+.lc-splash .sp-tags span {
+  font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+  border: 1px solid var(--c-hairline); background: var(--c-surface); color: var(--c-ink);
+}
+.lc-splash .sp-tags span:nth-child(2) {
+  background: var(--c-accent); border-color: var(--c-accent); color: #fff;
+}
+.lc-splash .sp-bar {
+  width: 150px; height: 3px; border-radius: 99px;
+  background: var(--c-hairline); overflow: hidden; margin-top: 8px;
+}
+.lc-splash .sp-bar i {
+  display: block; height: 100%; width: 40%; border-radius: 99px;
+  background: var(--c-riesling); animation: splashbar .75s ease-in-out infinite;
+}
+/* la phrase fondatrice, en or penché */
+.lc-splash .sp-cheers {
+  font-family: var(--font-serif); font-style: italic; font-size: 16px;
+  color: var(--c-gold); animation: spcheers .45s cubic-bezier(.2, .9, .3, 1.5) .95s both;
+}
+
+@keyframes splashbar { 0% { transform: translateX(-110%) } 100% { transform: translateX(400%) } }
+@keyframes spbadge { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+@keyframes spbub { 0% { transform: translateY(0); opacity: 0 } 25% { opacity: .85 } 100% { transform: translateY(-46px); opacity: 0 } }
+@keyframes spheart { 0% { transform: translateY(0) scale(.6); opacity: 0 } 20% { opacity: .9 } 100% { transform: translateY(-54px) scale(1); opacity: 0 } }
+@keyframes spword { from { transform: translateY(14px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes spfade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes spcheers { from { transform: scale(.3) rotate(-6deg); opacity: 0 } to { transform: scale(1) rotate(-3deg); opacity: 1 } }
 
 /* Focus charte */
 :focus { outline: none; }

@@ -44,16 +44,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Splash 2,5 s : livre bordeaux, barre riesling -->
-  <div v-if="store.splash" class="fixed inset-0 z-[70] flex flex-col items-center justify-center px-8" style="background: var(--c-bg)">
-    <div class="w-16 h-16 rounded-3xl flex items-center justify-center mb-4" style="background: var(--c-soft); color: var(--c-accent)">
+  <!-- Splash 2,5 s — fun et animé : carnet bordeaux qui pop, bulles riesling,
+       cœur or qui s'échappe, mots du titre en cascade, les trois cercles, phrase finale penchée -->
+  <div v-if="store.splash" class="lc-splash">
+    <div class="sp-badge">
       <Ic name="book" class="w-8 h-8" :sw="1.6" />
+      <span class="sp-bub b1"></span><span class="sp-bub b2"></span><span class="sp-bub b3"></span>
+      <Ic name="heart" class="sp-heart" :sw="2" filled />
     </div>
-    <p class="text-3xl font-serif leading-none" style="color: var(--c-accent)">Le Carnet</p>
-    <p class="text-[10px] uppercase tracking-[.35em] mt-2" style="color: var(--c-muted)">adresses aimées</p>
-    <div class="w-32 h-1 rounded-full overflow-hidden mt-6" style="background: var(--c-hairline)">
-      <div class="h-full rounded-full" style="background: var(--c-riesling); animation: lcbar 2.1s ease-out forwards" />
-    </div>
+    <h1 class="sp-title"><span class="sp-w">Le</span> <span class="sp-w sp-w2">Carnet</span></h1>
+    <div class="sp-sub">adresses aimées · moments partagés</div>
+    <div class="sp-tags"><span>En famille</span><span>Entre amis</span><span>Pour le boulot</span></div>
+    <div class="sp-bar"><i></i></div>
+    <div class="sp-cheers">Punaise, c'était bon !</div>
   </div>
 
   <template v-else>
