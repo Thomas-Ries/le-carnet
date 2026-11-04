@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.7 — Profil : invitation remontée
+
+- La carte « Inviter dans un carnet » remonte juste sous l'installation de l'app, au-dessus de « Réglages & données » : le partage du carnet est le geste de croissance nº1, il doit rester visible en haut du profil.
+
 ## 0.4.6 — Accueil : tri Récents / Aimés
 
 - Le filtre « Les préférés d'un proche » laisse place à un toggle de tri en pastilles (pattern Ma Cave) : « Récents » (défaut) ou « Aimés » (cœurs décroissants, égalité au plus récent). Le titre de la section suit le tri.
