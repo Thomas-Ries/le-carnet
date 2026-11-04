@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.14 — Correctif prod : bootstrap en erreur 500 (mode démo forcé)
+
+- Bug D1 : pour un appareil sans session (tout nouvel utilisateur), la requête `IN (NULL)` attendait 0 binding mais le code en passait 1 (« __none__ ») → D1_ERROR « Wrong number of parameter bindings » → /api/bootstrap renvoyait 500 → l'app basculait en mode démo, même en prod. Correction : aucune session = aucun binding. `IN (NULL)` ne retourne aucune ligne, comme prévu.
+
 ## 0.4.13 — Prénoms en doublon bloqués
 
 - Un prénom déjà pris dans un carnet est refusé à l'inscription (message sous le champ, retour à l'étape prénom, suggestion d'ajouter une initiale « ex. Sophie M. ») — le doublon ne passe pas tant qu'il n'est pas résolu. Même garde-fou sur le renommage dans le profil, et en mode démo.

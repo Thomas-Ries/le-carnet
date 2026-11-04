@@ -120,7 +120,7 @@ export default {
           for (const s of sess) roles[s.carnet_id] = s.role;
         }
         const inClause = (n) => (n ? `(${carnetIds.map(() => "?").join(",")})` : "(NULL)");
-        const bindIds = () => (carnetIds.length ? carnetIds : ["__none__"]);
+        const bindIds = () => (carnetIds.length ? carnetIds : []);
         const { results: carnets } = await db.prepare(
           `SELECT * FROM Carnets WHERE id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
