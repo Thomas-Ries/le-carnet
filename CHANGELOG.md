@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.18 — Fix mutations client : format de payload
+- BUG RACINE (rendu visible par V0.4.16/V0.4.17) : le client envoyait les champs à plat (`{ action, deviceId, ... }`) alors que le worker lisait `body.payload` → TOUTES les mutations du client échouaient en 400 et basculaient en démo avant V0.4.16. Symptôme : « Le nom du carnet est manquant » alors que le nom était saisi.
+- Worker : accepte les deux formats (`payload` imbriqué ou champs à plat) — couvre aussi les vieux bundles PWA encore en cache service worker.
+
 ## 0.4.17 — Messages d'erreur explicites sur createCarnet/join
 - Worker : le 400 générique « champs invalides » est remplacé par un message qui nomme le champ fautif (nom du carnet, prénom manquant, code admin/invitation invalide) — typiquement après un effacement des données du site, le prénom du profil est vide et bloquait la création sans explication.
 - CarnetView : garde-fou client — si le prénom du profil est vide, message clair au lieu d'un appel serveur condamné.

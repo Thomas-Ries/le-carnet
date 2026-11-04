@@ -223,7 +223,9 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ error: "bad json" }, 400); }
       const { action, payload } = body || {};
-      const p = payload || {};
+      // Tolérant aux deux formats : payload imbriqué OU champs à plat (les bundles
+      // client en cache envoient { action, deviceId, ...champs } sans enveloppe payload).
+      const p = payload || (action ? body : {});
       const now = new Date().toISOString();
       const device = cleanText(p.deviceId, 64);
 
