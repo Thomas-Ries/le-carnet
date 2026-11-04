@@ -61,9 +61,12 @@ onMounted(async () => {
       <router-view />
     </main>
 
-    <!-- FAB Flash : caméra + éclair or, calé juste au-dessus de la nav -->
-    <button v-if="showFab" @click="flashOpen = true" title="Flash — photo éclair"
-      class="fixed left-1/2 -translate-x-1/2 z-40 w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition"
+    <!-- FAB Flash : caméra + éclair or, à droite au-dessus de la nav (aligné sur la colonne) -->
+    <div v-if="showFab" class="fixed inset-x-0 z-40 pointer-events-none"
+      style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 16px)">
+      <div class="max-w-[720px] mx-auto px-4 flex justify-end">
+    <button @click="flashOpen = true" title="Flash — photo éclair"
+      class="pointer-events-auto relative w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition"
       style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 16px);
              background: linear-gradient(140deg, #7A2E3E, #5E2230);
              box-shadow: 0 8px 20px rgba(122,46,62,.45), 0 2px 6px rgba(43,35,32,.25);
@@ -74,6 +77,8 @@ onMounted(async () => {
       </span>
       <Ic name="camera" class="w-6 h-6 text-white" />
     </button>
+      </div>
+    </div>
 
     <!-- Bottom nav : fixe, colonne centrée, safe-area iPhone -->
     <nav v-if="showNav" class="fixed bottom-0 inset-x-0 z-50 lc-nav">
