@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.11 — Couverts du splash et du logo ajustés
+
+- Les couverts sont un peu plus grands et plus rapprochés du verre, sur le splash (badge 72 px) comme sur le logo PWA — le trio fourchette/verre/couteau respire mieux. PNG 192/512 à ré-exporter depuis logo.svg.
+
 ## 0.4.10 — Splash & PWA : couverts autour du verre
 
 - La barre horizontale du haut du verre est retirée. Le splash et le logo PWA affichent désormais la fourchette, le verre et le couteau — de gauche à droite — pour marquer le côté food : « Le Carnet » parle de restos, cavistes, bars, fromageries… autant que de vins. Nouvelles icônes fork et knife. PNG 192/512 à ré-exporter depuis logo.svg.
