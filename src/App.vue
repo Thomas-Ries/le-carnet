@@ -31,6 +31,13 @@ const NAV = [
 ];
 
 onMounted(async () => {
+  // L'événement d'installation Android/Chrome peut partir avant la navigation vers le profil :
+  // on le capture dès le lancement pour que la carte "Installer l'app" puisse l'utiliser.
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    store.installEvent = e;
+  });
+  window.addEventListener("appinstalled", () => { store.installEvent = null; });
   await store.boot();
   if (!store.profil.prenom) router.push("/join");
 });

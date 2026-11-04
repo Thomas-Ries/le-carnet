@@ -19,6 +19,7 @@ export const useCarnetStore = defineStore("carnet", {
     fiches: [],
     flashes: [],
     roles: {}, // { carnetId: "admin" | "member" }
+    installEvent: null, // événement beforeinstallprompt (Android/Chrome) — capturé par App.vue
   }),
 
   getters: {

@@ -2,6 +2,7 @@
 import { ref, computed, inject, onMounted } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
+import InstallCard from "../components/InstallCard.vue";
 import Avatar from "../components/Avatar.vue";
 import { exporterFichierJSON } from "../lib/util.js";
 import pkg from "../../package.json";
@@ -163,6 +164,8 @@ async function exporterJSON() {
         </div>
       </div>
     </div>
+
+    <InstallCard />
 
     <div v-if="notifSupported" class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Notifications</p>
