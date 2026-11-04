@@ -127,6 +127,14 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { fiche: f };
     }
+    case "leaveCarnet": {
+      const c = db.carnets.find((x) => x.id === p.carnetId);
+      if (!c) return { ok: true };
+      if (c.admin === p.prenom) return { error: "L'admin ne peut pas quitter son propre carnet" };
+      c.membres = c.membres.filter((m) => m !== p.prenom);
+      demo.save(db);
+      return { ok: true };
+    }
     case "removeMember": {
       const c = db.carnets.find((x) => x.id === p.carnetId);
       c.membres = c.membres.filter((m) => m !== p.membre);
@@ -152,3 +160,4 @@ export const deleteFlash = (id) => mutate("deleteFlash", { id });
 export const react = (targetId, prenom, on) => mutate("react", { targetId, prenom, on });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });
+export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });

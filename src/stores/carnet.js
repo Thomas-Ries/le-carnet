@@ -207,6 +207,27 @@ export const useCarnetStore = defineStore("carnet", {
       if (i !== -1) this.fiches[i].demandeRecette = r.fiche.demandeRecette;
     },
 
+    async quitterCarnet(carnetId) {
+      const r = await api.leaveCarnet(carnetId, this.profil.prenom);
+      this.demoMode = api.state.demoMode;
+      if (r && r.error) return r;
+      // Le carnet et tout son contenu disparaissent du fil de cet appareil
+      this.carnets = this.carnets.filter((c) => c.id !== carnetId);
+      delete this.roles[carnetId];
+      this.fiches = this.fiches
+        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
+        .filter((f) => f.carnets.length > 0);
+      this.flashes = this.flashes
+        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
+        .filter((f) => f.carnets.length > 0);
+      if (this.carnetId === carnetId) {
+        const suivant = this.carnets[0]?.id || null;
+        this.carnetId = suivant;
+        if (suivant) localStorage.setItem(LS.carnetId, suivant);
+      }
+      return { ok: true };
+    },
+
     async retirerMembre(carnetId, membre) {
       const r = await api.removeMember(carnetId, membre);
       const i = this.carnets.findIndex((c) => c.id === carnetId);

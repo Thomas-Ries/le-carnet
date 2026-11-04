@@ -339,6 +339,20 @@ export default {
             return json({ fiche: { demandeRecette: dem.map((d) => d.prenom) } });
           }
 
+          case "leaveCarnet": {
+            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!c) return json({ ok: true });
+            const s = await sessionOf(c.id);
+            if (!s) return json({ error: "tu n'es pas dans ce carnet" }, 404);
+            if (s.role === "admin" || s.prenom === c.admin) {
+              return json({ error: "L'admin ne peut pas quitter son propre carnet" }, 403);
+            }
+            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND device_id=?`).bind(c.id, device).run();
+            const autre = await db.prepare(`SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).first();
+            if (!autre) await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).run();
+            return json({ ok: true });
+          }
+
           case "removeMember": {
             const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
             if (!c) return json({ error: "introuvable" }, 404);
