@@ -44,6 +44,7 @@ function noterGo() {
 }
 const zoom = ref(false);
 const newCom = ref("");
+const comInput = ref(null);
 const editComId = ref(null);
 const editComText = ref("");
 
@@ -57,6 +58,14 @@ async function envoyerCom() {
   const r = await store.ajouterCommentaire(fiche.value.id, t);
   if (r && r.error) { toast(r.error); return; }
   newCom.value = "";
+  if (comInput.value) comInput.value.style.height = "auto";
+}
+// Champ de saisie : le retour à la ligne insère une vraie ligne (façon Instagram),
+// l'envoi se fait uniquement par le bouton. La zone grandit avec le texte.
+function autoGrow(e) {
+  const el = e.target;
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 144) + "px";
 }
 function startEditCom(c) { editComId.value = c.id; editComText.value = c.texte; }
 async function saveEditCom(c) {
@@ -217,19 +226,21 @@ async function supprimer() {
         </div>
         <div v-else>
           <div class="flex items-start justify-between gap-2">
-            <p class="text-sm leading-relaxed">{{ c.texte }}</p>
-            <span v-if="peutGerer(c)" class="flex gap-1.5 shrink-0">
+            <p class="text-sm leading-relaxed min-w-0 flex-1 whitespace-pre-line break-words">
+              <span class="font-semibold text-accent">{{ c.prenom }}</span> {{ c.texte }}
+              <span v-if="c.date" class="text-[11px] text-muted"> · {{ fmtDate(c.date) }}</span>
+            </p>
+            <span v-if="peutGerer(c)" class="flex gap-1.5 shrink-0 pt-0.5">
               <button @click="startEditCom(c)"><Ic name="pencil" class="w-3.5 h-3.5 text-muted" /></button>
               <button @click="supprCom(c)"><Ic name="trash" class="w-3.5 h-3.5 text-muted" /></button>
             </span>
           </div>
-          <p class="text-[11px] text-muted mt-1">{{ c.prenom }}{{ c.date ? " · " + fmtDate(c.date) : "" }}</p>
         </div>
       </div>
-      <div class="flex gap-2">
-        <input v-model="newCom" placeholder="Commentaire" @keyup.enter="envoyerCom"
-          class="flex-1 rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none" />
-        <button @click="envoyerCom" class="rounded-xl px-3.5 bg-soft border border-hairline">
+      <div class="flex items-end gap-2">
+        <textarea ref="comInput" v-model="newCom" placeholder="Commentaire" rows="1" @input="autoGrow"
+          class="flex-1 rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none max-h-36"></textarea>
+        <button @click="envoyerCom" class="rounded-xl px-3.5 py-2.5 bg-soft border border-hairline">
           <Ic name="chevron" class="w-4 h-4 text-accent" />
         </button>
       </div>

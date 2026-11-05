@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.59 — commentaires façon Instagram
+
+- La saisie devient un champ multi-lignes : le retour à la ligne insère une vraie ligne (plus de validation accidentelle), l'envoi se fait par le bouton, le champ grandit avec le texte (plafonné).
+- Affichage : prénom en gras suivi du commentaire, date discrète en fin de ligne ; le texte passe à la ligne sans jamais repousser les crayons/poubelles hors cadre.
+
 ## V0.4.58 — carte de partage : aération
 
 - Un peu plus d'espace entre la ligne lieu + note et le commentaire sur la carte image de partage.
