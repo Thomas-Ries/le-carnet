@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS Membres (
   carnet_id TEXT NOT NULL REFERENCES Carnets(id),
   prenom TEXT NOT NULL,
   code_recup TEXT,
+  avatar TEXT,
   PRIMARY KEY (carnet_id, prenom)
 );
 
@@ -46,6 +47,8 @@ CREATE TABLE IF NOT EXISTS Fiches (
   com TEXT,
   photo TEXT,
   recette TEXT,
+  pays TEXT,
+  ville TEXT,
   created_at TEXT NOT NULL
 );
 

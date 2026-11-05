@@ -163,18 +163,31 @@ const consoliderPrive = async (db, device) => {
        )
      ) ORDER BY created_at ASC`
   ).bind(device, device).all();
-  if (privs.length < 2) return;
-  const garde = privs[0].id;
-  for (const dup of privs.slice(1)) {
+  if (privs.length >= 2) forMerge: {
+    const garde = privs[0].id;
+    for (const dup of privs.slice(1)) {
     await db.prepare(
       `INSERT OR IGNORE INTO FichesCarnets (fiche_id, carnet_id) SELECT fiche_id, ? FROM FichesCarnets WHERE carnet_id=?`
     ).bind(garde, dup.id).run();
     await db.prepare(`DELETE FROM FichesCarnets WHERE carnet_id=?`).bind(dup.id).run();
     await db.prepare(`DELETE FROM Sessions WHERE carnet_id=?`).bind(dup.id).run();
     await db.prepare(`DELETE FROM Membres WHERE carnet_id=?`).bind(dup.id).run();
-    await db.prepare(`DELETE FROM Carnets WHERE id=?`).bind(dup.id).run();
+      await db.prepare(`DELETE FROM Carnets WHERE id=?`).bind(dup.id).run();
+    }
+    logEvent(db, "fusion_prive", { device, meta: { supprimes: privs.length - 1 } });
   }
-  logEvent(db, "fusion_prive", { device, meta: { supprimes: privs.length - 1 } });
+  // V0.4.88 : l'espace G-Maps suit la personne — si cet appareil a une session
+  // sous le prénom P et qu'un espace privé de P existe sans session pour lui
+  // (ex. espace importé sur le Mac APRÈS une récupération sur le tel), on
+  // l'y rattache ici, au bootstrap : il apparaît dans la même réponse.
+  for (const pv of privs) {
+    const dej = await db.prepare(`SELECT 1 FROM Sessions WHERE device_id=? AND carnet_id=?`).bind(device, pv.id).first();
+    if (dej) continue;
+    const mb = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=? LIMIT 1`).bind(pv.id).first();
+    if (!mb || !mb.prenom) continue;
+    await db.prepare(`INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`)
+      .bind(device, pv.id, mb.prenom, "member", new Date().toISOString()).run();
+  }
 };
 
 // V0.4.78 « Mon G-Maps » : renommage des espaces privés + DEDUP des fiches.
@@ -775,7 +788,25 @@ export default {
               logEvent(db, "create_prive", { device, prenom: prenomPrive, carnet: pid });
               }
             }
-            const s = await sessionOf(carnetPriveId);
+            let s = await sessionOf(carnetPriveId);
+            if (!s && !p.carnetId) {
+              // V0.4.88 : même personne, autre appareil — l'espace G-Maps est trouvé
+              // par prénom (dejaLa), mais CET appareil n'a pas encore de session
+              // dedans. On la rattache : le prenom de ses sessions doit correspondre
+              // au membre de l'espace, sinon refus.
+              const { results: sessDev2 } = await db.prepare(
+                `SELECT prenom FROM Sessions WHERE device_id=? AND prenom IS NOT NULL LIMIT 1`
+              ).bind(device).all();
+              const prenomSess = sessDev2.length ? cleanPrenom(sessDev2[0].prenom) : cleanPrenom(p.prenom);
+              const mb = await db.prepare(
+                `SELECT prenom FROM Membres WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`
+              ).bind(carnetPriveId, prenomSess).first();
+              if (!mb) return json({ error: "pas membre" }, 403);
+              await db.prepare(
+                `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+              ).bind(device, carnetPriveId, mb.prenom, "member", now).run();
+              s = await sessionOf(carnetPriveId);
+            }
             const { results: existantes } = await db.prepare(
               `SELECT f.titre FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
             ).bind(carnetPriveId).all();
