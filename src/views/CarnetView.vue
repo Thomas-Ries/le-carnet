@@ -323,7 +323,7 @@ async function exporterJSON() {
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Membres</p>
       <div class="space-y-1.5 mb-5">
         <div v-for="m in store.carnet.membres" :key="m" class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-surface border border-hairline">
-          <Avatar :prenom="m" :size="28" />
+          <Avatar :prenom="m" :size="28" :src="store.avatarDe(m)" />
           <span class="flex-1 text-sm">{{ m }}<span v-if="m === store.profil.prenom" class="text-muted text-xs"> (toi)</span></span>
           <Ic v-if="m === store.carnet.admin" name="lock" class="w-3.5 h-3.5 text-gold" />
           <button v-if="m !== store.profil.prenom && m !== store.carnet.admin" @click="retirer(m)"

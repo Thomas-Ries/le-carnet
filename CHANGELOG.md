@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.83 — Avatars partout où un badge de profil paraît
+
+- Le bootstrap diffuse l'avatar de chaque membre ; il s'affiche désormais dans la liste des membres d'un carnet, devant chaque commentaire d'une fiche, et sur les cards (auteur + cœurs reçus) à la place de la seule initiale.
+
 ## V0.4.82 — Filtre sobre, Mes carnets clarifié
 
 - Filtre pays/ville : plus d'emoji — les noms de pays seuls, sobres et lisibles.

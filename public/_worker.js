@@ -316,7 +316,7 @@ export default {
           `SELECT * FROM Carnets WHERE id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
         const { results: membres } = await db.prepare(
-          `SELECT carnet_id, prenom FROM Membres WHERE carnet_id IN ${inClause(carnetIds.length)}`
+          `SELECT carnet_id, prenom, avatar FROM Membres WHERE carnet_id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
         const { results: fichesRaw } = await db.prepare(
           `SELECT DISTINCT f.* FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
@@ -372,6 +372,9 @@ export default {
         for (const l of liens) (carnetsByFiche[l.fiche_id] = carnetsByFiche[l.fiche_id] || []).push(l.carnet_id);
         const membresByCarnet = {};
         for (const m of membres) (membresByCarnet[m.carnet_id] = membresByCarnet[m.carnet_id] || []).push(m.prenom);
+        // V0.4.83 : avatar par prénom — l'app l'affiche partout où un badge de profil paraît.
+        const avatarsByPrenom = {};
+        for (const m of membres) if (m.avatar) avatarsByPrenom[m.prenom] = m.avatar;
 
         const fiches = fichesRaw.map((f) => ({
           id: f.id, auteur: f.auteur, type: f.type, cat: f.cat, titre: f.titre, lieu: f.lieu,
@@ -457,7 +460,7 @@ export default {
           ).bind(device).all();
           if (av.length) avatarMoi = av[0].avatar;
         }
-        return json({ carnets: carnetsOut, fiches, flashes, roles, avatar: avatarMoi });
+        return json({ carnets: carnetsOut, fiches, flashes, roles, avatar: avatarMoi, avatars: avatarsByPrenom });
       } catch (e) {
         return json({ error: "bootstrap: " + String((e && e.message) || e) }, 500);
       }

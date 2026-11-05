@@ -15,6 +15,8 @@ export const useCarnetStore = defineStore("carnet", {
     demoMode: false,
     deviceId: null,
     profil: { prenom: "", avatar: null },
+    // V0.4.83 : avatar de chaque membre (reçu au bootstrap) — pour les badges de profil.
+    avatars: {},
     carnetId: null,
     carnets: [],
     fiches: [],
@@ -30,6 +32,7 @@ export const useCarnetStore = defineStore("carnet", {
     carnet: (s) => s.carnets.find((c) => c.id === s.carnetId) || null,
     // V0.4.71 : carnet privé « Mes adresses » (import Google Maps), invisible aux autres
     mesAdresses: (s) => s.carnets.find((c) => c.prive === "1" || c.prive === 1) || null,
+    avatarDe: (s) => (prenom) => s.avatars[prenom] || null,
     fichesDuCarnet(s) {
       return s.fiches
         .filter((f) => f.carnets.includes(s.carnetId))
@@ -137,6 +140,7 @@ export const useCarnetStore = defineStore("carnet", {
         this.fiches = data.fiches || [];
         this.flashes = data.flashes || [];
         this.roles = data.roles || {};
+        this.avatars = data.avatars || {};
         if (this.demoMode) {
           this.roles = {};
           for (const c of this.carnets) {

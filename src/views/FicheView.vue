@@ -228,10 +228,13 @@ async function supprimer() {
         </div>
         <div v-else>
           <div class="flex items-start justify-between gap-2">
-            <p class="text-sm leading-relaxed min-w-0 flex-1 whitespace-pre-line break-words">
+            <span class="flex items-start gap-2 min-w-0 flex-1">
+              <Avatar :prenom="c.prenom" :size="22" :src="store.avatarDe(c.prenom)" class="mt-0.5" />
+              <p class="text-sm leading-relaxed min-w-0 flex-1 whitespace-pre-line break-words">
               <span class="font-semibold text-accent">{{ c.prenom }}</span> {{ c.texte }}
               <span v-if="c.date" class="text-[11px] text-muted"> · {{ fmtDate(c.date) }}</span>
-            </p>
+              </p>
+            </span>
             <span v-if="peutGerer(c)" class="flex gap-1.5 shrink-0 pt-0.5">
               <button @click="startEditCom(c)"><Ic name="pencil" class="w-3.5 h-3.5 text-muted" /></button>
               <button @click="supprCom(c)"><Ic name="trash" class="w-3.5 h-3.5 text-muted" /></button>

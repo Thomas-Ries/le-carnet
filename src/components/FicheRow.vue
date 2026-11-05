@@ -20,13 +20,14 @@ const store = useCarnetStore();
     </div>
     <div class="flex-1 min-w-0">
       <p class="truncate text-[15px] font-serif">{{ fiche.titre }}</p>
-      <p class="truncate text-[11px] text-muted">
-        {{ fiche.cat }}<template v-if="fiche.lieu"> · {{ fiche.lieu }}</template> · par {{ fiche.auteur }}
+      <p class="truncate text-[11px] text-muted flex items-center gap-1">
+        <Avatar :prenom="fiche.auteur" :size="16" :src="store.avatarDe(fiche.auteur)" />
+        <span class="truncate">{{ fiche.cat }}<template v-if="fiche.lieu"> · {{ fiche.lieu }}</template> · par {{ fiche.auteur }}</span>
       </p>
     </div>
     <div class="flex items-center gap-1.5 shrink-0">
       <span v-if="fiche.reacts.length" class="flex -space-x-1">
-        <Avatar v-for="r in fiche.reacts.slice(0, 2)" :key="r" :prenom="r" :size="20" />
+        <Avatar v-for="r in fiche.reacts.slice(0, 2)" :key="r" :prenom="r" :size="20" :src="store.avatarDe(r)" />
       </span>
       <span v-if="fiche.reacts.includes(store.profil.prenom)" class="text-gold">
         <Ic name="heart" class="w-3.5 h-3.5" filled />
