@@ -190,7 +190,7 @@ async function supprimer() {
         <p class="text-sm leading-relaxed whitespace-pre-line">{{ fiche.recette }}</p>
       </div>
       <button v-else-if="fiche.auteur !== store.profil.prenom && !demandeEnvoyee"
-        @click="store.demanderRecette(fiche.id); toast(t("Demande envoyée à") + " " + fiche.auteur)"
+        @click="store.demanderRecette(fiche.id); toast(t('Demande envoyée à') + ' ' + fiche.auteur)"
         class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft mb-4 flex items-center justify-center gap-1.5">
         <Ic name="book" class="w-4 h-4" /> {{ t("Demander la recette à") }} {{ fiche.auteur }}
       </button>
