@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.42 — Commentaires + partage d'une note en jolie carte
+
+- **Commentaires sur les notes** : chacun peut commenter une adresse dans le carnet. L'auteur d'un commentaire peut le modifier ou le supprimer ; l'admin du carnet peut supprimer n'importe quel commentaire. Table `FicheComments` créée paresseusement au bootstrap (aucune console D1 à lancer), purgée avec la fiche.
+- **Boucle sociale** : quand quelqu'un commente, l'auteur de la fiche reçoit une notif push « X a commenté ton adresse » (sauf s'il s'agit de lui-même). Événement `comment` loggé pour les mesures H1-H4.
+- **Partager une note en jolie fiche** : bouton partage sur chaque fiche → carte image 1080x1350 générée sur l'appareil (charte crème/bordeaux/or, photo, titre, commentaire, « vu dans Le Carnet ») → feuille de partage native iOS (WhatsApp, SMS…). Sans Web Share, l'image est téléchargée. Zéro serveur.
+
 ## V0.4.41 — Retours d'usage : thèmes multiples, FAB discret
 
 - **Plusieurs thèmes par adresse** : un caviste qui fait bar à vin se note « Caviste + Bar à vin ». Sélection multiple à puces (au moins un requis, max 4 côté serveur), stockée en texte « Caviste, Bar à vin » — aucune migration D1.

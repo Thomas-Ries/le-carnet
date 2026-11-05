@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
-import { noteLabel, fmtDate, chargerPhoto } from "../lib/util.js";
+import { noteLabel, fmtDate, chargerPhoto, partagerFiche } from "../lib/util.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -33,6 +33,39 @@ async function onFile(e) {
 const confirmSuppr = ref(false);
 const zoom = ref(false);
 const pop = ref(false);
+const newCom = ref("");
+const editComId = ref(null);
+const editComText = ref("");
+
+const comments = computed(() => (fiche.value ? fiche.value.comments || [] : []));
+const isAdminIci = computed(() => fiche.value && (fiche.value.carnets || []).some((cid) => store.isAdminCarnet(cid)));
+const peutGerer = (c) => isAdminIci.value || c.prenom === store.profil.prenom;
+
+async function envoyerCom() {
+  const t = newCom.value.trim();
+  if (!t) return;
+  const r = await store.ajouterCommentaire(fiche.value.id, t);
+  if (r && r.error) { toast(r.error); return; }
+  newCom.value = "";
+}
+function startEditCom(c) { editComId.value = c.id; editComText.value = c.texte; }
+async function saveEditCom(c) {
+  const t = editComText.value.trim();
+  if (!t) return;
+  const r = await store.modifierCommentaire(fiche.value.id, c.id, t);
+  if (r && r.error) { toast(r.error); return; }
+  editComId.value = null;
+  toast("Commentaire modifié");
+}
+async function supprCom(c) {
+  const r = await store.supprimerCommentaire(fiche.value.id, c.id);
+  if (r && r.error) { toast(r.error); return; }
+}
+async function partager() {
+  toast("Préparation de la carte…");
+  const r = await partagerFiche(fiche.value);
+  if (r === "telecharge") toast("Image enregistrée — partage-la comme une photo");
+}
 
 function startEdit() {
   titre.value = fiche.value.titre;
@@ -68,6 +101,7 @@ async function supprimer() {
         <Ic name="back" class="w-4 h-4" />
       </button>
       <div class="flex gap-1.5">
+        <button class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="share" class="w-4 h-4 text-accent" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
       </div>
@@ -144,6 +178,37 @@ async function supprimer() {
     <p v-if="!edit && pop && likers.length" class="text-center text-[11px] text-muted mt-2">
       {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
     </p>
+
+    <!-- Commentaires -->
+    <div v-if="!edit" class="mt-5">
+      <p v-if="comments.length" class="text-[10px] uppercase tracking-widest text-muted mb-2">Commentaires</p>
+      <div v-for="c in comments" :key="c.id" class="rounded-xl p-3 bg-soft mb-2">
+        <div v-if="editComId === c.id">
+          <textarea v-model="editComText" rows="2" class="w-full rounded-xl px-3 py-2 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
+          <div class="flex gap-2 mt-2">
+            <button @click="editComId = null" class="flex-1 rounded-lg py-2 text-xs font-semibold bg-surface border border-hairline">Annuler</button>
+            <button @click="saveEditCom(c)" class="flex-1 rounded-lg py-2 text-xs font-semibold text-white bg-accent">Enregistrer</button>
+          </div>
+        </div>
+        <div v-else>
+          <div class="flex items-start justify-between gap-2">
+            <p class="text-sm leading-relaxed">{{ c.texte }}</p>
+            <span v-if="peutGerer(c)" class="flex gap-1.5 shrink-0">
+              <button @click="startEditCom(c)"><Ic name="pencil" class="w-3.5 h-3.5 text-muted" /></button>
+              <button @click="supprCom(c)"><Ic name="trash" class="w-3.5 h-3.5 text-muted" /></button>
+            </span>
+          </div>
+          <p class="text-[11px] text-muted mt-1">{{ c.prenom }}{{ c.date ? " · " + fmtDate(c.date) : "" }}</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <input v-model="newCom" placeholder="Un mot sur cette adresse…" @keyup.enter="envoyerCom"
+          class="flex-1 rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none" />
+        <button @click="envoyerCom" class="rounded-xl px-3.5 bg-soft border border-hairline">
+          <Ic name="chevron" class="w-4 h-4 text-accent" />
+        </button>
+      </div>
+    </div>
 
     <!-- Visionneuse plein écran : tap sur la photo -->
     <div v-if="zoom" @click="zoom = false"

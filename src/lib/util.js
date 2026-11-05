@@ -62,6 +62,107 @@ export async function exporterFichierJSON(nomFichier, data) {
   return "telecharge";
 }
 
+/* Carte de partage d'une note : image 1080x1350 generee en canvas, dans la charte
+   (creme, bordeaux, or, Georgia). Partage natif via Web Share API (fichier), sinon
+   telechargement. Zéro serveur : tout se passe sur l'appareil. */
+export function creerCartePartage(fiche) {
+  return new Promise((resolve) => {
+    const W = 1080, H = 1350;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d");
+    const C = { creme: "#FAF6F1", bordeaux: "#7A2E3E", or: "#A8842C", encre: "#2B211C" };
+    ctx.fillStyle = C.creme; ctx.fillRect(0, 0, W, H);
+
+    const dessinerTexte = () => {
+      let y = 0;
+      if (fiche.photo) {
+        const img = new Image();
+        img.onload = () => {
+          const zoneH = 700;
+          const k = Math.max(W / img.width, zoneH / img.height);
+          const dw = img.width * k, dh = img.height * k;
+          ctx.save();
+          ctx.beginPath(); ctx.rect(0, 0, W, zoneH); ctx.clip();
+          ctx.drawImage(img, (W - dw) / 2, (zoneH - dh) / 2, dw, dh);
+          ctx.restore();
+          y = zoneH;
+          finir(y);
+        };
+        img.onerror = () => finir(0);
+        img.src = fiche.photo;
+      } else {
+        finir(0);
+      }
+      function finir(photoH) {
+        let y = photoH + 70;
+        if (!fiche.photo) {
+          // pas de photo : un coeur or discret en haut de la carte
+          ctx.fillStyle = C.or;
+          ctx.font = "120px Georgia";
+          ctx.textAlign = "center";
+          ctx.fillText("♥", W / 2, 190);
+          y = 280;
+        }
+        ctx.textAlign = "left";
+        ctx.fillStyle = C.bordeaux;
+        ctx.font = "bold 64px Georgia";
+        const titre = fiche.titre.length > 44 ? fiche.titre.slice(0, 43) + "…" : fiche.titre;
+        let line = "", lines = [];
+        for (const mot of titre.split(" ")) {
+          if (ctx.measureText(line + mot).width > W - 180 && line) { lines.push(line); line = mot + " "; }
+          else line += mot + " ";
+        }
+        lines.push(line.trim());
+        for (const l of lines.slice(0, 3)) { ctx.fillText(l, 90, y); y += 78; }
+        y += 20;
+        if (fiche.com) {
+          ctx.fillStyle = C.encre;
+          ctx.font = "italic 44px Georgia";
+          const com = fiche.com.length > 150 ? fiche.com.slice(0, 149) + "…" : fiche.com;
+          line = "";
+          for (const mot of com.split(" ")) {
+            if (ctx.measureText(line + mot).width > W - 180 && line) { lines.push(line); line = mot + " "; }
+            else line += mot + " ";
+          }
+          lines.push(line.trim());
+          for (const l of lines.slice(-3)) { ctx.fillText(l, 90, y); y += 60; }
+        }
+        // pied : mention + coeur
+        ctx.fillStyle = C.or;
+        ctx.font = "46px Georgia";
+        ctx.fillText("vu dans Le Carnet", 90, H - 90);
+        ctx.textAlign = "right";
+        ctx.fillText("♥", W - 90, H - 90);
+        // trait de separation
+        ctx.strokeStyle = C.or;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(90, H - 140); ctx.lineTo(W - 90, H - 140); ctx.stroke();
+        cv.toBlob((blob) => resolve(blob), "image/png");
+      }
+    };
+    dessinerTexte();
+  });
+}
+
+export async function partagerFiche(fiche) {
+  const blob = await creerCartePartage(fiche);
+  const fichier = new File([blob], "le-carnet-" + (fiche.titre || "adresse").replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 30) + ".png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+    try {
+      await navigator.share({ files: [fichier], title: fiche.titre || "Le Carnet" });
+      return "partage";
+    } catch (e) { return "annule"; }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = fichier.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return "telecharge";
+}
+
 /* Invitation : message prêt à envoyer + partage WhatsApp / SMS — le lien et le code
    voyagent dans le message, plus besoin de copier-coller. */
 export const texteInvitation = (prenom, carnet, lien) =>

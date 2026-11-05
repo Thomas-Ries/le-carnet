@@ -100,6 +100,11 @@ const ensureEvents = (db) =>
     id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, device_id TEXT,
     prenom TEXT, carnet_id TEXT, meta TEXT, created_at TEXT NOT NULL)`)
     .run().catch(() => {});
+const ensureComments = (db) =>
+  db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
+    id TEXT PRIMARY KEY, fiche_id TEXT NOT NULL, prenom TEXT NOT NULL,
+    texte TEXT NOT NULL, created_at TEXT NOT NULL)`)
+    .run().catch(() => {});
 
 const isCode = (c) => /^([0-9]{4}|[0-9]{6})$/.test(String(c || ""));
 const cleanPrenom = (p) => String(p || "").trim().slice(0, 20);
@@ -146,6 +151,7 @@ export default {
       try {
         const device = cleanText(url.searchParams.get("device"), 64);
         await ensureEvents(db);
+        await ensureComments(db);
         logEvent(db, "open", { device });
         const roles = {};
         let carnetIds = [];
@@ -177,6 +183,11 @@ export default {
         const { results: demandes } = await db.prepare(
           `SELECT fiche_id, prenom FROM DemandesRecette`
         ).all();
+        const { results: coms } = await db.prepare(
+          `SELECT c.id, c.fiche_id, c.prenom, c.texte, c.created_at FROM FicheComments c
+           JOIN FichesCarnets l ON l.fiche_id = c.fiche_id
+           WHERE l.carnet_id IN ${inClause(carnetIds.length)} ORDER BY c.created_at ASC`
+        ).bind(...bindIds()).all();
         // Flashes expirés : commentés -> fiche "en attente" (note 0), sinon purge
         const { results: expiresRaw } = await db.prepare(
           `SELECT * FROM Flashes WHERE expires_at <= datetime('now')`
@@ -204,6 +215,9 @@ export default {
         for (const l of likes) (likesByFiche[l.fiche_id] = likesByFiche[l.fiche_id] || []).push(l.prenom);
         const demByFiche = {};
         for (const d of demandes) (demByFiche[d.fiche_id] = demByFiche[d.fiche_id] || []).push(d.prenom);
+        const comsByFiche = {};
+        for (const c of coms) (comsByFiche[c.fiche_id] = comsByFiche[c.fiche_id] || [])
+          .push({ id: c.id, prenom: c.prenom, texte: c.texte, date: c.created_at });
         const reactsByFlash = {};
         for (const r of reacts) (reactsByFlash[r.flash_id] = reactsByFlash[r.flash_id] || []).push(r.prenom);
         const carnetsByFiche = {};
@@ -216,6 +230,7 @@ export default {
           note: f.note, com: f.com, photo: f.photo, recette: f.recette,
           date: f.created_at, carnets: carnetsByFiche[f.id] || [],
           reacts: likesByFiche[f.id] || [], demandeRecette: demByFiche[f.id] || [],
+          comments: comsByFiche[f.id] || [],
         }));
         // Rappel J-6 : flash qui expire sous 24h, pas encore rappelé -> notification à son auteur
         if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
@@ -460,6 +475,7 @@ export default {
             await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM DemandesRecette WHERE fiche_id=?`).bind(p.id).run();
+            await db.prepare(`DELETE FROM FicheComments WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(p.id).run();
             return json({ ok: true });
           }
@@ -586,6 +602,71 @@ export default {
               .bind(p.id, prenom, now).run();
             const { results: dem } = await db.prepare(`SELECT prenom FROM DemandesRecette WHERE fiche_id=?`).bind(p.id).all();
             return json({ fiche: { demandeRecette: dem.map((d) => d.prenom) } });
+          }
+
+          case "addComment": {
+            const f = await db.prepare(`SELECT * FROM Fiches WHERE id=?`).bind(p.id).first();
+            if (!f) return json({ error: "introuvable" }, 404);
+            const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(p.id).all();
+            let sess = null;
+            for (const l of liens) { const x = await sessionOf(l.carnet_id); if (x) { sess = x; break; } }
+            if (!sess) return json({ error: "pas membre" }, 403);
+            const texte = cleanText(p.texte, 500).trim();
+            if (!texte) return json({ error: "commentaire vide" }, 400);
+            const id = crypto.randomUUID();
+            await ensureComments(db);
+            await db.prepare(
+              `INSERT INTO FicheComments (id, fiche_id, prenom, texte, created_at) VALUES (?,?,?,?,?)`
+            ).bind(id, p.id, sess.prenom, texte, now).run();
+            logEvent(db, "comment", { device, prenom: sess.prenom, carnet: liens[0] && liens[0].carnet_id, meta: { fiche: p.id } });
+            // Boucle sociale : l'auteur de la fiche apprend qu'on en parle (pas si c'est lui-meme)
+            if (f.auteur && f.auteur !== sess.prenom) {
+              (async () => {
+                const devAuteur = [];
+                for (const l of liens) {
+                  const { results } = await db.prepare(
+                    `SELECT DISTINCT device_id FROM Sessions WHERE carnet_id=? AND prenom=?`
+                  ).bind(l.carnet_id, f.auteur).all();
+                  for (const x of results) devAuteur.push(x.device_id);
+                }
+                await sendPushTo(env, db, [...new Set(devAuteur)], {
+                  title: sess.prenom + " a commenté ton adresse",
+                  body: "« " + cleanText(f.titre, 60) + " » — ça discute dans ton carnet ♥",
+                  url: "/fiche/" + p.id,
+                });
+              })().catch(() => {});
+            }
+            return json({ comment: { id, prenom: sess.prenom, texte, date: now } });
+          }
+
+          case "editComment": {
+            const c = await db.prepare(`SELECT * FROM FicheComments WHERE id=?`).bind(p.commentId).first();
+            if (!c) return json({ error: "introuvable" }, 404);
+            const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(c.fiche_id).all();
+            let autorise = false;
+            for (const l of liens) {
+              const sess = await sessionOf(l.carnet_id);
+              if (sess && (sess.prenom === c.prenom || sess.role === "admin")) { autorise = true; break; }
+            }
+            if (!autorise) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
+            const texte = cleanText(p.texte, 500).trim();
+            if (!texte) return json({ error: "commentaire vide" }, 400);
+            await db.prepare(`UPDATE FicheComments SET texte=? WHERE id=?`).bind(texte, p.commentId).run();
+            return json({ ok: true, texte });
+          }
+
+          case "deleteComment": {
+            const c = await db.prepare(`SELECT * FROM FicheComments WHERE id=?`).bind(p.commentId).first();
+            if (!c) return json({ ok: true });
+            const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(c.fiche_id).all();
+            let autorise = false;
+            for (const l of liens) {
+              const sess = await sessionOf(l.carnet_id);
+              if (sess && (sess.prenom === c.prenom || sess.role === "admin")) { autorise = true; break; }
+            }
+            if (!autorise) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
+            await db.prepare(`DELETE FROM FicheComments WHERE id=?`).bind(p.commentId).run();
+            return json({ ok: true });
           }
 
           case "leaveCarnet": {

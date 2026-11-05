@@ -300,6 +300,30 @@ export const useCarnetStore = defineStore("carnet", {
       maj(this.flashes);
     },
 
+    async ajouterCommentaire(ficheId, texte) {
+      const r = await api.addComment(ficheId, this.profil.prenom, texte);
+      if (r && r.comment) {
+        const f = this.fiches.find((x) => x.id === ficheId);
+        if (f) (f.comments = f.comments || []).push(r.comment);
+      }
+      return r;
+    },
+
+    async modifierCommentaire(ficheId, commentId, texte) {
+      const r = await api.editComment(commentId, texte);
+      const f = this.fiches.find((x) => x.id === ficheId);
+      const c = f && (f.comments || []).find((x) => x.id === commentId);
+      if (c && r && !r.error) c.texte = r.texte !== undefined ? r.texte : texte;
+      return r;
+    },
+
+    async supprimerCommentaire(ficheId, commentId) {
+      const r = await api.deleteComment(commentId);
+      const f = this.fiches.find((x) => x.id === ficheId);
+      if (f) f.comments = (f.comments || []).filter((x) => x.id !== commentId);
+      return r;
+    },
+
     async demanderRecette(id) {
       const r = await api.demandeRecette(id, this.profil.prenom);
       const i = this.fiches.findIndex((f) => f.id === id);

@@ -177,6 +177,31 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { fiche: f };
     }
+    case "addComment": {
+      const f = db.fiches.find((x) => x.id === p.id);
+      if (!f) return { error: "introuvable" };
+      const c = { id: demo.uid("cm"), prenom: p.prenom, texte: p.texte, date: new Date().toISOString() };
+      (f.comments = f.comments || []).push(c);
+      demo.save(db);
+      return { comment: c };
+    }
+    case "editComment": {
+      for (const f of db.fiches) {
+        const c = (f.comments || []).find((x) => x.id === p.commentId);
+        if (c) { c.texte = p.texte; demo.save(db); return { ok: true, texte: c.texte }; }
+      }
+      return { error: "introuvable" };
+    }
+    case "deleteComment": {
+      for (const f of db.fiches) {
+        if ((f.comments || []).some((x) => x.id === p.commentId)) {
+          f.comments = f.comments.filter((x) => x.id !== p.commentId);
+          demo.save(db);
+          return { ok: true };
+        }
+      }
+      return { ok: true };
+    }
     case "removeMember": {
       const c = db.carnets.find((x) => x.id === p.carnetId);
       c.membres = c.membres.filter((m) => m !== p.membre);
@@ -202,6 +227,9 @@ export const addFlash = (flash) => mutate("addFlash", { flash });
 export const commentFlash = (id, com) => mutate("commentFlash", { id, com });
 export const deleteFlash = (id) => mutate("deleteFlash", { id });
 export const react = (targetId, prenom, on) => mutate("react", { targetId, prenom, on });
+export const addComment = (id, prenom, texte) => mutate("addComment", { id, prenom, texte });
+export const editComment = (commentId, texte) => mutate("editComment", { commentId, texte });
+export const deleteComment = (commentId) => mutate("deleteComment", { commentId });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });
 export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });
