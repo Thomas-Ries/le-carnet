@@ -21,6 +21,28 @@ const showAdmin = ref(false);
 const showAdmin2 = ref(false);
 const err = ref("");
 
+/* Rejoindre un carnet : par mot-clé (invitation d'un admin) — aussi la porte de
+   secours pour retrouver un carnet quand on change d'appareil. */
+const modeRejoindre = ref(false);
+const codeRejoindre = ref("");
+const errRejoindre = ref("");
+async function rejoindre() {
+  const code = normMot(codeRejoindre.value);
+  if (code.length < 4) return;
+  errRejoindre.value = "";
+  const r = await store.rejoindre(code);
+  if (r && r.error) {
+    errRejoindre.value = r.error === "prenom_pris"
+      ? "« " + store.profil.prenom + " » est déjà pris dans ce carnet — change ton prénom dans Profil d'abord."
+      : r.error === "carnet introuvable" ? "Carnet introuvable — vérifie le mot-clé."
+      : "Impossible de rejoindre : " + r.error;
+    return;
+  }
+  modeRejoindre.value = false;
+  codeRejoindre.value = "";
+  toast("Bienvenue dans « " + (store.carnet?.nom || "ton carnet") + " »");
+}
+
 const lien = computed(() => {
   if (!store.carnet) return "";
   return location.origin + "/join/" + store.carnet.code;
@@ -113,11 +135,36 @@ async function exporterJSON() {
         </span>
         <Ic v-if="c.id === store.carnetId" name="check" class="w-4 h-4 text-accent" />
       </button>
-      <button @click="modeCreer = !modeCreer"
+      <button @click="modeCreer = !modeCreer; modeRejoindre = false"
         class="w-full rounded-2xl py-3.5 text-sm font-semibold text-accent flex items-center justify-center gap-1.5"
         style="border: 1.5px dashed var(--c-hairline)">
         <Ic name="plus" class="w-4 h-4" /> Créer un carnet
       </button>
+      <button @click="modeRejoindre = !modeRejoindre; modeCreer = false"
+        class="w-full rounded-2xl py-3.5 text-sm font-semibold text-accent flex items-center justify-center gap-1.5"
+        style="border: 1.5px dashed var(--c-hairline)">
+        <Ic name="users" class="w-4 h-4" /> Rejoindre un carnet
+      </button>
+    </div>
+
+    <!-- Rejoindre par mot-clé -->
+    <div v-if="modeRejoindre" class="rounded-2xl p-4 mb-6 bg-surface border border-hairline">
+      <p class="text-sm font-semibold mb-1">Rejoindre un carnet</p>
+      <p class="text-[11px] text-muted mb-3 leading-relaxed">
+        Entre le mot-clé que l'admin t'a donné. C'est aussi la porte de secours d'un nouvel
+        appareil : même carnet, même prénom, tu retrouves tout.
+      </p>
+      <label for="lc-rejoindre" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Mot-clé d'invitation</label>
+      <input id="lc-rejoindre" v-model="codeRejoindre" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
+        placeholder="ex. les-copains" @input="codeRejoindre = codeRejoindre.slice(0, 15)"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
+      <p class="text-[11px] text-muted mb-3">Celui affiché dans le carnet des membres, ou dans le lien d'invitation.</p>
+      <p v-if="errRejoindre" class="text-xs text-accent mb-2">{{ errRejoindre }}</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button @click="modeRejoindre = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
+        <button @click="rejoindre" :disabled="normMot(codeRejoindre).length < 4"
+          class="rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Rejoindre</button>
+      </div>
     </div>
 
     <!-- Création -->

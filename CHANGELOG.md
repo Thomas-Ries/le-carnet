@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.66 — Rejoindre un carnet depuis « Mes carnets »
+
+- La vue n'offrait que la création : impossible de rejoindre avec un mot-clé une fois l'onboarding passé. Nouveau panneau « Rejoindre un carnet » (icône users, même style que Créer) — c'est aussi la porte de secours d'un nouvel appareil pour retrouver un carnet.
+
 ## V0.4.65 — changer de prénom, pour de vrai
 
 - Le changement de prénom n'était que local : le serveur ne savait pas, les likes et commentaires restaient sous l'ancien nom. Nouvelle action « rename » : le serveur vérifie les doublons dans tous les carnets de l'appareil (casse indifférente) puis renomme partout — membres, sessions, admin, notes, likes, commentaires, demandes, flashes.
