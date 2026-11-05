@@ -33,6 +33,36 @@ async function onFile(e) {
   }
 }
 const confirmSuppr = ref(false);
+
+// V0.4.71 « Mes adresses » : partage volontaire d'une adresse importée vers un carnet.
+const priveIci = computed(() => {
+  const cp = store.mesAdresses;
+  return !!(fiche.value && cp && (fiche.value.carnets || []).includes(cp.id) && (fiche.value.carnets || []).length === 1);
+});
+const partageOuvert = ref(false);
+const partageNote = ref(85);
+const partageCom = ref("");
+const partageCarnet = ref(null);
+const carnetsPartageables = computed(() => store.carnets.filter((c) => !c.prive));
+async function partagerDansCarnet() {
+  const cid = partageCarnet.value || carnetsPartageables.value[0]?.id;
+  if (!cid) { toast("Tu n'as pas encore de carnet à partager"); return; }
+  const r = await store.noter({
+    carnets: [cid],
+    type: fiche.value.type || "adresse",
+    cat: fiche.value.cat || null,
+    titre: fiche.value.titre,
+    lieu: fiche.value.lieu || "",
+    note: partageNote.value,
+    com: partageCom.value.trim(),
+    photo: fiche.value.photo || null,
+    recette: fiche.value.recette || null,
+  });
+  if (r && r.error === "fiche_doublon") { toast("« " + r.titre + " » est déjà noté dans ce carnet"); return; }
+  if (r && r.error) { toast("Partage impossible : " + r.error); return; }
+  partageOuvert.value = false;
+  toast("Partagé dans " + (store.carnets.find((c) => c.id === cid)?.nom || "ton carnet"));
+}
 /* On y va : pont vers Google Maps (titre + lieu) — la fiche dit quoi et
    pourquoi, Maps dit comment y aller et comment contacter. */
 const lienMaps = computed(() =>
@@ -125,6 +155,32 @@ async function supprimer() {
         <button v-if="!edit" class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="share" class="w-4 h-4 text-accent" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
+      </div>
+    </div>
+
+    <!-- V0.4.71 : adresse importée dans « Mes adresses » → partage volontaire vers un carnet -->
+    <div v-if="priveIci && !edit" class="rounded-2xl p-3.5 mb-3 bg-soft border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Adresse importée — visible de toi seul</p>
+      <button v-if="!partageOuvert" @click="partageOuvert = true; partageCarnet = carnetsPartageables[0]?.id || null"
+        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5">
+        <Ic name="share" class="w-4 h-4" /> Partager dans un carnet
+      </button>
+      <div v-else class="space-y-2.5">
+        <p class="text-[11px] text-muted leading-snug">Ta note et ton commentaire seront visibles par les membres du carnet choisi.</p>
+        <select v-model="partageCarnet" class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg border border-hairline outline-none">
+          <option v-for="c in carnetsPartageables" :key="c.id" :value="c.id">{{ c.nom }}</option>
+        </select>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-muted">Ta note</span>
+          <span class="font-semibold text-accent">{{ partageNote }} · {{ noteLabel(partageNote) }}</span>
+        </div>
+        <input type="range" min="70" max="100" v-model.number="partageNote" class="w-full accent-[#7A2E3E]" />
+        <textarea v-model="partageCom" rows="2" placeholder="« Punaise, c'était bon » — ton commentaire…"
+          class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none resize-none"></textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <button @click="partageOuvert = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
+          <button @click="partagerDansCarnet" :disabled="!partageCarnet" class="rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Partager</button>
+        </div>
       </div>
     </div>
 

@@ -104,6 +104,9 @@ const ensureEvents = (db) =>
 // ALTER silencieux : no-op si la colonne existe déjà.
 const ensureRecup = (db) =>
   db.prepare(`ALTER TABLE Membres ADD COLUMN code_recup TEXT`).run().catch(() => {});
+// V0.4.71 « Mes adresses » : carnets privés (visibles de leur seul propriétaire)
+const ensurePrive = (db) =>
+  db.prepare(`ALTER TABLE Carnets ADD COLUMN prive TEXT`).run().catch(() => {});
 const ensureComments = (db) =>
   db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
     id TEXT PRIMARY KEY, fiche_id TEXT NOT NULL, prenom TEXT NOT NULL,
@@ -166,6 +169,7 @@ export default {
         const device = cleanText(url.searchParams.get("device"), 64);
         await ensureEvents(db);
         await ensureComments(db);
+        await ensurePrive(db);
         logEvent(db, "open", { device });
         const roles = {};
         let carnetIds = [];
@@ -184,6 +188,27 @@ export default {
         const { results: membres } = await db.prepare(
           `SELECT carnet_id, prenom FROM Membres WHERE carnet_id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
+        // V0.4.71 « Mes adresses » : crée le carnet privé de l'appareil s'il manque.
+        // Il n'a pas de mot-clé partageable (le join refuse les carnets privés).
+        if (!carnets.some((c) => c.prive === "1") && sess.length) {
+          const prenomPrive = cleanPrenom(sess[0].prenom);
+          if (prenomPrive) {
+            const pid = crypto.randomUUID();
+            const codePrive = "perso-" + Math.random().toString(36).slice(2, 8);
+            await db.prepare(
+              `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
+            ).bind(pid, "Mes adresses", codePrive, prenomPrive, "", "1", new Date().toISOString()).run();
+            await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(pid, prenomPrive).run();
+            await db.prepare(
+              `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+            ).bind(device, pid, prenomPrive, "member", new Date().toISOString()).run();
+            carnetIds.push(pid);
+            roles[pid] = "member";
+            carnets.push({ id: pid, nom: "Mes adresses", code: codePrive, admin: prenomPrive, admin_code_hash: "", prive: "1", created_at: new Date().toISOString() });
+            membres.push({ carnet_id: pid, prenom: prenomPrive });
+            logEvent(db, "create_prive", { device, prenom: prenomPrive, carnet: pid });
+          }
+        }
         const { results: fichesRaw } = await db.prepare(
           `SELECT DISTINCT f.* FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
            WHERE l.carnet_id IN ${inClause(carnetIds.length)} ORDER BY f.created_at DESC`
@@ -398,8 +423,10 @@ export default {
             const invite = cleanInvite(p.code);
             if (!invite) return json({ error: "Le mot-clé du carnet doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets)." }, 400);
             await ensureRecup(db);
+            await ensurePrive(db);
             const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(invite).first();
             if (!c) return json({ error: "carnet introuvable" }, 404);
+            if (c.prive === "1") return json({ error: "carnet prive" }, 403);
             const codeRecup = String(p.codeRecup || "").replace(/\D/g, "");
             // Doublon de prénom dans le carnet (insensible à la casse) : refus, SAUF
             // - retour d'un appareil qui porte déjà ce prénom là (rejoin du même membre), ou
@@ -547,6 +574,37 @@ export default {
             return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: catVal, titre: f.titre, lieu: f.lieu,
               note, com: f.com, photo: f.photo || null, recette: f.recette || null, date: now,
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
+          }
+
+          // V0.4.71 « Mes adresses » : import en masse dans le carnet PRIVÉ uniquement.
+          // Note 0 = « à noter » ; le partage vers un carnet passe par addFiche (doublons inclus).
+          case "importAdresses": {
+            const s = await sessionOf(p.carnetId);
+            if (!s) return json({ error: "pas membre" }, 403);
+            const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
+            const { results: existantes } = await db.prepare(
+              `SELECT f.titre FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
+            ).bind(p.carnetId).all();
+            const vues = new Set(existantes.map((x) => normNom(x.titre)).filter((k) => k.length >= 4));
+            let importes = 0, ignores = 0;
+            const seen = new Set();
+            for (const it of (Array.isArray(p.items) ? p.items : []).slice(0, 300)) {
+              const titre = cleanText(it && it.titre, 60).trim();
+              const cle = normNom(titre);
+              if (!titre || cle.length < 4 || vues.has(cle) || seen.has(cle)) { ignores++; continue; }
+              seen.add(cle);
+              const id = crypto.randomUUID();
+              await db.prepare(
+                `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+              ).bind(id, s.prenom, "adresse", null, titre, cleanText(it.lieu, 60), 0,
+                cleanText(it.com, 500), null, null, now).run();
+              await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, p.carnetId).run();
+              importes++;
+            }
+            logEvent(db, "import_adresses", { device, prenom: s.prenom, carnet: p.carnetId, meta: { importes, ignores } });
+            return json({ importes, ignores });
           }
 
           case "updateFiche": {

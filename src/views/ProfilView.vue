@@ -73,6 +73,47 @@ const appInstallee = (typeof window !== "undefined") &&
   ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
    window.navigator.standalone === true);
 const toast = inject("toast");
+
+// V0.4.71 « Mes adresses » : import des lieux enregistrés Google Maps (export KML).
+// Le parsing est local (rien ne quitte l'appareil), l'import part au serveur en batches.
+const importBusy = ref(false);
+const nbMesAdresses = computed(() => {
+  const cp = store.mesAdresses;
+  return cp ? store.fiches.filter((f) => f.carnets.includes(cp.id)).length : 0;
+});
+function parseKML(texte) {
+  const doc = new DOMParser().parseFromString(texte, "text/xml");
+  const places = [...doc.getElementsByTagName("Placemark")];
+  return places
+    .map((pm) => {
+      const nom = (pm.getElementsByTagName("name")[0]?.textContent || "").trim();
+      const addr = (pm.getElementsByTagName("address")[0]?.textContent
+        || pm.getElementsByTagName("description")[0]?.textContent || "").trim();
+      return { titre: nom.slice(0, 60), lieu: addr.slice(0, 60) };
+    })
+    .filter((x) => x.titre);
+}
+async function onImportKML(e) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  importBusy.value = true;
+  try {
+    const items = parseKML(await file.text());
+    if (!items.length) {
+      toast("Aucun lieu trouvé dans ce fichier — exporte « Enregistrés » depuis Google Maps (format KML)");
+      return;
+    }
+    const r = await store.importerAdresses(items);
+    if (r && r.error) { toast("Import impossible : " + r.error); return; }
+    toast(r.importes + " adresse" + (r.importes > 1 ? "s" : "") + " importée" + (r.importes > 1 ? "s" : "")
+      + (r.ignores ? " — " + r.ignores + " ignorée" + (r.ignores > 1 ? "s" : "") + " (doublons)" : ""));
+  } catch (err) {
+    toast("Fichier illisible — vérifie que c'est un export KML Google Maps");
+  } finally {
+    importBusy.value = false;
+  }
+}
 const prenom = ref(store.profil.prenom);
 
 const exportCarnetId = ref(store.carnetId);
@@ -218,6 +259,22 @@ async function exporterJSON() {
     </div>
 
     
+    <!-- V0.4.71 : Mes adresses — réservoir privé, rien n'est partagé sans geste explicite -->
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes adresses — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }}</p>
+      <p class="text-[11px] text-muted leading-relaxed mb-3">
+        Ton réservoir privé : visible de toi seul. Importe tes lieux enregistrés Google Maps,
+        puis partage une adresse dans un carnet quand tu veux, avec ta vraie note.
+      </p>
+      <label class="w-full rounded-xl py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer bg-soft text-accent"
+        :style="{ border: '1px dashed var(--c-hairline)', opacity: importBusy ? '.5' : '1' }">
+        <Ic name="pin" class="w-4 h-4" />
+        {{ importBusy ? "Import en cours…" : "Importer depuis Google Maps (.kml)" }}
+        <input type="file" accept=".kml,.xml,text/xml" class="hidden" @change="onImportKML" :disabled="importBusy" />
+      </label>
+      <p class="text-[10px] text-muted mt-2">Google Maps → Tes lieux → ⋮ → Exporter (KML). Les doublons sont ignorés.</p>
+    </div>
+
     <InstallCard v-if="!appInstallee" />
 
     <!-- Réglages & données : 3 accordéons natifs (details/summary), état visible même repliés -->

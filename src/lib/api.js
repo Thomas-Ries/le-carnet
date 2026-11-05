@@ -95,6 +95,32 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { carnet: c, role: "admin" };
     }
+    case "importAdresses": {
+      // V0.4.71 demo : mêmes règles que le serveur (carnet privé, note 0, dédup normNom).
+      let cp = db.carnets.find((x) => x.prive === "1");
+      if (!cp) {
+        cp = { id: demo.uid("c"), nom: "Mes adresses", code: "perso-demo", adminCode: "", admin: p.deviceId || "demo", membres: [p.deviceId || "demo"], prive: 1 };
+        db.carnets.push(cp);
+      }
+      const nn = (t) => {
+        let s = String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+        let m;
+        while ((m = /^(le|la|les|l|the|el|il|lo|du|de|des|d|au|aux|a|chez)\s+/.exec(s))) s = s.slice(m[0].length);
+        return s;
+      };
+      let importes = 0, ignores = 0;
+      const seen = new Set(db.fiches.filter((f) => (f.carnets || []).includes(cp.id)).map((f) => nn(f.titre)).filter((k) => k.length >= 4));
+      for (const it of (Array.isArray(p.items) ? p.items : []).slice(0, 300)) {
+        const cle = nn(it && it.titre);
+        if (!it || !it.titre || cle.length < 4 || seen.has(cle)) { ignores++; continue; }
+        seen.add(cle);
+        db.fiches.push({ id: demo.uid("f"), auteur: p.deviceId || "demo", type: "adresse", cat: null, titre: String(it.titre).slice(0, 60), lieu: String(it.lieu || "").slice(0, 60), note: 0, com: String(it.com || "").slice(0, 500), photo: null, recette: null, demandeRecette: [], reacts: [], comments: [], date: new Date().toISOString().slice(0, 10), carnets: [cp.id] });
+        importes++;
+      }
+      demo.save(db);
+      return { importes, ignores };
+    }
     case "join": {
       const c = db.carnets.find((x) => x.code === String(p.code));
       if (!c) return { error: "carnet introuvable" };
@@ -288,6 +314,7 @@ export const superAdmin = (pass) => mutate("superAdmin", { pass });
 export const regenerateInvite = (payload) => mutate("regenerateInvite", payload);
 export const changeAdminCode = (payload) => mutate("changeAdminCode", payload);
 export const addFiche = (fiche) => mutate("addFiche", { fiche });
+export const importAdresses = (carnetId, items, deviceId) => mutate("importAdresses", { carnetId, items, deviceId });
 export const updateFiche = (id, patch) => mutate("updateFiche", { id, patch });
 export const deleteFiche = (id) => mutate("deleteFiche", { id });
 export const addFlash = (flash) => mutate("addFlash", { flash });

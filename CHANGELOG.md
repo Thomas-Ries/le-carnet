@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.71 — « Mes adresses » : carnet privé + import Google Maps
+
+- Nouveau carnet privé **« Mes adresses »**, créé automatiquement au boot : visible de son seul propriétaire, invisible aux autres, mot-clé inutilisable (le serveur refuse le join d'un carnet privé).
+- **Profil → Importer depuis Google Maps (.kml)** : parsing local du fichier (rien ne quitte l'appareil), import en batches vers « Mes adresses » — note laissée à « à noter », doublons ignorés (même normalisation que l'anti-doublon).
+- **Partage volontaire** : depuis une adresse importée, « Partager dans un carnet » → choix du carnet, note (slider, suggestion modifiable) et commentaire. Le partage crée une vraie fiche via addFiche : l'anti-doublon V0.4.70 s'applique, et l'import ne pollue jamais un carnet partagé.
+- Rien n'est partagé sans geste explicite ; les carnets restent indépendants.
 ## V0.4.70 — anti-doublon de fiches dans un même carnet
 
 - Refus serveur à l'ajout si un lieu au nom identique (normalisé : minuscules, sans accents ni ponctuation, article initial retiré — « Le Météoreat » ≡ « Météoreat ») existe déjà dans un des carnets destinataires. Erreur `fiche_doublon` avec la fiche existante.

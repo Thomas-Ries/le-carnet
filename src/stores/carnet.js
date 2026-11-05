@@ -28,6 +28,8 @@ export const useCarnetStore = defineStore("carnet", {
 
   getters: {
     carnet: (s) => s.carnets.find((c) => c.id === s.carnetId) || null,
+    // V0.4.71 : carnet privé « Mes adresses » (import Google Maps), invisible aux autres
+    mesAdresses: (s) => s.carnets.find((c) => c.prive === "1" || c.prive === 1) || null,
     fichesDuCarnet(s) {
       return s.fiches
         .filter((f) => f.carnets.includes(s.carnetId))
@@ -40,6 +42,23 @@ export const useCarnetStore = defineStore("carnet", {
   },
 
   actions: {
+    // V0.4.71 : import d'adresses dans « Mes adresses » (batches de 100, refresh à la fin)
+    async importerAdresses(items) {
+      const cp = this.mesAdresses;
+      if (!cp && !api.state.demoMode) return { error: "pas de carnet prive" };
+      const carnetId = cp ? cp.id : null; // en démo, l'api crée « Mes adresses » à la volée
+      let importes = 0, ignores = 0;
+      for (let i = 0; i < items.length; i += 100) {
+        const r = await api.importAdresses(carnetId, items.slice(i, i + 100), this.deviceId);
+        if (r && r.error) return r;
+        importes += r.importes || 0;
+        ignores += r.ignores || 0;
+      }
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      await this.refresh();
+      return { importes, ignores };
+    },
     async boot() {
       // Splash 3,5 s
       setTimeout(() => (this.splash = false), 3500);

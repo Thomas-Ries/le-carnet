@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS Carnets (
   code TEXT UNIQUE NOT NULL,
   admin TEXT NOT NULL,
   admin_code_hash TEXT NOT NULL,
+  prive TEXT,
   created_at TEXT NOT NULL
 );
 
