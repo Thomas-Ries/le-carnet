@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.45 — Modale Bienvenue à la première connexion
+
+- Après le tout premier join (prénom + mot-clé du carnet), une modale « Bienvenue dans Le Carnet » présente les quatre gestes de l'app : noter une adresse, flasher (7 jours), aimer et commenter, piocher une inspiration.
+- Elle propose d'activer les notifications (« Pour ne rien rater ») en CTA explicite — ce premier passage remplace le prompt silencieux ; les joins suivants gardent le prompt silencieux habituel. Refus ou indisponibilité : message doux, tout se rattrape depuis le Profil.
+- Un seul affichage par appareil (drapeau `lc-bienvenue` en localStorage).
+
 ## V0.4.44 — Inspiration de sortie + fiche des carnets
 
 - **« Envie d'inspiration ? »** : bandeau sous les deux tuiles de l'accueil (après-work, tête à tête…). Clic → modale « Ce soir, l'ambiance est plutôt… » avec les thèmes réellement présents dans le carnet (compteur par puce), puis les 5 adresses les mieux notées du thème — cartes cliquables (détail + partage), et bouton « Ça vous tente, je réserve ? » qui partage la sélection en texte (feuille native, sinon WhatsApp). Zéro serveur : tout vient des fiches déjà notées.

@@ -49,9 +49,19 @@ async function rejoindre() {
   }
   if (r) {
     toast("Bienvenue dans « " + store.carnet.nom + " »");
+    // Première connexion : la modale Bienvenue (HomeView) présente l'app
+    // et propose d'activer les notifs. Les connexions suivantes gardent le
+    // prompt silencieux ci-dessous.
+    let premiere = false;
+    try {
+      if (!localStorage.getItem("lc-bienvenue")) {
+        localStorage.setItem("lc-bienvenue", "pending");
+        premiere = true;
+      }
+    } catch (e) { /* ok */ }
     router.push("/");
     // Pic d'envie : on propose les notifs juste après le join. Silencieux si refus.
-    if (typeof Notification !== "undefined" && "serviceWorker" in navigator &&
+    if (!premiere && typeof Notification !== "undefined" && "serviceWorker" in navigator &&
         "PushManager" in window && Notification.permission === "default" && !store.demoMode) {
       api.activerNotifs().then((res) => {
         if (res && res.ok) toast("Tu seras prévenu quand quelqu'un note une adresse");

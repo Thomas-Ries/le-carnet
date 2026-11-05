@@ -105,6 +105,34 @@ function inspirFermer() {
   inspirTheme.value = null;
 }
 
+/* Bienvenue : modale de premiere connexion, posee par JoinView juste apres
+   le premier join. Presente l'app, propose d'activer les notifs, puis disparait
+   pour toujours (drapeau lc-bienvenue). */
+const bienvenue = ref(false);
+const notifBienvenue = ref("attente"); // attente | ok | refuse | indispo
+onMounted(() => {
+  try {
+    if (localStorage.getItem("lc-bienvenue") === "pending") bienvenue.value = true;
+  } catch (e) { /* ok */ }
+});
+function fermerBienvenue() {
+  bienvenue.value = false;
+  try { localStorage.setItem("lc-bienvenue", "vu"); } catch (e) { /* ok */ }
+}
+async function activerNotifsBienvenue() {
+  if (store.demoMode) { notifBienvenue.value = "indispo"; return; }
+  try {
+    const r = await api.activerNotifs();
+    if (r && r.ok) {
+      notifBienvenue.value = "ok";
+      notifOn.value = true;
+      toast("Tu seras prévenu quand quelqu'un note une adresse");
+    } else {
+      notifBienvenue.value = r && r.raison === "refuse" ? "refuse" : "indispo";
+    }
+  } catch (e) { notifBienvenue.value = "indispo"; }
+}
+
 /* Scroll infini facon feed : rendu par tranches de 20, rechargees quand on approche du bas.
    (Avant, seules les 8 premieres fiches etaient affichees : les suivantes etaient invisibles.) */
 const PARC = 20;
@@ -231,6 +259,57 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
         </span>
         <Ic name="chevron" class="w-4 h-4 text-muted rotate-90 shrink-0" :sw="2" />
       </button>
+
+      <!-- Modale Bienvenue : premiere connexion -->
+      <div v-if="bienvenue" class="fixed inset-0 z-[95] flex items-end sm:items-center justify-center p-4"
+        style="background: rgba(20, 14, 12, .6)">
+        <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
+          <p class="text-lg font-serif text-center mb-0.5">Bienvenue dans Le Carnet</p>
+          <p class="text-[11px] text-muted text-center mb-4">Le carnet « {{ store.carnet?.nom }} » est à toi aussi, maintenant.</p>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-start gap-3">
+              <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="pin" class="w-4 h-4" /></span>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Note les adresses que tu aimes</span> — resto, caviste, bar… avec une note sur 100 et une photo.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="bolt" class="w-4 h-4" /></span>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Flash</span> — une photo éclair à faire aimer en 7 jours, avant de la noter en fiche.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="heart" class="w-4 h-4" /></span>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Aime les notes des autres</span> — son auteur reçoit un petit signe, et tu peux commenter.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="sparkle" class="w-4 h-4" /></span>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Envie d'inspiration ?</span> — le carnet te propose une sortie par thème, à partager.</p>
+            </div>
+          </div>
+
+          <!-- Notifs : proposees ici au lieu du prompt silencieux, premier passage -->
+          <div v-if="notifsDispo && !store.demoMode && !notifOn" class="rounded-xl p-3.5 mb-4 bg-soft border border-hairline">
+            <p class="text-xs leading-relaxed mb-2.5">
+              <span class="font-semibold">Pour ne rien rater</span> — une alerte quand quelqu'un partage une adresse ou un flash.
+            </p>
+            <button v-if="notifBienvenue === 'attente'" @click="activerNotifsBienvenue"
+              class="w-full rounded-lg py-2.5 text-xs font-semibold text-white" style="background: var(--c-accent)">
+              Activer les notifications
+            </button>
+            <p v-else-if="notifBienvenue === 'ok'" class="text-[11px] text-accent font-semibold text-center">C'est noté — tu seras prévenu.</p>
+            <p v-else-if="notifBienvenue === 'refuse'" class="text-[11px] text-muted text-center leading-relaxed">
+              Pas grave — tu pourras les activer plus tard dans Profil, Réglages.
+            </p>
+            <p v-else class="text-[11px] text-muted text-center leading-relaxed">
+              Notifications indisponibles pour l'instant — réessaie plus tard depuis ton Profil.
+            </p>
+          </div>
+
+          <button @click="fermerBienvenue"
+            class="w-full rounded-xl py-3 text-sm font-semibold text-white" style="background: var(--c-accent)">
+            C'est parti
+          </button>
+        </div>
+      </div>
 
       <!-- Modale inspiration : choix du thème puis sélection des mieux notées -->
       <div v-if="inspirOpen" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
