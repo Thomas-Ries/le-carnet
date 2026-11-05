@@ -301,6 +301,9 @@ export const useCarnetStore = defineStore("carnet", {
 
     async liker(targetId, on) {
       const r = await api.react(targetId, this.profil.prenom, on);
+      // Garde-fou : un refus serveur ne doit jamais corrompre l'état local
+      // (reacts undefined faisait crasher la fiche à l'affichage).
+      if (!r || r.error || !Array.isArray(r.reacts)) return r || { error: "refusé" };
       const maj = (arr) => {
         const t = arr.find((x) => x.id === targetId);
         if (t) t.reacts = r.reacts;

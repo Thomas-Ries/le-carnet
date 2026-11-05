@@ -70,7 +70,10 @@ async function mutate(action, payload) {
     // 4xx = refus du serveur (validation, droits, doublon) : on remonte l'erreur à
     // l'appelant. On ne bascule JAMAIS en démo sur un refus — sinon l'action réussit
     // en local, invisible pour le carnet, avec un toast de fausse réussite.
-    if (e && e.status >= 400 && e.status < 500) {
+    // 4xx = refus du serveur UNIQUEMENT si un worker a vraiment répondu.
+    // En dev (Vite sans worker) /api/mutate répond 404 HTML : c'est une absence
+    // de serveur, pas un refus — on bascule en démo comme au bootstrap.
+    if (e && e.status >= 400 && e.status < 500 && !etaitDemo) {
       return e.body || { error: "refusé par le serveur (" + e.status + ")" };
     }
     const db = fallbackConnexion(e);

@@ -12,7 +12,7 @@ const store = useCarnetStore();
 const toast = inject("toast");
 
 const fiche = computed(() => store.fiches.find((f) => f.id === route.params.id));
-const likers = computed(() => (fiche.value ? fiche.value.reacts : []));
+const likers = computed(() => (fiche.value ? fiche.value.reacts || [] : []));
 const liked = computed(() => fiche.value && likers.value.includes(store.profil.prenom));
 const demandeEnvoyee = computed(() => fiche.value && fiche.value.demandeRecette?.includes(store.profil.prenom));
 const edit = ref(false);
@@ -173,28 +173,28 @@ async function supprimer() {
       <p v-else class="text-center text-xs text-muted mb-4">Tu n'as pas encore écrit la recette — tu peux l'ajouter en éditant la fiche.</p>
     </div>
 
-    <!-- Likes -->
-    <button v-if="!edit" @click="store.liker(fiche.id, !liked); pop = true"
-      class="w-full rounded-xl py-3.5 text-sm font-semibold flex items-center justify-center gap-2 transition"
-      :style="{
-        background: liked ? 'var(--c-gold)' : 'var(--c-surface)',
-        color: liked ? '#fff' : 'var(--c-accent)',
-        border: '1.5px solid ' + (liked ? 'var(--c-gold)' : 'var(--c-accent)'),
-      }">
-      <Ic name="heart" class="w-5 h-5" :filled="liked" />
-      {{ liked ? "Tu aimes" : "J'aime" }}{{ likers.length ? " · " + likers.length : "" }}
-    </button>
+    <!-- Likes + On y va : deux CTA compacts côte à côte -->
+    <div v-if="!edit" class="flex gap-2">
+      <button @click="store.liker(fiche.id, !liked); pop = true"
+        class="flex-1 rounded-full py-2.5 text-[13px] font-semibold flex items-center justify-center gap-1.5 transition"
+        :style="{
+          background: liked ? 'var(--c-gold)' : 'var(--c-surface)',
+          color: liked ? '#fff' : 'var(--c-accent)',
+          border: '1.5px solid ' + (liked ? 'var(--c-gold)' : 'var(--c-accent)'),
+        }">
+        <Ic name="heart" class="w-4 h-4" :filled="liked" />
+        {{ liked ? "Tu aimes" : "J'aime" }}{{ likers.length ? " · " + likers.length : "" }}
+      </button>
+      <a v-if="fiche.type !== 'recette'" :href="lienMaps" target="_blank" rel="noopener"
+        @click="noterGo"
+        class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center justify-center gap-1.5 transition"
+        :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
+        <Ic name="pin" class="w-4 h-4" /> On y va
+      </a>
+    </div>
     <p v-if="!edit && pop && likers.length" class="text-center text-[11px] text-muted mt-2">
       {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
     </p>
-
-    <!-- On y va : itinéraire Maps, uniquement pour les adresses -->
-    <a v-if="!edit && fiche.type !== 'recette'" :href="lienMaps" target="_blank" rel="noopener"
-      @click="noterGo"
-      class="w-full rounded-xl py-3 mt-3 text-sm font-semibold flex items-center justify-center gap-2"
-      :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
-      <Ic name="pin" class="w-4 h-4" /> On y va
-    </a>
 
     <!-- Commentaires -->
     <div v-if="!edit" class="mt-5">

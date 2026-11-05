@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.52 — Fix like en dev + CTA compacts
+
+- **Fix like/unlike en mode dev** : sans worker, Vite répond 404 à /api/mutate et le garde-fou « 4xx = refus serveur » faisait échouer silencieusement le like (reacts undefined, crash de la fiche). Un 4xx n'est plus traité comme un refus quand l'app tourne en mode démo ; le store ne corrompt plus l'état local si la réponse est invalide ; la fiche affiche reacts manquant comme zéro like au lieu de planter.
+- **CTA compacts côte à côte** : « J'aime » et « On y va » deviennent deux pilules arrondies sur une même ligne (façon Instagram), plus petites — moitié moins de hauteur sous la fiche.
+
 ## V0.4.51 — « On y va »
 
 - Sur le détail d'une fiche adresse, sous le bouton « J'aime » : **« On y va »** ouvre Google Maps directement sur le lieu (requête = titre + lieu) — itinéraire, numéro de téléphone, horaires. La fiche dit quoi et pourquoi, Maps dit comment y aller.
