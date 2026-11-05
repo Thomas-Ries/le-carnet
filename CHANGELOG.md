@@ -7,6 +7,7 @@
 - AjouterView : **aperçu réel de la photo** (4:3) avant d'enregistrer + bouton retirer + toast « Photo illisible » en cas d'échec (plus jamais muet).
 - FicheView (édition) et FlashSheet : même durcissement, même toast d'erreur.
 - `e.target.value = ""` après chaque sélection : on peut re-choisir le même fichier après un échec.
+- **Fix worker `deleteFiche`** : le DELETE de la fiche s'exécutait AVANT celui de ses lignes enfants, donc FOREIGN KEY constraint : toute suppression de fiche échouait en prod (vérifié en direct). Les enfants (FichesCarnets, FicheLikes, DemandesRecette) sont maintenant supprimés en premier.
 
 ## V0.4.31 — Profil allégé
 

@@ -428,10 +428,11 @@ export default {
               if (sess && (sess.role === "admin" || sess.prenom === f.auteur)) { autorise = true; break; }
             }
             if (!autorise) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
-            await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(p.id).run();
+            // Enfants d'abord : la cle etrangere bloque sinon le DELETE de Fiches
             await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM DemandesRecette WHERE fiche_id=?`).bind(p.id).run();
+            await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(p.id).run();
             return json({ ok: true });
           }
 
