@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.64 — nav PWA : centrage sur toute la barre
+
+- En PWA installée (viewport-fit=cover), la safe-area iPhone (~34px de barre d'accueil) s'ajoutait SOUS la rangée de 50px : barre visuellement grande, icônes collées en haut. La rangée inclut maintenant la safe-area dans sa hauteur et le contenu se centre sur toute la barre — padding identique haut/bas, navigateur comme PWA.
+
 ## V0.4.63 — fix crash au join
 
 - Rejoindre avec un mot-clé erroné (ou tout refus serveur) faisait crasher l'écran : l'objet d'erreur passait pour un succès et le toast lisait le carnet inexistant. Chaque erreur affiche maintenant son message clair.
