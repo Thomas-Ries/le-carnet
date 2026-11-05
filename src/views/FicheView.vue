@@ -173,21 +173,19 @@ async function supprimer() {
       <p v-else class="text-center text-xs text-muted mb-4">Tu n'as pas encore écrit la recette — tu peux l'ajouter en éditant la fiche.</p>
     </div>
 
-    <!-- Likes + On y va : deux CTA compacts côte à côte -->
+    <!-- Likes + On y va : deux CTA discrets alignés à gauche façon Instagram -->
     <div v-if="!edit" class="flex gap-2">
       <button @click="store.liker(fiche.id, !liked); pop = true"
-        class="flex-1 rounded-full py-2.5 text-[13px] font-semibold flex items-center justify-center gap-1.5 transition"
-        :style="{
-          background: liked ? 'var(--c-gold)' : 'var(--c-surface)',
-          color: liked ? '#fff' : 'var(--c-accent)',
-          border: '1.5px solid ' + (liked ? 'var(--c-gold)' : 'var(--c-accent)'),
-        }">
+        class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
+        :style="liked
+          ? { background: 'var(--c-gold)', color: '#fff', border: '1px solid var(--c-gold)' }
+          : { color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
         <Ic name="heart" class="w-4 h-4" :filled="liked" />
         {{ liked ? "Tu aimes" : "J'aime" }}{{ likers.length ? " · " + likers.length : "" }}
       </button>
       <a v-if="fiche.type !== 'recette'" :href="lienMaps" target="_blank" rel="noopener"
         @click="noterGo"
-        class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center justify-center gap-1.5 transition"
+        class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
         :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
         <Ic name="pin" class="w-4 h-4" /> On y va
       </a>

@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.53 — CTA discrets alignés à gauche
+
+- « J'aime » adopte le style discret de « On y va » (fond soft, liseré hairline, texte bordeaux) et ne passe en or plein que lorsqu'il est aimé ; les deux pilules sont alignées à gauche façon Instagram au lieu d'occuper toute la largeur.
+
 ## V0.4.52 — Fix like en dev + CTA compacts
 
 - **Fix like/unlike en mode dev** : sans worker, Vite répond 404 à /api/mutate et le garde-fou « 4xx = refus serveur » faisait échouer silencieusement le like (reacts undefined, crash de la fiche). Un 4xx n'est plus traité comme un refus quand l'app tourne en mode démo ; le store ne corrompt plus l'état local si la réponse est invalide ; la fiche affiche reacts manquant comme zéro like au lieu de planter.
