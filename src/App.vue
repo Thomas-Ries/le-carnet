@@ -44,14 +44,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Splash 3,5 s — fun et animé : verre bordeaux qui pop, bulles riesling,
+  <!-- Splash 3,5 s — fun et animé : fourchette · verre · petit cœur qui pop, bulles riesling,
        cœur or qui s'échappe, mots du titre en cascade, les trois cercles, phrase finale penchée -->
   <div v-if="store.splash" class="lc-splash">
     <div class="sp-badge">
       <div class="flex items-center gap-0.5">
         <Ic name="fork" class="w-[23px] h-[23px]" :sw="1.8" />
         <Ic name="glass" class="w-9 h-9" :sw="1.7" />
-        <Ic name="knife" class="w-[23px] h-[23px]" :sw="1.8" />
+        <Ic name="heart" class="w-[23px] h-[23px]" :sw="1.8" filled />
       </div>
       <span class="sp-bub b1"></span><span class="sp-bub b2"></span><span class="sp-bub b3"></span>
       <Ic name="heart" class="sp-heart" :sw="2" filled />

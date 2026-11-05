@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Icône « Le Carnet » : fourchette penchée + cœur riesling — l'amour de la table à partager -->
+  <!-- Icône « Le Carnet » : fourchette · verre · cœur — la table aimée, partagée -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7A2E3E"/>
@@ -7,11 +7,15 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="160" fill="url(#bg)"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="21.2" stroke-linecap="round" stroke-linejoin="round"
-     transform="translate(63,130) scale(11.175) rotate(10 9.5 12)">
-    <path d="M5.5 2v6a3 3 0 003 3h2a3 3 0 003-3V2M9.5 2v20"/>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(67.36,197.92) scale(4.2539)" stroke-width="1.8">
+      <path d="M5.5 2v6a3 3 0 003 3h2a3 3 0 003-3V2M9.5 2v20"/>
+    </g>
+    <g transform="translate(171.66,169.61) scale(6.6454)" stroke-width="1.7">
+      <path d="M12 15a3 3 0 003-3V4H9v8a3 3 0 003 3zM12 15v7M8 22h8"/>
+    </g>
   </g>
-  <g transform="translate(249.2,100.2) scale(6.1835)">
+  <g transform="translate(296.08,181.53) scale(5.9600)">
     <path d="M21 8.18c0 4.94-6.5 8.32-9 9.64-2.5-1.32-9-4.7-9-9.64A4.68 4.68 0 017.68 3.5a4.68 4.68 0 014.32 2.5A4.68 4.68 0 0116.32 3.5 4.68 4.68 0 0121 8.18z" fill="#D9C589"/>
   </g>
 </svg>

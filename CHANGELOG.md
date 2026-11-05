@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.24 — Trio final : fourchette · verre · petit cœur
+- Décision de Thomas : l'icône et le splash remplacent le couteau par un cœur plein (riesling dans l'icône, blanc dans le splash) — fourchette · verre · petit cœur.
+- logo.svg + PNG 192/512 régénérés dans ce motif (carré plein opaque, motif recentré, zone de sécurité maskable) — PNG livrés dans le canvas.
+- Splash (App.vue) : le badge affiche fork · glass · heart(filled).
+
 ## 0.4.23 — Nouvelle icône : cœur + fourchette
 - Décision produit de Thomas après exploration (livre = religieux, verre seul = Ma Cave, assiette illisible, cœur seul = rencontre) : **fourchette penchée (10°) + cœur riesling** sur badge bordeaux — « l'amour de la table à partager ».
 - logo.svg refait dans ce motif ; PNG 192/512 régénérés (carré plein opaque, motif dans la zone de sécurité maskable) — livrés dans le canvas de livraison (le connecteur GitHub corrompt les binaires).
