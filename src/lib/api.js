@@ -177,6 +177,20 @@ function demoMutate(db, action, p) {
     case "unsubscribePush":
       return { ok: true };
     case "addFiche": {
+      // Anti-doublon intra-carnet (V0.4.70) : mêmes règles que le serveur.
+      const nn = (t) => {
+        let s = String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+        let m;
+        while ((m = /^(le|la|les|l|the|el|il|lo|du|de|des|d|au|aux|a|chez)\s+/.exec(s))) s = s.slice(m[0].length);
+        return s;
+      };
+      const cle = nn(p.fiche.titre);
+      if (cle.length >= 4) {
+        const d = db.fiches.find((x) =>
+          (x.carnets || []).some((cid) => (p.fiche.carnets || []).includes(cid)) && nn(x.titre) === cle);
+        if (d) return { error: "fiche_doublon", ficheId: d.id, titre: d.titre };
+      }
       const f = { id: demo.uid("f"), reacts: [], photo: null, recette: null, demandeRecette: [], ...p.fiche };
       db.fiches.unshift(f);
       demo.save(db);

@@ -244,6 +244,8 @@ export const useCarnetStore = defineStore("carnet", {
       });
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
+      // Refus serveur (ex. fiche_doublon) : rien n'est créé, on remonte l'erreur
+      if (r && r.error) return r;
       this.fiches.unshift(r.fiche);
       return r.fiche;
     },

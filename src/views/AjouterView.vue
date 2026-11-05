@@ -35,7 +35,13 @@ const cats = computed(() => (type.value === "recette" ? ["Recette"] : CATS));
 /* Anti-doublon : pendant la saisie du titre, on cherche les fiches du meme type
    deja notees dans le(s) carnet(s) vise(s) dont le titre ressemble (normalise :
    minuscules, sans accents ni ponctuation, inclusion dans un sens ou l'autre). */
-const normTitre = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+const normTitre = (t) => {
+  let s = (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ").trim().replace(/\s+/g, " ");
+  let m;
+  while ((m = /^(le|la|les|l|the|du|de|des|d|au|aux|a|chez) /.exec(s))) s = s.slice(m[0].length);
+  return s.replace(/\s+/g, "");
+};
 const doublons = computed(() => {
   const q = normTitre(titre.value);
   if (q.length < 4) return [];
@@ -68,9 +74,11 @@ async function onFile(e) {
   }
 }
 
+const doublonErr = ref("");
 async function valider() {
   if (!titre.value.trim()) return;
-  await store.noter({
+  doublonErr.value = "";
+  const r = await store.noter({
     carnets: sel.value,
     type: type.value,
     cat: type.value === "recette" ? "Recette" : selCats.value.join(", "),
@@ -81,6 +89,14 @@ async function valider() {
     photo: photo.value,
     recette: type.value === "recette" && recette.value.trim() ? recette.value.trim() : null,
   });
+  if (r && r.error === "fiche_doublon") {
+    doublonErr.value = "« " + r.titre + " » est déjà noté dans ce carnet — c'est probablement le même lieu. Ouvre la fiche existante ci-dessus, ou précise le titre (ville, quartier) pour le distinguer.";
+    return;
+  }
+  if (r && r.error) {
+    toast("Impossible de noter : " + r.error);
+    return;
+  }
   toast("Noté dans " + (sel.value.length > 1 ? sel.value.length + " carnets" : store.carnets.find((c) => c.id === sel.value[0]).nom));
   router.push("/");
 }
@@ -179,6 +195,7 @@ async function valider() {
       </label>
     </div>
 
+    <p v-if="doublonErr" class="text-xs text-accent leading-relaxed mt-2">{{ doublonErr }}</p>
     <button @click="valider" :disabled="!titre.trim()"
       class="mt-4 w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
       :style="{ background: titre.trim() ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">

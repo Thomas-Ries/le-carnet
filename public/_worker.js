@@ -114,6 +114,16 @@ const isCode = (c) => /^([0-9]{4}|[0-9]{6})$/.test(String(c || ""));
 const cleanPrenom = (p) => String(p || "").trim().slice(0, 20);
 const cleanText = (t, n) => String(t == null ? "" : t).slice(0, n);
 
+// Anti-doublon : clé de similitude d'un nom de lieu — minuscules, sans accents
+// ni ponctuation, article initial retiré (« Le Météoreat » ≡ « Météoreat »).
+const normNom = (t) => {
+  let s = cleanText(t, 200).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  let m;
+  while ((m = /^(le|la|les|l|the|el|il|lo|du|de|des|d|au|aux|a|chez)\s+/.exec(s))) s = s.slice(m[0].length);
+  return s;
+};
+
 // Invitation : MOT-CLÉ 4-15 caractères, minuscules sans accents, chiffres et tirets.
 // « Pâques 2027 » -> « paques-2027 ». Retourne "" si invalide.
 function cleanInvite(v) {
@@ -489,6 +499,22 @@ export default {
             const f = p.fiche || {};
             const s = await sessionOf(f.carnets && f.carnets[0]);
             if (!s) return json({ error: "pas membre" }, 403);
+            // Anti-doublon INTRA-carnet (V0.4.70) : même lieu écrit différemment =>
+            // refus explicite. Chaque carnet reste indépendant : la vérification
+            // ne porte que sur les carnets destinataires, jamais sur les autres.
+            const cleNom = normNom(f.titre);
+            if (cleNom.length >= 4) {
+              const deja = [];
+              for (const cid of (Array.isArray(f.carnets) ? f.carnets : []).slice(0, 20)) {
+                if (!(await sessionOf(cid))) continue;
+                const { results: existantes } = await db.prepare(
+                  `SELECT f.id, f.titre FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
+                ).bind(cid).all();
+                const m = existantes.find((x) => normNom(x.titre) === cleNom);
+                if (m) deja.push({ id: m.id, titre: m.titre });
+              }
+              if (deja.length) return json({ error: "fiche_doublon", ficheId: deja[0].id, titre: deja[0].titre }, 409);
+            }
             const id = crypto.randomUUID();
             const note = Math.min(100, Math.max(70, parseInt(f.note, 10) || 80));
             // Plusieurs themes possibles (tableau client) -> texte unique, max 4, virgules.

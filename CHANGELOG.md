@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.70 — anti-doublon de fiches dans un même carnet
+
+- Refus serveur à l'ajout si un lieu au nom identique (normalisé : minuscules, sans accents ni ponctuation, article initial retiré — « Le Météoreat » ≡ « Météoreat ») existe déjà dans un des carnets destinataires. Erreur `fiche_doublon` avec la fiche existante.
+- La vérification ne porte QUE sur les carnets destinataires : les carnets restent indépendants, le même lieu peut vivre dans deux carnets différents.
+- Message client explicite : ouvre la fiche existante ou précise le titre (ville, quartier). L'indice live pendant la saisie détecte maintenant aussi les articles.
+- Mode démo : mêmes règles.
 ## V0.4.69 — mémorisation du code personnel
 
 - Au premier choix du code (onboarding, rejoindre, création), message renforcé : « Mémorise bien ce code : il te servira à créer tes propres carnets et à retrouver tes carnets si tu changes de téléphone. Personne ne pourra te le renvoyer. » — phrase clé en gras.
