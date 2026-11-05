@@ -107,6 +107,9 @@ const ensureRecup = (db) =>
 // V0.4.71 « Mes adresses » : carnets privés (visibles de leur seul propriétaire)
 const ensurePrive = (db) =>
   db.prepare(`ALTER TABLE Carnets ADD COLUMN prive TEXT`).run().catch(() => {});
+// V0.4.78 : avatar du membre synchronisé entre appareils (avant : localStorage local).
+const ensureAvatar = (db) =>
+  db.prepare(`ALTER TABLE Membres ADD COLUMN avatar TEXT`).run().catch(() => {});
 // V0.4.76 : zones géographiques (pays / ville) des fiches, pour le filtre.
 // ALTER silencieux : no-op si les colonnes existent déjà.
 const ensureZones = async (db) => {
@@ -165,6 +168,57 @@ const consoliderPrive = async (db, device) => {
     await db.prepare(`DELETE FROM Carnets WHERE id=?`).bind(dup.id).run();
   }
   logEvent(db, "fusion_prive", { device, meta: { supprimes: privs.length - 1 } });
+};
+
+// V0.4.78 « Mon G-Maps » : renommage des espaces privés + DEDUP des fiches.
+// Après la fusion V0.4.77, un appareil qui avait importé 3 fois (3 espaces)
+// se retrouve avec 3 copies de chaque lieu DANS le carnet gardé. Ici on
+// regroupe par titre normalisé et on ne garde qu'une fiche : en priorité
+// celle partagée dans un autre carnet, sinon la plus complète (note, com,
+// photo), sinon la plus ancienne. Les copies de trop sont retirées de
+// l'espace privé ; si elles n'appartiennent à aucun autre carnet, elles
+// sont supprimées avec leurs enfants.
+const renommerEtDedupPrive = async (db, device) => {
+  if (!device) return;
+  const { results: privs } = await db.prepare(
+    `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?)`
+  ).bind(device).all();
+  for (const cp of privs) {
+    await db.prepare(`UPDATE Carnets SET nom='Mon G-Maps' WHERE id=?`).bind(cp.id).run();
+    const { results: fs } = await db.prepare(
+      `SELECT f.id, f.titre, f.note, f.com, f.photo, f.created_at,
+        (SELECT COUNT(*) FROM FichesCarnets l WHERE l.fiche_id=f.id AND l.carnet_id<>?) AS autres
+       FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
+    ).bind(cp.id, cp.id).all();
+    const groupes = {};
+    for (const f of fs) {
+      const cle = normNom(f.titre);
+      if (cle.length < 4) continue;
+      (groupes[cle] = groupes[cle] || []).push(f);
+    }
+    let supprimes = 0;
+    for (const cle of Object.keys(groupes)) {
+      const g = groupes[cle];
+      if (g.length < 2) continue;
+      g.sort((a, b) =>
+        (b.autres - a.autres) ||
+        ((b.note > 0) - (a.note > 0)) ||
+        ((b.com ? 1 : 0) - (a.com ? 1 : 0)) ||
+        ((b.photo ? 1 : 0) - (a.photo ? 1 : 0)) ||
+        (a.created_at < b.created_at ? -1 : 1));
+      for (const d of g.slice(1)) {
+        await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=? AND carnet_id=?`).bind(d.id, cp.id).run();
+        if (!d.autres) {
+          await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=?`).bind(d.id).run();
+          await db.prepare(`DELETE FROM DemandesRecette WHERE fiche_id=?`).bind(d.id).run();
+          await db.prepare(`DELETE FROM FicheComments WHERE fiche_id=?`).bind(d.id).run();
+          await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(d.id).run();
+        }
+        supprimes++;
+      }
+    }
+    if (supprimes) logEvent(db, "dedup_prive", { device, carnet: cp.id, meta: { supprimes } });
+  }
 };
 const ensureComments = (db) =>
   db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
@@ -233,6 +287,8 @@ export default {
         // V0.4.77 : fusion des espaces privés en doublon (avant le backfill,
         // pour que les fiches déplacées soient requalifiées dans la foulée).
         await consoliderPrive(db, device);
+        await ensureAvatar(db);
+        await renommerEtDedupPrive(db, device);
         // Backfill zones : les fiches créées avant V0.4.76 sont requalifiées depuis leur adresse.
         {
           const { results: sansZone } = await db.prepare(
@@ -392,7 +448,16 @@ export default {
           membres: membresByCarnet[c.id] || [],
         }));
 
-        return json({ carnets: carnetsOut, fiches, flashes, roles });
+        // V0.4.78 : avatar serveur du membre (sync entre appareils)
+        let avatarMoi = null;
+        {
+          const { results: av } = await db.prepare(
+            `SELECT m.avatar FROM Membres m JOIN Sessions s ON s.carnet_id=m.carnet_id AND s.prenom=m.prenom
+             WHERE s.device_id=? AND m.avatar IS NOT NULL AND m.avatar<>'' LIMIT 1`
+          ).bind(device).all();
+          if (av.length) avatarMoi = av[0].avatar;
+        }
+        return json({ carnets: carnetsOut, fiches, flashes, roles, avatar: avatarMoi });
       } catch (e) {
         return json({ error: "bootstrap: " + String((e && e.message) || e) }, 500);
       }
@@ -659,7 +724,7 @@ export default {
               const codePrive = "perso-" + Math.random().toString(36).slice(2, 8);
               await db.prepare(
                 `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
-              ).bind(pid, "Mes adresses", codePrive, prenomPrive, "", "1", now).run();
+              ).bind(pid, "Mon G-Maps", codePrive, prenomPrive, "", "1", now).run();
               await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(pid, prenomPrive).run();
               await db.prepare(
                 `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
@@ -878,6 +943,22 @@ export default {
             await db.prepare(`DELETE FROM FicheComments WHERE fiche_id=?`).bind(p.id).run();
             await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(p.id).run();
             return json({ ok: true });
+          }
+
+          // V0.4.78 : avatar synchronisé — chaque appareil du même membre le reçoit au bootstrap.
+          case "setAvatar": {
+            if (typeof p.avatar !== "string" || p.avatar.length > 150000)
+              return json({ error: "avatar invalide" }, 400);
+            const { results: sessMoi } = await db.prepare(
+              `SELECT carnet_id, prenom FROM Sessions WHERE device_id=?`
+            ).bind(device).all();
+            let n = 0;
+            for (const sess of sessMoi) {
+              await db.prepare(`UPDATE Membres SET avatar=? WHERE carnet_id=? AND prenom=?`)
+                .bind(p.avatar, sess.carnet_id, sess.prenom).run();
+              n++;
+            }
+            return json({ ok: true, carnets: n });
           }
 
           case "addFlash": {

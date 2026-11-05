@@ -85,6 +85,8 @@ const nbMesAdresses = computed(() => {
   const cp = store.mesAdresses;
   return cp ? store.fiches.filter((f) => f.carnets.includes(cp.id)).length : 0;
 });
+// V0.4.78 : section d'import repliée par défaut — elle ne prend plus toute la place.
+const importOuvert = ref(false);
 const picks = ref([]);        // [{ nom, type: "avis"|"lieux", items, sansLieu? }]
 const errImport = ref("");
 const resultatImport = ref(null); // { importes, ignores, rattaches, orphelins, sansLieu }
@@ -321,16 +323,22 @@ async function exporterJSON() {
     
     <!-- V0.4.72 : Mes adresses — import Google (lieux + avis optionnel), espace privé créé au premier import -->
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline" style="border-color: var(--c-accent)">
-      <div class="flex items-start gap-2.5 mb-2.5">
+      <button class="w-full flex items-start gap-2.5 text-left"
+        :class="importOuvert || resultatImport ? 'mb-2.5' : ''"
+        @click="importOuvert = !importOuvert">
         <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 mt-0.5"
           :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
-        <div>
-          <p class="font-serif text-lg font-semibold leading-tight">Importer mes lieux, notes et commentaires Google&nbsp;Maps</p>
-          <p class="text-[11px] text-muted leading-relaxed mt-1">
-            Ton réservoir privé « Mes adresses » — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }} · visible de toi seul, rien n'est partagé sans ton geste explicite.
-          </p>
-        </div>
-      </div>
+        <span class="flex-1">
+          <span class="flex items-center gap-1.5 font-serif text-lg font-semibold leading-tight">
+            Mon G-Maps
+            <Ic name="chevron" class="w-3.5 h-3.5 text-muted transition-transform" :class="importOuvert ? 'rotate-180' : ''" />
+          </span>
+          <span class="block text-[11px] text-muted leading-relaxed mt-1">
+            {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }} importé{{ nbMesAdresses > 1 ? "s" : "" }} · {{ importOuvert || resultatImport ? "Importer mes lieux, notes et commentaires Google Maps — visible de toi seul." : "Importer mes lieux et avis Google Maps — touche pour ouvrir." }}
+          </span>
+        </span>
+      </button>
+      <template v-if="importOuvert || resultatImport">
 
       <!-- Astuce : l'import est plus simple au clavier — Le Carnet est aussi un site web -->
       <div class="rounded-xl px-3 py-2.5 mb-3 flex items-start gap-2 bg-soft">
@@ -390,7 +398,7 @@ async function exporterJSON() {
         <!-- V0.4.73b : sortie de flow — on ENVOIE vers l'espace privé, pas vers un nouvel import -->
         <button class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5"
           @click="ouvrirMesAdresses">
-          <Ic name="book" class="w-4 h-4" /> Ouvrir mon espace Google Maps{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
+          <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
         </button>
         <p class="text-[11px] text-muted text-center mt-2.5 mb-1">
           Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».
@@ -401,9 +409,10 @@ async function exporterJSON() {
 
       <button v-if="store.mesAdresses && !resultatImport" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
         @click="ouvrirMesAdresses">
-        <Ic name="book" class="w-4 h-4" /> Mon espace Google Maps ({{ nbMesAdresses }}) →
+        <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps ({{ nbMesAdresses }}) →
       </button>
       <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.</p>
+      </template>
     </div>
 
     <InstallCard v-if="!appInstallee" />

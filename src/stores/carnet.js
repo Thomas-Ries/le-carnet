@@ -144,6 +144,14 @@ export const useCarnetStore = defineStore("carnet", {
           }
         }
         if (!this.carnets.some((c) => c.id === this.carnetId)) this.carnetId = this.carnets[0]?.id || null;
+        // V0.4.78 : avatar synchronisé. Le serveur est la source de vérité ;
+        // si l'appareil a un avatar local que le serveur ne connaît pas
+        // (installé avant la synchro), on l'envoie une fois.
+        if (typeof data.avatar === "string" && data.avatar) {
+          if (this.profil.avatar !== data.avatar) this.setProfil(this.profil.prenom, data.avatar);
+        } else if (this.profil.avatar && !this.demoMode) {
+          api.setAvatar(this.profil.avatar, this.deviceId).catch(() => null);
+        }
       } catch (e) { /* réseau KO : on retentera au prochain retour au premier plan */ }
       finally { this._refreshing = false; }
     },
@@ -194,7 +202,11 @@ export const useCarnetStore = defineStore("carnet", {
       this.refresh(); // les likes/commentaires affichent le nouveau prénom
       return r;
     },
-    setAvatar(avatar) { this.setProfil(this.profil.prenom, avatar); },
+    setAvatar(avatar) {
+      this.setProfil(this.profil.prenom, avatar);
+      // V0.4.78 : pousse vers le serveur pour les autres appareils (best effort).
+      api.setAvatar(avatar, this.deviceId).catch(() => null);
+    },
     setDark() { this.toggleDark(); },
 
     setInspirOn(v) {

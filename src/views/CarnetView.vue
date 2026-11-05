@@ -171,7 +171,7 @@ async function exporterJSON() {
       <span class="rounded-full w-10 h-10 flex items-center justify-center shrink-0"
         :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
       <span class="flex-1">
-        <span class="block text-sm font-semibold">Mon espace Google Maps</span>
+        <span class="block text-sm font-semibold">Mon G-Maps</span>
         <span class="block text-[11px] text-muted">{{ nbGmaps }} adresse{{ nbGmaps > 1 ? "s" : "" }} importée{{ nbGmaps > 1 ? "s" : "" }} · visible de toi seul · appui long pour partager</span>
       </span>
       <span class="text-accent font-semibold">→</span>

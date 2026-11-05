@@ -354,6 +354,8 @@ function demoMutate(db, action, p) {
       }
       return { ok: true };
     }
+    case "setAvatar":
+      return { ok: true };
     case "go":
       return { ok: true };
     case "deleteAccount":
@@ -384,6 +386,7 @@ export const partagerFiches = (ficheIds, carnetIds, deviceId) => mutate("partage
 export const demoPrive = (pass) => mutate("demoPrive", { pass });
 export const updateFiche = (id, patch) => mutate("updateFiche", { id, patch });
 export const deleteFiche = (id) => mutate("deleteFiche", { id });
+export const setAvatar = (avatar, deviceId) => mutate("setAvatar", { avatar, deviceId });
 export const addFlash = (flash) => mutate("addFlash", { flash });
 export const commentFlash = (id, com) => mutate("commentFlash", { id, com });
 export const deleteFlash = (id) => mutate("deleteFlash", { id });

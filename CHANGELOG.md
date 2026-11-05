@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.4.78 — « Mon G-Maps », section repliable, avatar synchronisé, dédoublonnage
+
+- L'espace privé s'appelle désormais « Mon G-Maps » (renommage automatique des espaces existants).
+- La section d'import du profil est repliée par défaut : une ligne discrète « Mon G-Maps · N lieux importés », on touche pour ouvrir.
+- Avatar synchronisé entre appareils : stocké côté serveur (Membres.avatar), envoyé à chaque changement, reçu par tous les appareils du membre au chargement.
+- Dédoublonnage automatique des fiches de l'espace privé : après la fusion V0.4.77, les imports répétés laissaient plusieurs copies de chaque lieu ; on ne garde que la meilleure (partagée ailleurs > plus complète > plus ancienne), les copies sont retirées — et supprimées si elles n'appartiennent à aucun autre carnet.
+
 ## V0.4.77 — Un seul espace Google Maps, réparable et toujours trouvable
 
 - FIX doublons « Mes adresses » : l'import réutilise l'espace privé existant de l'appareil au lieu d'en créer un nouveau ; les doublons existants sont fusionnés automatiquement au premier chargement (on garde le plus ancien, les fiches sont déplacées, les doublons supprimés).
