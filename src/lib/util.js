@@ -115,6 +115,26 @@ export function creerCartePartage(fiche) {
         }
         lines.push(line.trim());
         for (const l of lines.slice(0, 3)) { ctx.fillText(l, 90, y); y += 78; }
+        // méta : lieu à gauche, note sur 100 en or à droite
+        if (fiche.lieu || (fiche.note && fiche.note >= 70)) {
+          y += 18;
+          const baseY = y;
+          if (fiche.lieu) {
+            ctx.fillStyle = C.encre;
+            ctx.font = "italic 42px Georgia";
+            ctx.textAlign = "left";
+            const lieu = fiche.lieu.length > 40 ? fiche.lieu.slice(0, 39) + "…" : fiche.lieu;
+            ctx.fillText(lieu, 90, baseY);
+          }
+          if (fiche.note && fiche.note >= 70) {
+            ctx.fillStyle = C.or;
+            ctx.font = "bold 52px Georgia";
+            ctx.textAlign = "right";
+            ctx.fillText(fiche.note + " / 100", W - 90, baseY);
+          }
+          ctx.textAlign = "left";
+          y = baseY + 44;
+        }
         y += 20;
         if (fiche.com) {
           ctx.fillStyle = C.encre;

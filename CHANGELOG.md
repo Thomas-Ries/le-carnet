@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.56 — carte de partage : lieu + note
+
+- La carte image d'une fiche affiche désormais le lieu (italique, à gauche) et la note sur 100 (or, à droite) sur une ligne sous le titre. La note n'apparaît que si elle est posée (70-100) — pas sur les fiches « à noter ».
+
 ## V0.4.55 — fix doublons des fiches multi-carnets
 
 - Une fiche liée à plusieurs carnets (duplication Famille B → Les copains) apparaissait deux fois dans le fil : le bootstrap du worker renvoyait une ligne par lien fiche↔carnet. Toutes les jointures qui peuvent doubler passent en DISTINCT (fiches, commentaires, compteur relance J+8, purge de compte).
