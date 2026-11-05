@@ -254,6 +254,7 @@ export default {
               if (!dup) break;
               code = newInviteCode();
             }
+            if (p.codeAdmin === code) return json({ error: "Le code admin doit être différent du code d'invitation — sinon n'importe quel invité pourrait reprendre le carnet en admin." }, 400);
             const id = crypto.randomUUID();
             const hash = await hashCode(p.codeAdmin);
             await db.prepare(
@@ -329,6 +330,8 @@ export default {
           case "changeAdminCode": {
             if (!isCode(p.newCode)) return json({ error: "code invalide" }, 400);
             if (!(await isAdminOf(p.carnetId))) return json({ error: "réservé à l'admin" }, 403);
+            const carnetCode = (await db.prepare(`SELECT code FROM Carnets WHERE id=?`).bind(p.carnetId).first()) || {};
+            if (p.newCode === carnetCode.code) return json({ error: "Le code admin doit être différent du code d'invitation." }, 400);
             await db.prepare(`UPDATE Carnets SET admin_code_hash=? WHERE id=?`)
               .bind(await hashCode(p.newCode), p.carnetId).run();
             return json({ ok: true });

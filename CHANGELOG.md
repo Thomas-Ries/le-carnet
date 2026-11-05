@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.26 — Sécurité codes + fil rafraîchi au retour au premier plan
+
+- Le code admin doit être différent du code d'invitation (refus côté serveur à la création ET au changement de code, message explicite côté client). Sinon tout détenteur du lien d'invitation peut reprendre le carnet en admin.
+- Fix « la personne ne voit pas ma note » : une PWA iOS reste en mémoire des jours sans recharger — l'app relance maintenant un bootstrap silencieux quand on la rouvre après >15 s en arrière-plan (et au retour du réseau). Plus besoin de force-quit pour voir les notes des autres.
+
 ## 0.4.25 — Splash aligné sur l'icône : cœur riesling dans le badge
 
 - Le cœur du trio du splash passe en riesling (#D9C589), identique à l'icône PWA ; la fourchette et le verre restent blancs.

@@ -40,6 +40,14 @@ onMounted(async () => {
   window.addEventListener("appinstalled", () => { store.installEvent = null; });
   await store.boot();
   if (!store.profil.prenom) router.push("/join");
+  // PWA : l'app reste en mémoire des jours. Au retour au premier plan après une
+  // absence, on recharge le carnet en silence pour voir les notes des autres.
+  let cachéeDepuis = 0;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) cachéeDepuis = Date.now();
+    else if (cachéeDepuis && Date.now() - cachéeDepuis > 15000) store.refresh();
+  });
+  window.addEventListener("online", () => store.refresh());
 });
 </script>
 

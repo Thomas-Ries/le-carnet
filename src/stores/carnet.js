@@ -68,6 +68,31 @@ export const useCarnetStore = defineStore("carnet", {
       this.purgerFlashesExpires();
     },
 
+    async refresh() {
+      // Recharge silencieuse (retour au premier plan) : pas de splash, écran intact.
+      // Une PWA iOS reste en mémoire des jours — sans ça, les notes des autres
+      // n'apparaissent qu'après un force-quit de l'app.
+      if (this._refreshing) return;
+      this._refreshing = true;
+      try {
+        const data = await api.bootstrap(this.deviceId);
+        this.demoMode = api.state.demoMode;
+        this.connexionPerdue = api.state.connexionPerdue;
+        this.carnets = data.carnets || [];
+        this.fiches = data.fiches || [];
+        this.flashes = data.flashes || [];
+        this.roles = data.roles || {};
+        if (this.demoMode) {
+          this.roles = {};
+          for (const c of this.carnets) {
+            if (c.admin === this.profil.prenom) this.roles[c.id] = "admin";
+          }
+        }
+        if (!this.carnets.some((c) => c.id === this.carnetId)) this.carnetId = this.carnets[0]?.id || null;
+      } catch (e) { /* réseau KO : on retentera au prochain retour au premier plan */ }
+      finally { this._refreshing = false; }
+    },
+
     isAdminCarnet(carnetId) {
       return this.roles[carnetId] === "admin";
     },

@@ -31,6 +31,10 @@ async function creer() {
     err.value = "Le code admin doit être saisi deux fois à l'identique.";
     return;
   }
+  if (codeInvite.value.length === 6 && codeAdmin.value === codeInvite.value) {
+    err.value = "Le code admin doit être différent du code d'invitation — sinon tous les invités pourraient reprendre le carnet.";
+    return;
+  }
   const r = await store.creerCarnet(
     nom.value.trim(),
     codeInvite.value.length === 6 ? codeInvite.value : null,
