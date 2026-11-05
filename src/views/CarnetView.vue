@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, inject } from "vue";
+import { useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
@@ -7,7 +8,19 @@ import ConfirmModal from "../components/ConfirmModal.vue";
 import { exporterFichierJSON, texteInvitation, partagerWhatsapp, partagerSms } from "../lib/util.js";
 
 const store = useCarnetStore();
+const router = useRouter();
 const toast = inject("toast");
+// V0.4.77 : l'espace privé Google Maps vit ici, toujours accessible.
+const nbGmaps = computed(() => {
+  const cp = store.mesAdresses;
+  return cp ? store.fiches.filter((f) => (f.carnets || []).includes(cp.id)).length : 0;
+});
+function ouvrirEspaceGmaps() {
+  const cp = store.mesAdresses;
+  if (!cp) return;
+  store.switchCarnet(cp.id);
+  router.push("/");
+}
 const modeCreer = ref(false);
 const nom = ref("");
 const codeInvite = ref("");
@@ -150,6 +163,19 @@ async function exporterJSON() {
   <div>
     <h1 class="text-lg font-serif mb-1">Mes carnets</h1>
     <p class="text-xs text-muted mb-4">Un par cercle : famille, copains, boulot…</p>
+
+    <!-- V0.4.77 : accès permanent à l'espace privé d'import Google Maps -->
+    <button v-if="store.mesAdresses" @click="ouvrirEspaceGmaps"
+      class="w-full rounded-2xl p-4 mb-3 flex items-center gap-3 text-left bg-soft"
+      style="border: 1px solid var(--c-accent)">
+      <span class="rounded-full w-10 h-10 flex items-center justify-center shrink-0"
+        :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
+      <span class="flex-1">
+        <span class="block text-sm font-semibold">Mon espace Google Maps</span>
+        <span class="block text-[11px] text-muted">{{ nbGmaps }} adresse{{ nbGmaps > 1 ? "s" : "" }} importée{{ nbGmaps > 1 ? "s" : "" }} · visible de toi seul · appui long pour partager</span>
+      </span>
+      <span class="text-accent font-semibold">→</span>
+    </button>
 
     <div class="space-y-2 mb-6">
       <button v-for="c in store.carnets" :key="c.id"

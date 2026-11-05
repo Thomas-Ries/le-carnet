@@ -143,6 +143,29 @@ const zonesDepuisLieu = (lieu, codePays) => {
   }
   return { pays, ville };
 };
+
+// V0.4.77 : un appareil = UN seul espace privé « Mes adresses ». Les imports
+// successifs créaient un carnet privé à chaque fois (bug V0.4.76) ; on fusionne
+// les doublons au bootstrap : on garde le plus ancien, on y déplace les liens
+// de fiches des autres, puis on supprime les doublons.
+const consoliderPrive = async (db, device) => {
+  if (!device) return;
+  const { results: privs } = await db.prepare(
+    `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?) ORDER BY created_at ASC`
+  ).bind(device).all();
+  if (privs.length < 2) return;
+  const garde = privs[0].id;
+  for (const dup of privs.slice(1)) {
+    await db.prepare(
+      `INSERT OR IGNORE INTO FichesCarnets (fiche_id, carnet_id) SELECT fiche_id, ? FROM FichesCarnets WHERE carnet_id=?`
+    ).bind(garde, dup.id).run();
+    await db.prepare(`DELETE FROM FichesCarnets WHERE carnet_id=?`).bind(dup.id).run();
+    await db.prepare(`DELETE FROM Sessions WHERE carnet_id=?`).bind(dup.id).run();
+    await db.prepare(`DELETE FROM Membres WHERE carnet_id=?`).bind(dup.id).run();
+    await db.prepare(`DELETE FROM Carnets WHERE id=?`).bind(dup.id).run();
+  }
+  logEvent(db, "fusion_prive", { device, meta: { supprimes: privs.length - 1 } });
+};
 const ensureComments = (db) =>
   db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
     id TEXT PRIMARY KEY, fiche_id TEXT NOT NULL, prenom TEXT NOT NULL,
@@ -207,6 +230,9 @@ export default {
         await ensureComments(db);
         await ensurePrive(db);
         await ensureZones(db);
+        // V0.4.77 : fusion des espaces privés en doublon (avant le backfill,
+        // pour que les fiches déplacées soient requalifiées dans la foulée).
+        await consoliderPrive(db, device);
         // Backfill zones : les fiches créées avant V0.4.76 sont requalifiées depuis leur adresse.
         {
           const { results: sansZone } = await db.prepare(
@@ -617,6 +643,14 @@ export default {
               const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(carnetPriveId).first();
               if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
             } else {
+              // V0.4.77 : si l'appareil a déjà un espace privé (import précédent,
+              // retour arrière, cache client), on le RÉUTILISE — jamais de doublon.
+              const dejaLa = await db.prepare(
+                `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?) ORDER BY created_at ASC LIMIT 1`
+              ).bind(device).first();
+              if (dejaLa) {
+                carnetPriveId = dejaLa.id;
+              } else {
               // pas encore d'espace privé : on le crée (V0.4.72 — à la demande)
               const { results: sess } = await db.prepare(`SELECT prenom FROM Sessions WHERE device_id=? AND prenom IS NOT NULL LIMIT 1`).bind(device).all();
               const prenomPrive = sess.length ? cleanPrenom(sess[0].prenom) : cleanPrenom(p.prenom);
@@ -632,6 +666,7 @@ export default {
               ).bind(device, pid, prenomPrive, "member", now).run();
               carnetPriveId = pid;
               logEvent(db, "create_prive", { device, prenom: prenomPrive, carnet: pid });
+              }
             }
             const s = await sessionOf(carnetPriveId);
             const { results: existantes } = await db.prepare(

@@ -629,8 +629,8 @@ async function confirmerPartage() {
 
     <!-- V0.4.72 — bandeau d'action carnet privé : au-dessus de la zone basse, style charte -->
     <div v-if="store.carnet?.prive && selMode"
-      class="fixed left-0 right-0 z-40 flex items-center justify-between gap-2 px-4 py-3"
-      :style="{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)', background: 'var(--c-surface)', borderTop: '1px solid var(--c-hairline)', boxShadow: '0 -8px 24px rgba(43,35,32,.18)' }">
+      class="fixed left-0 right-0 z-[45] flex items-center justify-between gap-2 px-4 py-3"
+      :style="{ bottom: 'calc(var(--lc-nav-h) + env(safe-area-inset-bottom, 0px) + 12px)', background: 'var(--c-surface)', borderTop: '1px solid var(--c-hairline)', boxShadow: '0 -8px 24px rgba(43,35,32,.18)' }">
       <p class="text-sm font-semibold text-accent shrink-0">{{ selIds.length }} sélectionnée{{ selIds.length > 1 ? "s" : "" }}</p>
       <button class="text-[11px] font-semibold text-muted underline shrink-0" @click="annulerSel">Tout désélectionner</button>
       <button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40"

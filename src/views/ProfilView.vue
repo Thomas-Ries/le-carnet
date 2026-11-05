@@ -320,12 +320,12 @@ async function exporterJSON() {
 
     
     <!-- V0.4.72 : Mes adresses — import Google (lieux + avis optionnel), espace privé créé au premier import -->
-    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline" style="border-color: var(--c-accent)">
       <div class="flex items-start gap-2.5 mb-2.5">
         <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 mt-0.5"
           :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
         <div>
-          <p class="font-serif text-base leading-tight">Importer mes lieux, notes et commentaires Google&nbsp;Maps</p>
+          <p class="font-serif text-lg font-semibold leading-tight">Importer mes lieux, notes et commentaires Google&nbsp;Maps</p>
           <p class="text-[11px] text-muted leading-relaxed mt-1">
             Ton réservoir privé « Mes adresses » — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }} · visible de toi seul, rien n'est partagé sans ton geste explicite.
           </p>
@@ -390,7 +390,7 @@ async function exporterJSON() {
         <!-- V0.4.73b : sortie de flow — on ENVOIE vers l'espace privé, pas vers un nouvel import -->
         <button class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5"
           @click="ouvrirMesAdresses">
-          <Ic name="book" class="w-4 h-4" /> Voir mes adresses{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
+          <Ic name="book" class="w-4 h-4" /> Ouvrir mon espace Google Maps{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
         </button>
         <p class="text-[11px] text-muted text-center mt-2.5 mb-1">
           Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».
@@ -399,9 +399,9 @@ async function exporterJSON() {
           @click="resultatImport = null">Import d'autres fichiers</button>
       </template>
 
-      <button v-if="store.mesAdresses" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
+      <button v-if="store.mesAdresses && !resultatImport" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
         @click="ouvrirMesAdresses">
-        <Ic name="book" class="w-4 h-4" /> Ouvrir Mes adresses ({{ nbMesAdresses }}) →
+        <Ic name="book" class="w-4 h-4" /> Mon espace Google Maps ({{ nbMesAdresses }}) →
       </button>
       <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.</p>
     </div>

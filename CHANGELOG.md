@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.4.77 — Un seul espace Google Maps, réparable et toujours trouvable
+
+- FIX doublons « Mes adresses » : l'import réutilise l'espace privé existant de l'appareil au lieu d'en créer un nouveau ; les doublons existants sont fusionnés automatiquement au premier chargement (on garde le plus ancien, les fiches sont déplacées, les doublons supprimés).
+- Un seul CTA après l'import : « Ouvrir mon espace Google Maps » ; le bouton permanent disparaît pendant l'écran de résultat.
+- « Mon espace Google Maps » épinglé en tête de « Mes carnets » — toujours trouvable, avec compte d'adresses.
+- FIX bandeau de partage caché sous la navbar : il flotte désormais au-dessus.
+- Section d'import plus visible : titre agréci, bordure accent.
+- Réimport autant de fois que voulu : les fiches déjà présentes (dans l'espace ou partagées) ne sont jamais écrasées, seules les nouvelles sont ajoutées.
+
 ## V0.4.76 — Filtre par pays et ville
 
 - Colonnes `pays` / `ville` sur les fiches (migration auto) + backfill des fiches existantes au premier chargement.
