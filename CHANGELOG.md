@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.58 — carte de partage : aération
+
+- Un peu plus d'espace entre la ligne lieu + note et le commentaire sur la carte image de partage.
+
 ## V0.4.57 — édition : la note et le lieu deviennent modifiables
 
 - L'écran d'édition d'une fiche affiche désormais le slider de note (prérempli avec la note actuelle, 70-100) et un champ lieu — on peut retourner à l'endroit et réviser son jugement. Le worker accepte la mise à jour du lieu (tronqué 80 caractères, COALESCE comme les autres champs).

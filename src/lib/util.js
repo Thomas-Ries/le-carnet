@@ -135,7 +135,7 @@ export function creerCartePartage(fiche) {
           ctx.textAlign = "left";
           y = baseY + 44;
         }
-        y += 20;
+        y += 44;
         if (fiche.com) {
           ctx.fillStyle = C.encre;
           ctx.font = "italic 44px Georgia";
