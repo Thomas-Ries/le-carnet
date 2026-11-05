@@ -15,6 +15,12 @@ const nbGmaps = computed(() => {
   const cp = store.mesAdresses;
   return cp ? store.fiches.filter((f) => (f.carnets || []).includes(cp.id)).length : 0;
 });
+// V0.4.82 : l'espace privé G-Maps n'est PAS un cercle — il ne figure pas dans
+// la liste des carnets (sa carte dédiée au-dessus suffit), sinon il apparaît
+// deux fois et prête à confusion.
+const carnetsCercles = computed(() =>
+  store.carnets.filter((c) => c.prive !== "1" && c.prive !== 1)
+);
 function ouvrirEspaceGmaps() {
   const cp = store.mesAdresses;
   if (!cp) return;
@@ -162,7 +168,15 @@ async function exporterJSON() {
 <template>
   <div>
     <h1 class="text-lg font-serif mb-1">Mes carnets</h1>
-    <p class="text-xs text-muted mb-4">Un par cercle : famille, copains, boulot…</p>
+    <p class="text-xs text-muted mb-2">Un par cercle : famille, copains, boulot…</p>
+    <!-- V0.4.82 : un carnet vit sur l'appareil où on l'a rejoint — ici, on
+         explique comment retrouver ceux du téléphone sur un nouvel écran. -->
+    <p class="text-[11px] text-muted leading-relaxed mb-4 rounded-xl px-3 py-2.5 bg-soft">
+      Tes carnets ne sont pas repris automatiquement d'un appareil à l'autre : sur un nouvel écran,
+      retrouve-les avec « Rejoindre un carnet » ci-dessous — ton
+      <span class="font-semibold text-accent">mot-clé d'invitation</span> et ton
+      <span class="font-semibold text-accent">code personnel</span> remettent tout en place.
+    </p>
 
     <!-- V0.4.77 : accès permanent à l'espace privé d'import Google Maps -->
     <button v-if="store.mesAdresses" @click="ouvrirEspaceGmaps"
@@ -178,7 +192,7 @@ async function exporterJSON() {
     </button>
 
     <div class="space-y-2 mb-6">
-      <button v-for="c in store.carnets" :key="c.id"
+      <button v-for="c in carnetsCercles" :key="c.id"
         @click="store.switchCarnet(c.id)"
         class="w-full rounded-2xl p-4 flex items-center gap-3 text-left"
         :style="{

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.82 — Filtre sobre, Mes carnets clarifié
+
+- Filtre pays/ville : plus d'emoji — les noms de pays seuls, sobres et lisibles.
+- L'espace « Mon G-Maps » n'apparaît plus dans la liste des carnets : sa carte dédiée en tête suffit (il n'est pas un cercle).
+- « Mes carnets » explique que les carnets ne sont pas repris automatiquement d'un appareil à l'autre, et comment les retrouver : mot-clé d'invitation + code personnel via « Rejoindre un carnet ».
+
 ## V0.4.81 — Popin « Nouveauté » pour les gros ajouts
 
 - Quand une grosse feature sort, les comptes existants voient une petite popin élégante (une seule fois) qui dit où elle est et ce qu'elle permet — première édition : l'import Google Maps.

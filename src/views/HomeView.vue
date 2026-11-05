@@ -8,7 +8,7 @@ import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
 import * as api from "../lib/api.js";
-import { partagerSelectionFiches, zoneFiche, drapeauPays } from "../lib/util.js";
+import { partagerSelectionFiches, zoneFiche } from "../lib/util.js";
 
 const store = useCarnetStore();
 const router = useRouter();
@@ -89,7 +89,7 @@ const paysChips = computed(() => {
   }
   return [...n.entries()]
     .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
-    .map(([p, c]) => ({ pays: p || "?", label: p || "Non précisé", drapeau: drapeauPays(p), n: c }));
+    .map(([p, c]) => ({ pays: p || "?", label: p || "Non précisé", n: c }));
 });
 const villesChips = computed(() => {
   if (!filtrePays.value) return [];
@@ -120,7 +120,7 @@ const labelLieu = computed(() => {
   if (!filtrePays.value) return "Lieu";
   if (filtreVille.value) return filtreVille.value === "?" ? "Non précisé" : filtreVille.value;
   const p = paysChips.value.find((x) => x.pays === filtrePays.value);
-  return p ? p.drapeau + " " + p.label : "Lieu";
+  return p ? p.label : "Lieu";
 });
 const totalPays = computed(() => villesChips.value.reduce((a, v) => a + v.n, 0));
 
@@ -629,7 +629,7 @@ async function confirmerPartage() {
                 <button v-for="p in paysChips" :key="p.pays" @click="filtrePays = p.pays; filtreVille = ''"
                   class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
                   :style="{ color: 'var(--c-ink)' }">
-                  <span>{{ p.drapeau }} {{ p.label }}</span>
+                  <span>{{ p.label }}</span>
                   <span class="text-[10px] text-muted">{{ p.n }}</span>
                 </button>
               </template>
