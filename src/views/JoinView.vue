@@ -187,9 +187,10 @@ async function reprendre() {
           <Ic :name="showRecupCode ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
         </button>
       </div>
-      <p class="text-[11px] text-muted leading-relaxed mb-3">
-        À toi seul, et un seul pour tous tes carnets. Il prouve que ce prénom est le tien, te permet de le
-        reprendre sur un nouvel appareil et servira à créer tes prochains carnets — garde-le précieusement.
+      <p class="text-[11px] leading-relaxed mb-3">
+        <span class="font-semibold">Mémorise bien ce code : il te servira à créer tes propres carnets et à retrouver
+        tes carnets si tu changes de téléphone.</span>
+        <span class="text-muted"> Personne ne pourra te le renvoyer — un seul code, pour tous tes carnets.</span>
       </p>
       <p v-if="err" class="text-xs text-accent text-center mb-2">{{ err }}</p>
       <button @click="rejoindre" :disabled="code.trim().length < 4 || ![4, 6].includes(codeRecup.replace(/\D/g, '').length)"

@@ -195,8 +195,10 @@ async function exporterJSON() {
         placeholder="●●●●●●"
         @input="codeRecupJoin = codeRecupJoin.replace(/\D/g, '').slice(0, 6)"
         class="w-full rounded-xl px-3 py-3 text-sm text-center tracking-[.3em] bg-bg border border-hairline outline-none mb-1" />
-      <p class="text-[11px] text-muted mb-3 leading-relaxed">
-        Obligatoire pour un nouveau prénom — et si tu reprends le tien sur un nouvel appareil, c'est lui qui le prouve.
+      <p class="text-[11px] mb-3 leading-relaxed">
+        <span class="font-semibold">Mémorise bien ce code : il te servira à créer tes propres carnets et à retrouver
+        tes carnets si tu changes de téléphone.</span>
+        <span class="text-muted"> Obligatoire pour un nouveau prénom — et si tu reprends le tien sur un nouvel appareil, c'est lui qui le prouve.</span>
       </p>
       <p v-if="errRejoindre" class="text-xs text-accent mb-2 leading-relaxed">{{ errRejoindre }}</p>
       <!-- Prénom déjà pris : c'est peut-être toi sur un nouvel appareil → code admin -->
@@ -259,7 +261,11 @@ async function exporterJSON() {
           <Ic :name="showAdmin2 ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
         </button>
       </div>
-      <p class="text-[11px] text-muted mb-3">Ton code personnel : il devient le code admin de ce carnet et te suit partout — pour créer tes prochains carnets et reprendre ta place sur un nouvel appareil. Ne le donne à personne.</p>
+      <p class="text-[11px] mb-3 leading-relaxed">
+        <span class="font-semibold">Mémorise bien ce code : il te servira à créer tes propres carnets et à retrouver
+        tes carnets si tu changes de téléphone.</span>
+        <span class="text-muted"> Il devient le code admin de ce carnet. Ne le donne à personne.</span>
+      </p>
 
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>
       <div class="grid grid-cols-2 gap-2">

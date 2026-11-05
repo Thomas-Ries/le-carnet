@@ -1,5 +1,8 @@
 # Changelog
 
+## V0.4.69 — mémorisation du code personnel
+
+- Au premier choix du code (onboarding, rejoindre, création), message renforcé : « Mémorise bien ce code : il te servira à créer tes propres carnets et à retrouver tes carnets si tu changes de téléphone. Personne ne pourra te le renvoyer. » — phrase clé en gras.
 ## V0.4.68 — un seul code personnel, partout
 
 - Le code de récupération devient le **code personnel** : un seul pour tous les carnets.
