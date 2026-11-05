@@ -153,9 +153,16 @@ const zonesDepuisLieu = (lieu, codePays) => {
 // de fiches des autres, puis on supprime les doublons.
 const consoliderPrive = async (db, device) => {
   if (!device) return;
+  // V0.4.84 : un appareil par personne = ses espaces privés par appareil fusionnent
+  // aussi (l'identité, c'est le prénom — le deviceId n'est qu'une commodité locale).
   const { results: privs } = await db.prepare(
-    `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?) ORDER BY created_at ASC`
-  ).bind(device).all();
+    `SELECT id FROM Carnets WHERE prive='1' AND id IN (
+       SELECT carnet_id FROM Sessions WHERE device_id=?
+       UNION SELECT carnet_id FROM Membres WHERE LOWER(prenom) IN (
+         SELECT LOWER(prenom) FROM Sessions WHERE device_id=?
+       )
+     ) ORDER BY created_at ASC`
+  ).bind(device, device).all();
   if (privs.length < 2) return;
   const garde = privs[0].id;
   for (const dup of privs.slice(1)) {
@@ -711,11 +718,18 @@ export default {
               const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(carnetPriveId).first();
               if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
             } else {
-              // V0.4.77 : si l'appareil a déjà un espace privé (import précédent,
-              // retour arrière, cache client), on le RÉUTILISE — jamais de doublon.
+              // V0.4.84 : l'espace privé suit la PERSONNE — on le réutilise par prénom
+              // (importe sur le Mac, le tel le voit aussi), pas seulement par appareil.
+              const { results: sessDev } = await db.prepare(
+                `SELECT prenom FROM Sessions WHERE device_id=? AND prenom IS NOT NULL LIMIT 1`
+              ).bind(device).all();
+              const prenomImp = cleanPrenom(p.prenom) || (sessDev.length ? cleanPrenom(sessDev[0].prenom) : "");
               const dejaLa = await db.prepare(
-                `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?) ORDER BY created_at ASC LIMIT 1`
-              ).bind(device).first();
+                `SELECT id FROM Carnets WHERE prive='1' AND id IN (
+                   SELECT carnet_id FROM Sessions WHERE device_id=?
+                   UNION SELECT carnet_id FROM Membres WHERE prenom<>'' AND LOWER(prenom)=LOWER(?)
+                 ) ORDER BY created_at ASC LIMIT 1`
+              ).bind(device, prenomImp).first();
               if (dejaLa) {
                 carnetPriveId = dejaLa.id;
               } else {
@@ -729,6 +743,16 @@ export default {
                 `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
               ).bind(pid, "Mon G-Maps", codePrive, prenomPrive, "", "1", now).run();
               await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(pid, prenomPrive).run();
+              // V0.4.84 : l'espace privé reçoit le même code personnel hashé que les
+              // autres carnets du membre — il devient récupérable sur un nouvel appareil.
+              {
+                const { results: srcCode } = await db.prepare(
+                  `SELECT code_recup FROM Membres WHERE prenom=? AND code_recup IS NOT NULL AND carnet_id<>? LIMIT 1`
+                ).bind(prenomPrive, pid).all();
+                if (srcCode.length)
+                  await db.prepare(`UPDATE Membres SET code_recup=? WHERE carnet_id=? AND prenom=?`)
+                    .bind(srcCode[0].code_recup, pid, prenomPrive).run();
+              }
               await db.prepare(
                 `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
               ).bind(device, pid, prenomPrive, "member", now).run();
@@ -962,6 +986,50 @@ export default {
               n++;
             }
             return json({ ok: true, carnets: n });
+          }
+
+          // V0.4.84 « Retrouver mes carnets » : prénom + code personnel (le même
+          // partout, hashé dans Membres.code_recup) et cet appareil récupère TOUT —
+          // carnets ET espace privé G-Maps. Un appareil qui perd son stockage local
+          // (purge iOS, réinstallation, nouveau téléphone) ne retape plus rien.
+          case "recuperer": {
+            const prenomR = cleanPrenom(p.prenom);
+            const codeR = String(p.code || "").replace(/\D/g, "");
+            if (!prenomR || ![4, 6].includes(codeR.length)) return json({ error: "code_invalide" }, 400);
+            const { results: mbs } = await db.prepare(
+              `SELECT carnet_id, code_recup FROM Membres WHERE LOWER(prenom)=LOWER(?)`
+            ).bind(prenomR).all();
+            let retrouves = 0;
+            for (const m of mbs) {
+              if (!m.code_recup || !(await verifyCode(codeR, m.code_recup))) continue;
+              const dej = await db.prepare(
+                `SELECT 1 FROM Sessions WHERE device_id=? AND carnet_id=?`
+              ).bind(device, m.carnet_id).first();
+              if (!dej)
+                await db.prepare(
+                  `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+                ).bind(device, m.carnet_id, prenomR, "member", now).run();
+              retrouves++;
+            }
+            if (!retrouves) return json({ error: "code_refuse" });
+            // G-Maps suit la personne : l'espace privé récupéré hérite du code
+            // personnel (hash copié tel quel — le même code vérifie pareil).
+            {
+              const { results: srcCode } = await db.prepare(
+                `SELECT code_recup FROM Membres WHERE LOWER(prenom)=LOWER(?) AND code_recup IS NOT NULL LIMIT 1`
+              ).bind(prenomR).all();
+              if (srcCode.length) {
+                const { results: privSansCode } = await db.prepare(
+                  `SELECT m.carnet_id, m.prenom FROM Membres m JOIN Carnets c ON c.id=m.carnet_id
+                   WHERE c.prive='1' AND LOWER(m.prenom)=LOWER(?) AND m.code_recup IS NULL`
+                ).bind(prenomR).all();
+                for (const pv of privSansCode)
+                  await db.prepare(`UPDATE Membres SET code_recup=? WHERE carnet_id=? AND prenom=?`)
+                    .bind(srcCode[0].code_recup, pv.carnet_id, pv.prenom).run();
+              }
+            }
+            logEvent(db, "recuperer", { device, prenom: prenomR, meta: { retrouves } });
+            return json({ ok: true, carnets: retrouves });
           }
 
           case "addFlash": {

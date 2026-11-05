@@ -1,5 +1,10 @@
-# Changelog
-
+0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
+- Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
+- Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
+- Fusion des espaces privés par prénom (plus par appareil) : l'import G-Maps fait sur le Mac apparaît sur le tel, fiches dédupliquées.
+- JoinView : lien « J'ai déjà mes carnets sur un autre appareil » + encart prénom/code → tout revient (carnets + G-Maps).
+- main.js : `navigator.storage.persist()` au boot pour réduire l'éviction silencieuse.
+- Encart multi-appareils (CarnetView) réécrit autour de la nouvelle porte.
 ## V0.4.83 — Avatars partout où un badge de profil paraît
 
 - Le bootstrap diffuse l'avatar de chaque membre ; il s'affiche désormais dans la liste des membres d'un carnet, devant chaque commentaire d'une fiche, et sur les cards (auteur + cœurs reçus) à la place de la seule initiale.

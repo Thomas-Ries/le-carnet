@@ -240,6 +240,16 @@ export const useCarnetStore = defineStore("carnet", {
       return r.carnet;
     },
 
+    // V0.4.84 : prénom + code personnel -> l'appareil retrouve TOUS ses carnets
+    // (et l'espace G-Maps). Le remède aux purges de stockage iOS et aux changements
+    // d'appareil : on ne retape plus jamais ses carnets.
+    async recuperer(prenom, code) {
+      const r = await api.recuperer(prenom, code, this.deviceId);
+      if (r && r.error) return r;
+      this.setProfil(prenom);
+      await this.refresh();
+      return r;
+    },
     async rejoindre(code, codeRecup) {
       const prenom = this.profil.prenom;
       const r = await api.join({ code, prenom, deviceId: this.deviceId, codeRecup });

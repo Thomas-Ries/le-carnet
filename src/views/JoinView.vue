@@ -12,6 +12,11 @@ const store = useCarnetStore();
 const toast = inject("toast");
 
 const step = ref(route.params.code ? 2 : 1);
+// V0.4.84 : récupération identité — prénom + code personnel, tout revient.
+const recupOpen = ref(false);
+const recupCode = ref("");
+const recupBusy = ref(false);
+const recupIdErr = ref("");
 const prenom = ref(store.profil.prenom || "");
 // Normalise un mot-clé : minuscules, sans accents, espaces -> tirets, max 15
 const normMot = (v) =>
@@ -31,6 +36,21 @@ const superPass = ref("");
 const superErr = ref("");
 const connu = computed(() => store.carnets.find((c) => c.code === normMot(code.value)));
 
+async function retrouverMesCarnets() {
+  if (recupBusy.value) return;
+  recupIdErr.value = "";
+  recupBusy.value = true;
+  const r = await store.recuperer(prenom.value.trim(), recupCode.value);
+  recupBusy.value = false;
+  if (r && r.error) {
+    recupIdErr.value = r.error === "code_refuse"
+      ? "Code refusé — vérifie ton code personnel (4 ou 6 chiffres)."
+      : "Impossible pour l'instant — vérifie ta connexion.";
+    return;
+  }
+  toast("Retrouvé — tes carnets sont de retour");
+  router.push("/");
+}
 function goStep2() {
   if (!prenom.value.trim()) return;
   dupErr.value = "";
@@ -168,6 +188,23 @@ async function reprendre() {
         Continuer
       </button>
       <p class="text-center text-xs text-muted mt-4">Pas de mot de passe. Juste ton prénom et le mot-clé du carnet.</p>
+      <button @click="recupOpen = !recupOpen" class="w-full py-2 mt-1 text-xs font-semibold text-muted underline">
+        J'ai déjà mes carnets sur un autre appareil
+      </button>
+      <div v-if="recupOpen" class="rounded-2xl p-4 mt-2 bg-surface border border-hairline text-left">
+        <p class="text-[11px] text-muted leading-relaxed mb-2.5">
+          Prénom + code personnel (4 ou 6 chiffres) : cet appareil retrouve tout seul
+          tes carnets et ton espace G-Maps — même après une réinstallation ou un changement de téléphone.
+        </p>
+        <input v-model="recupCode" :type="showRecup ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Ton code personnel" autocomplete="off"
+          @input="recupCode = recupCode.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-4 py-3 text-lg text-center tracking-[.3em] bg-bg border border-hairline outline-none mb-2" />
+        <p v-if="recupIdErr" class="text-xs text-accent text-center mb-2">{{ recupIdErr }}</p>
+        <button @click="retrouverMesCarnets" :disabled="!prenom.trim() || ![4, 6].includes(recupCode.length) || recupBusy"
+          class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40">
+          {{ recupBusy ? "Recherche…" : "Retrouver mes carnets" }}
+        </button>
+      </div>
     </div>
 
     <!-- Étape 2 : code -->

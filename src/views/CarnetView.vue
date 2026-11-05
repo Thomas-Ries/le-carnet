@@ -172,10 +172,11 @@ async function exporterJSON() {
     <!-- V0.4.82 : un carnet vit sur l'appareil où on l'a rejoint — ici, on
          explique comment retrouver ceux du téléphone sur un nouvel écran. -->
     <p class="text-[11px] text-muted leading-relaxed mb-4 rounded-xl px-3 py-2.5 bg-soft">
-      Tes carnets ne sont pas repris automatiquement d'un appareil à l'autre : sur un nouvel écran,
-      retrouve-les avec « Rejoindre un carnet » ci-dessous — ton
-      <span class="font-semibold text-accent">mot-clé d'invitation</span> et ton
-      <span class="font-semibold text-accent">code personnel</span> remettent tout en place.
+      Tes carnets ne sont pas repris automatiquement d'un appareil à l'autre. Sur un nouvel écran :
+      rouvre l'app, entre ton <span class="font-semibold text-accent">prénom</span> puis
+      « <span class="font-semibold text-accent">J'ai déjà mes carnets sur un autre appareil</span> » —
+      ton <span class="font-semibold text-accent">code personnel</span> remet tout en place,
+      y compris ton espace G-Maps. Ou rejoins-les un par un avec un mot-clé ci-dessous.
     </p>
 
     <!-- V0.4.77 : accès permanent à l'espace privé d'import Google Maps -->

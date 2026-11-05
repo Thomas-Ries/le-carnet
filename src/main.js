@@ -15,4 +15,7 @@ createApp(App).use(createPinia()).use(router).mount("#app");
 // Service worker : nécessaire pour recevoir les notifications push
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
+  // V0.4.84 : demander la persistance du stockage quand le navigateur le permet —
+  // réduit l'éviction silencieuse du localStorage (deviceId / sessions locales).
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) { /* ok */ }
 }
