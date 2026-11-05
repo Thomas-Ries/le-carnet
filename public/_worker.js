@@ -380,7 +380,7 @@ export default {
               }
               sendPushTo(env, db, [...dests], {
                 title: s.prenom + " a noté une adresse aimée",
-                body: "« " + cleanText(f.titre, 60) + " » — va voir, aime-la si tu la fréquentes ♥",
+                body: "« " + cleanText(f.titre, 60) + " » — une nouvelle adresse à découvrir dans ton carnet ♥",
                 url: "/fiche/" + id,
               }).catch(() => {});
             })().catch(() => {});

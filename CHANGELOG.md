@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.36 — Notif note : nouvelle tournure
+
+- Thomas n'aimait pas « va voir, aime-la si tu la fréquentes » -> corps de la notif d'une nouvelle note : « X » — une nouvelle adresse à découvrir dans ton carnet ♥.
+
 ## V0.4.35 — Notifications : signature cœur
 
 - Le logo de l'app est déjà attaché à chaque notif (sw.js : icon/badge icon-192.png ; iOS affiche l'icône de l'app installée). Ce qui manquait : la chaleur du texte.
