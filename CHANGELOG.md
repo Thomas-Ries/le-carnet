@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.63 — fix crash au join
+
+- Rejoindre avec un mot-clé erroné (ou tout refus serveur) faisait crasher l'écran : l'objet d'erreur passait pour un succès et le toast lisait le carnet inexistant. Chaque erreur affiche maintenant son message clair.
+
 ## V0.4.62 — nav : centrage vertical
 
 - La rangée de la nav a une hauteur fixe (50px) et le contenu (icône + label) s'y centre verticalement — padding identique en haut et en bas, quel que soit l'onglet actif.

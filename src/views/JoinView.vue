@@ -47,8 +47,16 @@ async function rejoindre() {
     step.value = 1;
     return;
   }
+  if (r && r.error) {
+    // Toute erreur de join remonte ici avec un message clair — jamais un crash
+    // (mot-clé erroné, refus serveur… l'appareil n'a alors aucun carnet actif).
+    toast(r.error === "carnet introuvable"
+      ? "Carnet introuvable — vérifie le mot-clé"
+      : "Impossible de rejoindre : " + r.error);
+    return;
+  }
   if (r) {
-    toast("Bienvenue dans « " + store.carnet.nom + " »");
+    toast("Bienvenue dans « " + (store.carnet?.nom || "ton carnet") + " »");
     // Première connexion : la modale Bienvenue (HomeView) présente l'app
     // et propose d'activer les notifs. Les connexions suivantes gardent le
     // prompt silencieux ci-dessous.
