@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.38 — Liens d'invitation courts
+
+- Le lien partagé (WhatsApp / SMS / Copier) passe de `.../#/join/famille-a` à `https://le-carnet-adresses-animees.pages.dev/join/famille-a` — plus propre, sans dièse.
+- Worker : les chemins `/join/<mot-clé>` servent l'app (index.html). Client : le chemin est reconverti en route hash au démarrage (main.js), les anciens liens `#/join/...` restent valides.
+- Le mot-clé du carnet joue le rôle de nom dans l'URL (ex. `famille-a`, `paques-2027`).
+
 ## V0.4.37 — Flash : texte de l'appât photo
 
 - « Assiette, verre, salle — c'est parti en 5 secondes » -> « Une bouteille, un plat, une ambiance — ça part en 5 secondes » (préférence de Thomas).

@@ -23,8 +23,7 @@ const err = ref("");
 
 const lien = computed(() => {
   if (!store.carnet) return "";
-  const base = location.origin + location.pathname;
-  return base + "#/join/" + store.carnet.code;
+  return location.origin + "/join/" + store.carnet.code;
 });
 
 async function creer() {

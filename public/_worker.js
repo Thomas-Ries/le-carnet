@@ -117,6 +117,11 @@ export default {
     const url = new URL(request.url);
 
     // ---------- Statiques ----------
+    // Lien court d'invitation : /join/<mot-clé> sert l'app (index.html).
+    // Le client convertit le chemin en route hash au démarrage (main.js).
+    if (request.method === "GET" && url.pathname.startsWith("/join/")) {
+      return env.ASSETS.fetch(new Request(new URL("/", url), request));
+    }
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
 
     if (!env.DB) return json({ error: "binding DB absent" }, 500);

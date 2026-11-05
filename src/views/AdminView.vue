@@ -100,7 +100,7 @@ async function changerCode() {
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
         <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter dans ce carnet</p>
         <p class="text-[11px] text-muted mb-2.5">Mot-clé d'invitation : <span class="font-semibold text-accent">{{ carnet?.code }}</span> — à donner à la main ou via le lien.</p>
-        <button @click="navigator.clipboard?.writeText(location.origin + location.pathname + '#/join/' + carnet?.code); toast('Lien copié')"
+        <button @click="navigator.clipboard?.writeText(location.origin + '/join/' + carnet?.code); toast('Lien copié')"
           class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5 mb-3">
           <Ic name="share" class="w-4 h-4" /> Copier le lien
         </button>
