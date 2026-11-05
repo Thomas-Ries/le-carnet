@@ -7,7 +7,7 @@ import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
 import * as api from "../lib/api.js";
-import { partagerSelectionFiches } from "../lib/util.js";
+import { partagerSelectionFiches, zoneFiche, drapeauPays } from "../lib/util.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -56,18 +56,69 @@ async function activerNotifsAccueil() {
 
 /* Tri : plus récent (défaut, ordre du carnet) / plus aimé (cœurs décroissants) / A à Z (titre) */
 const fichesTri = computed(() => {
+  const base = fiches.value.filter(passeFiltre);
   if (tri.value === "aime") {
-    return [...fiches.value].sort(
+    return [...base].sort(
       (a, b) => (b.reacts?.length || 0) - (a.reacts?.length || 0) || (a.date < b.date ? 1 : -1)
     );
   }
   if (tri.value === "az") {
-    return [...fiches.value].sort((a, b) =>
+    return [...base].sort((a, b) =>
       (a.titre || "").localeCompare(b.titre || "", "fr", { sensitivity: "base" })
     );
   }
-  return fiches.value;
+  return base;
 });
+
+/* V0.4.76 — Filtre par pays puis par ville. Zone effective = colonnes serveur
+   (backfillées au bootstrap) si présentes, sinon détection locale depuis l'adresse.
+   « Non précisé » (aucun pays reconnu) est un groupe comme les autres.
+   Les chips n'apparaissent que si le carnet touche au moins 2 pays distincts. */
+const filtrePays = ref("");
+const filtreVille = ref("");
+const zonesFiches = computed(() =>
+  fiches.value.map((f) => ({ f, z: zoneFiche(f) }))
+);
+const paysChips = computed(() => {
+  const n = new Map();
+  for (const { z } of zonesFiches.value) {
+    const k = z.pays || "";
+    n.set(k, (n.get(k) || 0) + 1);
+  }
+  return [...n.entries()]
+    .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+    .map(([p, c]) => ({ pays: p || "?", label: p || "Non précisé", drapeau: drapeauPays(p), n: c }));
+});
+const villesChips = computed(() => {
+  if (!filtrePays.value) return [];
+  const paysCible = filtrePays.value === "?" ? "" : filtrePays.value;
+  const n = new Map();
+  let sans = 0;
+  for (const { z } of zonesFiches.value) {
+    if ((z.pays || "") !== paysCible) continue;
+    if (z.ville) n.set(z.ville, (n.get(z.ville) || 0) + 1);
+    else sans++;
+  }
+  const out = [...n.entries()]
+    .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+    .map(([v, c]) => ({ ville: v, n: c }));
+  if (sans) out.push({ ville: "?", n: sans });
+  return out;
+});
+const passeFiltre = (f) => {
+  if (!filtrePays.value) return true;
+  const z = zoneFiche(f);
+  if ((z.pays || "") !== (filtrePays.value === "?" ? "" : filtrePays.value)) return false;
+  if (filtreVille.value && (z.ville || "") !== (filtreVille.value === "?" ? "" : filtreVille.value)) return false;
+  return true;
+};
+function choisirPays(p) {
+  filtrePays.value = filtrePays.value === p ? "" : p;
+  filtreVille.value = "";
+}
+function choisirVille(v) {
+  filtreVille.value = filtreVille.value === v ? "" : v;
+}
 
 /* Inspiration : piocher une idee de sortie dans les adresses deja notees.
    L'etat vit dans le store : quand on ouvre le detail d'une card depuis la
@@ -175,6 +226,7 @@ onUnmounted(() => { window.removeEventListener("scroll", surScroll); document.bo
 
 /* Sélection longue-press sur une card → partage de la sélection.
    1 card = sa carte PNG ; plusieurs = un PDF qui les regroupe (pas de flood). */
+watch(() => store.carnet?.id, () => { filtrePays.value = ""; filtreVille.value = ""; });
 const selMode = ref(false);
 const selIds = ref([]);
 const estSel = (id) => selIds.value.includes(id);
@@ -518,6 +570,41 @@ async function confirmerPartage() {
           </div>
         </div>
       </div>
+      <!-- V0.4.76 — Filtre pays : visible dès que le carnet touche 2 pays distincts -->
+      <div v-if="paysChips.length > 1 && fiches.length" class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar pb-0.5">
+        <button @click="choisirPays('')"
+          class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition"
+          :style="{
+            background: filtrePays ? 'var(--c-surface)' : 'var(--c-soft)',
+            color: filtrePays ? 'var(--c-muted)' : 'var(--c-accent)',
+            border: '1px solid ' + (filtrePays ? 'var(--c-hairline)' : 'var(--c-accent)'),
+          }">Tous · {{ fiches.length }}</button>
+        <button v-for="p in paysChips" :key="p.pays" @click="choisirPays(p.pays)"
+          class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition"
+          :style="{
+            background: filtrePays === p.pays ? 'var(--c-soft)' : 'var(--c-surface)',
+            color: filtrePays === p.pays ? 'var(--c-accent)' : 'var(--c-ink)',
+            border: '1px solid ' + (filtrePays === p.pays ? 'var(--c-accent)' : 'var(--c-hairline)'),
+          }">{{ p.drapeau }} {{ p.label }} · {{ p.n }}</button>
+      </div>
+      <!-- Sous-filtre ville, révélé quand un pays est choisi -->
+      <div v-if="filtrePays && villesChips.length > 1" class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar pb-0.5">
+        <button @click="choisirVille('')"
+          class="shrink-0 rounded-full px-3 py-1.5 text-[11px] transition"
+          :style="{
+            background: filtreVille ? 'var(--c-surface)' : 'var(--c-soft)',
+            color: filtreVille ? 'var(--c-muted)' : 'var(--c-accent)',
+            border: '1px solid ' + (filtreVille ? 'var(--c-hairline)' : 'var(--c-accent)'),
+          }">Toutes les villes</button>
+        <button v-for="v in villesChips" :key="v.ville" @click="choisirVille(v.ville)"
+          class="shrink-0 rounded-full px-3 py-1.5 text-[11px] transition"
+          :style="{
+            background: filtreVille === v.ville ? 'var(--c-soft)' : 'var(--c-surface)',
+            color: filtreVille === v.ville ? 'var(--c-accent)' : 'var(--c-ink)',
+            border: '1px solid ' + (filtreVille === v.ville ? 'var(--c-accent)' : 'var(--c-hairline)'),
+          }">{{ v.ville === "?" ? "Non précisé" : v.ville }} · {{ v.n }}</button>
+      </div>
+
       <div class="space-y-2">
         <!-- Appui long sur une card = entrer en sélection ; en sélection, le tap coche/décoche -->
         <div v-for="f in affiches" :key="f.id" class="relative rounded-xl"

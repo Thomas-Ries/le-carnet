@@ -268,3 +268,54 @@ export function partagerWhatsapp(texte) {
 export function partagerSms(texte) {
   location.href = "sms:?&body=" + encodeURIComponent(texte);
 }
+/* V0.4.76 — Zones géographiques (filtre pays / ville).
+   Miroir léger de zonesDepuisLieu (worker) : l'UI s'en sert en fallback pour
+   les fiches non encore backfillées (démo, très vieux imports). */
+export const PAYS_DRAPEAUX = {
+  "France": "🇫🇷", "Belgique": "🇧🇪", "Suisse": "🇨🇭", "Luxembourg": "🇱🇺", "Allemagne": "🇩🇪",
+  "Espagne": "🇪🇸", "Italie": "🇮🇹", "Portugal": "🇵🇹", "Pays-Bas": "🇳🇱", "Royaume-Uni": "🇬🇧",
+  "Irlande": "🇮🇪", "Autriche": "🇦🇹", "Pologne": "🇵🇱", "Grece": "🇬🇷", "Turquie": "🇹🇷",
+  "Maroc": "🇲🇦", "Algerie": "🇩🇿", "Tunisie": "🇹🇳", "Canada": "🇨🇦", "Etats-Unis": "🇺🇸",
+  "Bresil": "🇧🇷", "Japon": "🇯🇵", "Chine": "🇨🇳", "Inde": "🇮🇳", "Thailande": "🇹🇭",
+  "Australie": "🇦🇺", "Nouvelle-Zelande": "🇳🇿",
+};
+export const drapeauPays = (p) => PAYS_DRAPEAUX[p] || "🌍";
+const PAYS_NOMS_CLIENT = new Set(Object.keys(PAYS_DRAPEAUX).concat(
+  ["Ecosse", "Angleterre", "Tchequie", "Slovaquie", "Hongrie", "Slovenie", "Croatie", "Serbie",
+  "Bulgarie", "Roumanie", "Ukraine", "Lituanie", "Lettonie", "Estonie", "Finlande", "Suede",
+  "Norvege", "Danemark", "Islande", "Russie", "Liban", "Israel", "Egypte", "Senegal",
+  "Mexique", "Cuba", "Argentine", "Chili", "Perou", "Colombie", "Vietnam", "Cambodge",
+  "Laos", "Singapour", "Indonesie", "Malaisie"]));
+const normZone = (t) => String(t || "").trim().normalize("NFD")
+  .replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z' -]+/g, " ").replace(/\s+/g, " ").trim();
+export function detecterZone(lieu, codePays) {
+  const CODES = { FR: "France", BE: "Belgique", CH: "Suisse", DE: "Allemagne", ES: "Espagne",
+    IT: "Italie", PT: "Portugal", NL: "Pays-Bas", GB: "Royaume-Uni", UK: "Royaume-Uni",
+    IE: "Irlande", MA: "Maroc", DZ: "Algerie", TN: "Tunisie", CA: "Canada", US: "Etats-Unis" };
+  let pays = codePays ? (CODES[String(codePays).toUpperCase()] || "") : "";
+  let ville = "";
+  const parts = String(lieu || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (!pays) {
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const n = normZone(parts[i]);
+      if (n && PAYS_NOMS_CLIENT.has(n)) { pays = n; parts.splice(i, 1); break; }
+    }
+  } else {
+    const n = normZone(parts[parts.length - 1] || "");
+    if (n && PAYS_NOMS_CLIENT.has(n)) parts.splice(parts.length - 1, 1);
+  }
+  for (let i = 0; i < parts.length; i++) {
+    const m = /^\d{4,6}\s+(.+)$/.exec(parts[i]);
+    if (m) { ville = normZone(m[1]); break; }
+  }
+  if (!ville && pays === "France" && parts.length >= 2) {
+    const candidat = normZone(parts[parts.length - 1]);
+    if (candidat && !/^\d/.test(parts[parts.length - 2] || " ") && candidat.length <= 40) ville = candidat;
+  }
+  return { pays, ville };
+}
+/* Zone effective d'une fiche : colonnes V0.4.76 si déjà remplies, sinon détection locale. */
+export function zoneFiche(f) {
+  if (f && f.pays) return { pays: f.pays, ville: f.ville || "" };
+  return detecterZone(f && f.lieu);
+}

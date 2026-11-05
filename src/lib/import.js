@@ -138,6 +138,7 @@ export function parseAvis(nomFichier, texte) {
       aviss.push({
         titre: titre.slice(0, 60),
         lieu: (champ(loc, ["address", "adresse"]) || champ(v, ["address", "adresse"])).slice(0, 60),
+        country_code: (champ(loc, ["country_code", "countrycode", "pays_code"]) || champ(v, ["country_code", "countrycode"])).slice(0, 2).toUpperCase(),
         note: NOTE_DES_ETOILES[Math.round(note)] || 85,
         com: com.slice(0, 500),
       });

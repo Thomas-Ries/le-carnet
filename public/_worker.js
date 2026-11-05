@@ -107,6 +107,42 @@ const ensureRecup = (db) =>
 // V0.4.71 « Mes adresses » : carnets privés (visibles de leur seul propriétaire)
 const ensurePrive = (db) =>
   db.prepare(`ALTER TABLE Carnets ADD COLUMN prive TEXT`).run().catch(() => {});
+// V0.4.76 : zones géographiques (pays / ville) des fiches, pour le filtre.
+// ALTER silencieux : no-op si les colonnes existent déjà.
+const ensureZones = async (db) => {
+  await db.prepare(`ALTER TABLE Fiches ADD COLUMN pays TEXT`).run().catch(() => {});
+  await db.prepare(`ALTER TABLE Fiches ADD COLUMN ville TEXT`).run().catch(() => {});
+};
+// Pays reconnus dans une adresse Google (dernier segment après la virgule).
+const PAYS_NOMS = new Set(("France, Belgique, Suisse, Luxembourg, Monaco, Allemagne, Espagne, Italie, Portugal, Pays-Bas, Royaume-Uni, Irlande, Ecosse, Angleterre, Autriche, Pologne, Tchequie, Slovaquie, Hongrie, Slovenie, Croatie, Serbie, Bosnie-Herzegovine, Montenegro, Macedoine, Grece, Bulgarie, Roumanie, Moldavie, Ukraine, Lituanie, Lettonie, Estonie, Finlande, Suede, Norvege, Danemark, Islande, Turquie, Russie, Maroc, Algerie, Tunisie, Liban, Israel, Egypte, Senegal, Cote d Ivoire, Canada, Etats-Unis, Mexique, Cuba, Republique dominicaine, Jamaque, Bresil, Argentine, Chili, Perou, Colombie, Uruguay, Chine, Japon, Coree du Sud, Inde, Thailande, Vietnam, Cambodge, Laos, Singapour, Indonesie, Malaisie, Australie, Nouvelle-Zelande, Nouvelle Zelande").split(", "));
+const CODE_PAYS = { FR: "France", BE: "Belgique", CH: "Suisse", LU: "Luxembourg", MC: "Monaco", DE: "Allemagne", ES: "Espagne", IT: "Italie", PT: "Portugal", NL: "Pays-Bas", GB: "Royaume-Uni", UK: "Royaume-Uni", IE: "Irlande", AT: "Autriche", PL: "Pologne", CZ: "Tchequie", GR: "Grece", TR: "Turquie", RU: "Russie", MA: "Maroc", DZ: "Algerie", TN: "Tunisie", CA: "Canada", US: "Etats-Unis", MX: "Mexique", BR: "Bresil", AR: "Argentine", AU: "Australie", NZ: "Nouvelle-Zelande", JP: "Japon", CN: "Chine", IN: "Inde", TH: "Thailande", VN: "Vietnam" };
+const normPays = (t) => cleanText(t, 40).trim()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z' -]+/g, " ").replace(/\s+/g, " ").trim();
+// Lieu texte -> { pays, ville }. Ville = segment au motif "NNNNN Nom" (code postal),
+// sinon l'avant-dernier segment s'il ressemble à un nom de ville.
+const zonesDepuisLieu = (lieu, codePays) => {
+  let pays = codePays ? (CODE_PAYS[String(codePays).toUpperCase()] || "") : "";
+  let ville = "";
+  const parts = cleanText(lieu, 120).split(",").map((x) => x.trim()).filter(Boolean);
+  if (!pays) {
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const n = normPays(parts[i]);
+      if (n && PAYS_NOMS.has(n)) { pays = n; parts.splice(i, 1); break; }
+    }
+  } else {
+    const n = normPays(parts[parts.length - 1] || "");
+    if (n && PAYS_NOMS.has(n)) parts.splice(parts.length - 1, 1);
+  }
+  for (let i = 0; i < parts.length; i++) {
+    const m = /^\d{4,6}\s+(.+)$/.exec(parts[i]);
+    if (m) { ville = normPays(m[1]); break; }
+  }
+  if (!ville && pays === "France" && parts.length >= 2) {
+    const candidat = normPays(parts[parts.length - 1]);
+    if (candidat && /^\d/.test(parts[parts.length - 2] || " ") === false && candidat.length <= 40) ville = candidat;
+  }
+  return { pays, ville };
+};
 const ensureComments = (db) =>
   db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
     id TEXT PRIMARY KEY, fiche_id TEXT NOT NULL, prenom TEXT NOT NULL,
@@ -170,6 +206,18 @@ export default {
         await ensureEvents(db);
         await ensureComments(db);
         await ensurePrive(db);
+        await ensureZones(db);
+        // Backfill zones : les fiches créées avant V0.4.76 sont requalifiées depuis leur adresse.
+        {
+          const { results: sansZone } = await db.prepare(
+            `SELECT id, lieu FROM Fiches WHERE (pays IS NULL OR pays='') AND lieu<>'' LIMIT 500`
+          ).all();
+          for (const f of sansZone) {
+            const z = zonesDepuisLieu(f.lieu);
+            await db.prepare(`UPDATE Fiches SET pays=?, ville=? WHERE id=?`)
+              .bind(z.pays || "", z.ville || "", f.id).run();
+          }
+        }
         logEvent(db, "open", { device });
         const roles = {};
         let carnetIds = [];
@@ -246,6 +294,7 @@ export default {
         const fiches = fichesRaw.map((f) => ({
           id: f.id, auteur: f.auteur, type: f.type, cat: f.cat, titre: f.titre, lieu: f.lieu,
           note: f.note, com: f.com, photo: f.photo, recette: f.recette,
+          pays: f.pays || "", ville: f.ville || "",
           date: f.created_at, carnets: carnetsByFiche[f.id] || [],
           reacts: likesByFiche[f.id] || [], demandeRecette: demByFiche[f.id] || [],
           comments: comsByFiche[f.id] || [],
@@ -528,13 +577,14 @@ export default {
             const catVal = Array.isArray(f.cat)
               ? f.cat.filter(Boolean).slice(0, 4).join(", ")
               : f.cat;
+            const zone = zonesDepuisLieu(f.lieu, f.country_code);
             await db.prepare(
-              `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+              `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, pays, ville, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
             ).bind(id, cleanPrenom(f.auteur), cleanText(f.type, 10), cleanText(catVal, 60),
               cleanText(f.titre, 60), cleanText(f.lieu, 60), note, cleanText(f.com, 500),
               typeof f.photo === "string" ? f.photo.slice(0, 400000) : null,
-              cleanText(f.recette, 4000), now).run();
+              cleanText(f.recette, 4000), zone.pays, zone.ville, now).run();
             for (const cid of (Array.isArray(f.carnets) ? f.carnets : []).slice(0, 20)) {
               const membre = await sessionOf(cid);
               if (membre) await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, cid).run();
@@ -551,7 +601,7 @@ export default {
               }).catch(() => {});
             })().catch(() => {});
             logEvent(db, "note", { device, prenom: s.prenom, carnet: f.carnets && f.carnets[0], meta: { titre: cleanText(f.titre, 60) } });
-            return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: catVal, titre: f.titre, lieu: f.lieu,
+            return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: catVal, titre: f.titre, lieu: f.lieu, pays: zone.pays, ville: zone.ville,
               note, com: f.com, photo: f.photo || null, recette: f.recette || null, date: now,
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
           }
@@ -596,13 +646,14 @@ export default {
               if (!titre || cle.length < 4 || vues.has(cle) || seen.has(cle)) { ignores++; continue; }
               seen.add(cle);
               const noteImp = Math.min(100, Math.max(0, parseInt(it && it.note, 10) || 0));
+              const zone = zonesDepuisLieu(it && it.lieu, it && it.country_code);
               const id = crypto.randomUUID();
               await db.prepare(
-                `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+                `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, pays, ville, created_at)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
               ).bind(id, s.prenom, "adresse", null, titre, cleanText(it && it.lieu, 60),
                 (noteImp >= 70 && noteImp <= 100) ? noteImp : 0,
-                cleanText(it && it.com, 500), null, null, now).run();
+                cleanText(it && it.com, 500), null, null, zone.pays, zone.ville, now).run();
               await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, carnetPriveId).run();
               importes++;
             }

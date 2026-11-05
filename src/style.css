@@ -213,3 +213,7 @@ summary.lc-sum:active { background: var(--c-soft); }
   button:not(:disabled):hover { filter: brightness(.94); }
   button:not(:disabled):active { filter: brightness(.88); }
 }
+
+/* V0.4.76 — Barres de défilement masquées pour les rangées de chips filtres. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

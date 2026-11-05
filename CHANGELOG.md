@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.4.76 — Filtre par pays et ville
+
+- Colonnes `pays` / `ville` sur les fiches (migration auto) + backfill des fiches existantes au premier chargement.
+- Détection centrale côté serveur (pays reconnu dans l'adresse ou code pays Takeout, ville via segment code postal) ; l'UI retombe sur une détection locale pour les fiches non encore qualifiées.
+- Chips de filtre dans la liste : pays (drapeaux + compte), puis villes du pays choisi ; « Non précisé » est un groupe à part, compté dans « Tous ». N'apparaissent que si le carnet touche au moins 2 pays.
+- Le filtre s'applique au tri et à la sélection ; réinitialisé au changement de carnet.
+
 ## V0.4.75 — Fix « Voir mes adresses » silencieux + section import visible + curseurs desktop
 
 - **Bug** : après import, « Voir mes adresses » ne faisait RIEN (sans erreur console). Cause : le bootstrap du worker ne renvoyait pas la colonne `prive` des carnets → `store.mesAdresses` restait null → le clic retournait silencieusement. Fix : `carnetsOut` inclut désormais `prive`. Filet de sécurité : `ouvrirMesAdresses` rafraîchit depuis le serveur si l'espace manque, et affiche un toast explicite plutôt que rien.
