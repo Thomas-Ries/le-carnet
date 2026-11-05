@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.72d — Textes import : le produit Takeout s'appelle « Maps (vos adresses) »
+
+- Libellés réels de Google Takeout vérifiés avec Thomas : le produit à cocher est **« Maps (vos adresses) »** (« Enregistrements de vos lieux favoris et de vos avis sur les lieux ») — un seul produit contient les listes ET les avis. Les anciens libellés (« Maps → Enregistrés », « Mes avis ») n'existent plus dans l'interface.
+- Mise à jour de la carte d'import (slot 1, ligne d'aide, messages d'erreur du parser).
+
 ## V0.4.72c — Fix : `_worker.js` tronqué à la V0.4.72 (build wrangler en échec)
 
 - Le `_worker.js` poussé en V0.4.72 était coupé au milieu du `case "rename"` : `wrangler pages deploy` échouait avec « Unexpected end of file ». Reconstitué intégralement (V0.4.71 complète + blocs V0.4.72) et re-validé en syntaxe ESM stricte.

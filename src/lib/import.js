@@ -42,13 +42,13 @@ function parseKML(t) {
     lieu: (pm.getElementsByTagName("address")[0]?.textContent
       || pm.getElementsByTagName("description")[0]?.textContent || "").trim().slice(0, 60),
   })).filter((x) => x.titre);
-  if (!items.length) return { erreur: "Aucun lieu trouvé dans ce KML — exporte « Lieux enregistrés » depuis takeout.google.com (Maps)." };
+  if (!items.length) return { erreur: "Aucun lieu trouvé dans ce KML — exporte « Maps (vos adresses) » depuis takeout.google.com." };
   return { items: items.slice(0, 300) };
 }
 
 function parseCSV(t) {
   const lignes = t.replace(/\r/g, "").split("\n").filter((l) => l.trim());
-  if (lignes.length < 2) return { erreur: "CSV trop court — vérifie que c'est l'export Takeout « Lieux enregistrés »." };
+  if (lignes.length < 2) return { erreur: "CSV trop court — vérifie que c'est l'export Takeout « Maps (vos adresses) »." };
   const sep = lignes[0].includes(";") ? ";" : lignes[0].includes("\t") ? "\t" : ",";
   const split = (l) => {
     const out = [];
@@ -118,7 +118,7 @@ export function parseAvis(nomFichier, texte) {
   const t = String(texte || "");
   if (!t.trim()) return { erreur: "Fichier vide." };
   let data;
-  try { data = JSON.parse(t); } catch (e) { return { erreur: "JSON illisible — vérifie que c'est l'export Takeout « Maps / avis »." }; }
+  try { data = JSON.parse(t); } catch (e) { return { erreur: "JSON illisible — vérifie que c'est l'export Takeout « Maps (vos adresses) » (fichier d'avis)." }; }
   const aviss = [];
   const visite = (v, prof) => {
     if (prof > 5) return;

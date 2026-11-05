@@ -112,7 +112,7 @@ async function onPickAvis(e) {
     if (r.erreur) { errImport.value = "Avis : " + r.erreur; return; }
     avisPick.value = { nom: file.name, items: r.items };
   } catch (err) {
-    errImport.value = "Avis : fichier illisible — seul le JSON de Takeout (Maps) est attendu.";
+    errImport.value = "Avis : fichier illisible — seul le JSON d'avis de Takeout (« Maps (vos adresses) ») est attendu.";
   }
 }
 async function validerImport() {
@@ -328,7 +328,7 @@ async function exporterJSON() {
           <label class="flex-1 text-[11px] leading-tight cursor-pointer">
             <span class="block font-semibold text-sm" :class="lieuxPick ? 'text-accent' : ''">
               {{ lieuxPick ? "✓ " + lieuxPick.nom : "1. Tes lieux enregistrés" }}</span>
-            <span class="text-muted">Obligatoire — export Takeout Google (carte « Enregistrés »)</span>
+            <span class="text-muted">Obligatoire — export Takeout Google (produit « Maps (vos adresses) »)</span>
             <input type="file" accept=".kml,.xml,.csv,.json,.txt" class="hidden" @change="onPickLieux" :disabled="importBusy" />
           </label>
           <Ic name="pin" class="w-4 h-4 text-muted" />
@@ -377,7 +377,7 @@ async function exporterJSON() {
         @click="ouvrirMesAdresses">
         <Ic name="book" class="w-4 h-4" /> Ouvrir Mes adresses ({{ nbMesAdresses }}) →
       </button>
-      <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → Maps → « Enregistrés » (et « Mes avis »). Aucun compte Google requis.</p>
+      <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.</p>
     </div>
 
     <InstallCard v-if="!appInstallee" />
