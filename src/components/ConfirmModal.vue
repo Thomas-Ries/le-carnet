@@ -11,9 +11,9 @@ const emit = defineEmits(["confirm", "cancel"]);
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-[80] flex items-end justify-center"
+  <div v-if="open" class="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4"
     style="background: rgba(43,35,32,.45)" @click.self="emit('cancel')">
-    <div class="w-full max-w-[430px] rounded-t-2xl bg-surface p-5 pb-7"
+    <div class="w-full max-w-[430px] rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl"
       style="border-top: 1px solid var(--c-hairline)">
       <p class="font-serif text-lg mb-1">{{ title }}</p>
       <p class="text-xs text-muted mb-4 leading-relaxed">{{ text }}</p>

@@ -356,7 +356,7 @@ async function exporterJSON() {
           :style="{ border: '1px dashed ' + (picks.length ? 'var(--c-accent)' : 'var(--c-hairline)') }">
           <span class="text-[11px] leading-tight">
             <span class="block font-semibold text-sm" :class="picks.length ? 'text-accent' : ''">
-              {{ picks.length ? picks.length + " fichier" + (picks.length > 1 ? "s" : "") + " choisi" + (picks.length > 1 ? "s" : "") : "Choisir mes fichiers d'export" }}</span>
+              {{ picks.length ? picks.length + " fichier" + (picks.length > 1 ? "s" : "") + " choisi" + (picks.length > 1 ? "s" : "") : "Importer mes fichiers Google Maps" }}</span>
             <span class="text-muted">Ton export takeout.google.com (« Maps (vos adresses) ») — tout seul ou tout le zip : on détecte ce qui est dedans. Les avis deviennent des fiches avec ta note ★ et ton commentaire ; les listes deviennent des fiches « à noter ».</span>
             <input type="file" accept=".json,.kml,.xml,.csv,.txt" multiple class="hidden" @change="onPickExport" :disabled="importBusy" />
           </span>
@@ -536,9 +536,9 @@ async function exporterJSON() {
     </p>
 
     <!-- Popin super-admin : crée l'espace privé de démo (pass vérifié serveur) -->
-    <div v-if="demoPopin" class="fixed inset-0 z-50 flex items-end" :style="{ background: 'rgba(0,0,0,.35)' }"
+    <div v-if="demoPopin" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" :style="{ background: 'rgba(0,0,0,.35)' }"
       @click.self="demoPopin = false">
-      <div class="w-full rounded-t-2xl bg-surface p-5 pb-7" style="max-width: 480px; margin: 0 auto;">
+      <div class="w-full rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl" style="max-width: 480px; margin: 0 auto;">
         <p class="text-sm font-semibold mb-1">Espace privé de démo</p>
         <p class="text-[11px] text-muted mb-3">Super-admin : entre ton pass pour créer « Mes adresses » avec des fiches de démonstration.</p>
         <input v-model="demoPass" type="password" inputmode="numeric" placeholder="Pass super-admin"

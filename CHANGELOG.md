@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.4.79 — Finitions d'après test réel (PWA + desktop)
+
+- CTA d'import : « Importer mes fichiers Google Maps ».
+- Mot-clé d'invitation : espacement des lettres normal (il était taillé pour des codes chiffrés).
+- Le bouton flash disparaît dans l'espace G-Maps — il n'y a rien à y raconter en flash, et il ne masque plus le bandeau de partage.
+- Sur ordi, tous les popins et feuilles (partage, confirmation, flash, démo) s'affichent en modales centrées au lieu de feuilles collées en bas.
+
 ## V0.4.78 — « Mon G-Maps », section repliable, avatar synchronisé, dédoublonnage
 
 - L'espace privé s'appelle désormais « Mon G-Maps » (renommage automatique des espaces existants).

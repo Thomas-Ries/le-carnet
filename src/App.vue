@@ -21,7 +21,10 @@ provide("toast", showToast);
 
 /* Nav masquée sur l'onboarding ; FAB flash sur l'accueil uniquement (pas sur le détail d'une fiche : il gênait le bouton d'envoi des commentaires) */
 const showNav = computed(() => route.name !== "join");
-const showFab = computed(() => route.path === "/" && !store.splash);
+// V0.4.79 : pas de flash story dans l'espace privé G-Maps — le FAB y est inutile
+// et masquait le bandeau de partage.
+const showFab = computed(() =>
+  route.path === "/" && !store.splash && !(store.carnet && (store.carnet.prive === "1" || store.carnet.prive === 1)));
 
 const NAV = [
   { to: "/", icon: "pin", label: "Carnet" },

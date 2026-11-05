@@ -215,7 +215,7 @@ async function exporterJSON() {
       <label for="lc-rejoindre" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Mot-clé d'invitation</label>
       <input id="lc-rejoindre" v-model="codeRejoindre" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
         placeholder="ex. les-copains" @input="codeRejoindre = codeRejoindre.slice(0, 15)"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-3 tracking-[.3em]" />
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-3" />
       <label for="lc-recup" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>
       <input id="lc-recup" v-model="codeRecupJoin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
         placeholder="●●●●●●"
@@ -263,7 +263,7 @@ async function exporterJSON() {
       <input id="lc-code" v-model="codeInvite" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
         placeholder="ex. famille-A ou spice-girls (auto si vide)"
         @input="codeInvite = codeInvite.slice(0, 15)"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1" />
       <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites — plus facile à retenir qu'un numéro. Généré automatiquement si tu laisses vide.</p>
 
       <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>

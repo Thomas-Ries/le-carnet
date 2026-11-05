@@ -175,7 +175,7 @@ async function reprendre() {
       <p class="text-sm text-muted text-center mb-4">Entre le mot-clé du carnet qu'on t'a donné — 4 à 15 caractères.</p>
       <input v-model="code" type="text" autocapitalize="none" autocomplete="off" maxlength="15" autofocus
         placeholder="famille-A ou spice-girls"
-        class="w-full rounded-xl px-4 py-4 text-2xl text-center tracking-[.5em] bg-surface border border-hairline outline-none mb-2" />
+        class="w-full rounded-xl px-4 py-4 text-2xl text-center bg-surface border border-hairline outline-none mb-2" />
       <label class="block text-[10px] uppercase tracking-widest text-muted mt-2 mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>
       <div class="relative mb-1">
         <input v-model="codeRecup" :type="showRecupCode ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
