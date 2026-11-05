@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.4.73 — Import avis-seuls : le JSON d'avis suffit pour créer les fiches
+
+- **Réel constaté** (export Takeout « Maps (vos adresses) » de Thomas) : parfois le zip ne contient AUCUN fichier de listes, seulement le JSON d'avis (GeoJSON FeatureCollection, `properties.location.name/address`, `five_star_rating_published`, `review_text_published`).
+- parseAvis extrait désormais **nom du lieu, adresse, note ★ et commentaire** de chaque avis (lieu imbriqué `location` géré) ; un avis sans lieu identifié (« Aucune information de localisation ») est ignoré et **compté** (`sansLieu`, affiché dans le résumé).
+- Flow : soit fichier suffit — avis seuls → chaque avis devient une fiche complète dans « Mes adresses » ; listes seules → fiches note 0 « à noter » ; les deux → lieux importés puis avis rattachés (inchangé). Slot 1 « Tes listes de lieux — optionnel », slot 2 « Tes avis Google (JSON) — suffit seul ».
+- Libellés Takeout « Maps (vos adresses) » dans les messages d'erreur du parser (certains remplacements V0.4.72d n'avaient pas pris : apostrophes typographiques — piège consigné).
+
 ## V0.4.72d — Textes import : le produit Takeout s'appelle « Maps (vos adresses) »
 
 - Libellés réels de Google Takeout vérifiés avec Thomas : le produit à cocher est **« Maps (vos adresses) »** (« Enregistrements de vos lieux favoris et de vos avis sur les lieux ») — un seul produit contient les listes ET les avis. Les anciens libellés (« Maps → Enregistrés », « Mes avis ») n'existent plus dans l'interface.

@@ -120,16 +120,24 @@ export function parseAvis(nomFichier, texte) {
   let data;
   try { data = JSON.parse(t); } catch (e) { return { erreur: "JSON illisible — vérifie que c'est l'export Takeout « Maps (vos adresses) » (fichier d'avis)." }; }
   const aviss = [];
+  let sansLieu = 0;
   const visite = (v, prof) => {
     if (prof > 5) return;
     if (Array.isArray(v)) { v.forEach((x) => visite(x, prof + 1)); return; }
     if (!v || typeof v !== "object") return;
     const note = Number(valk(v, ["rating", "stars", "note", "starrating", "score"]) ?? NaN);
+    if (Number.isNaN(note) || note < 1 || note > 5) return void Object.values(v).forEach((x) => visite(x, prof + 1));
+    // V0.4.73 Takeout : le lieu est imbriqué dans properties.location { name, address }.
+    const loc = (v.location && typeof v.location === "object") ? v.location : {};
+    const titre = champ(loc, ["name", "title", "titre", "nom", "place"]) || champ(v, ["title", "titre", "name", "nom", "place"]);
     const com = champ(v, ["text", "comment", "review", "contenu", "avis"]);
-    const titre = champ(v, ["title", "titre", "name", "nom", "place", "location"]);
-    if (!Number.isNaN(note) && note >= 1 && note <= 5 && (titre || com)) {
+    if (!titre) {
+      // Avis sans lieu identifié (Google : « Aucune information de localisation ») : pas de fiche possible.
+      sansLieu++;
+    } else {
       aviss.push({
         titre: titre.slice(0, 60),
+        lieu: (champ(loc, ["address", "adresse"]) || champ(v, ["address", "adresse"])).slice(0, 60),
         note: NOTE_DES_ETOILES[Math.round(note)] || 85,
         com: com.slice(0, 500),
       });
@@ -137,6 +145,8 @@ export function parseAvis(nomFichier, texte) {
     Object.values(v).forEach((x) => visite(x, prof + 1));
   };
   visite(data, 0);
-  if (!aviss.length) return { erreur: "Aucun avis exploitable dans ce fichier (note ★ + nom de lieu attendus). Vos lieux sont quand même importables sans lui." };
-  return { items: aviss.slice(0, 500) };
+  if (!aviss.length)
+    return { erreur: "Aucun avis exploitable dans ce fichier (note \u2605 + nom de lieu attendus). Tes listes sont quand m\u00eame importables sans lui." };
+  return { items: aviss.slice(0, 500), sansLieu };
+
 }

@@ -110,23 +110,27 @@ async function onPickAvis(e) {
   try {
     const r = parseAvis(file.name, await file.text());
     if (r.erreur) { errImport.value = "Avis : " + r.erreur; return; }
-    avisPick.value = { nom: file.name, items: r.items };
+    avisPick.value = { nom: file.name, items: r.items, sansLieu: r.sansLieu || 0 };
   } catch (err) {
     errImport.value = "Avis : fichier illisible — seul le JSON d'avis de Takeout (« Maps (vos adresses) ») est attendu.";
   }
 }
 async function validerImport() {
-  if (!lieuxPick.value) return;
+  // V0.4.73 : le fichier d'avis SUFFIT SEUL — chaque avis porte nom, adresse, note ★ et
+  // commentaire, donc il crée directement des fiches. Les listes de lieux restent utiles
+  // si l'export en contient ; si les deux sont fournis : lieux importés, avis rattachés.
+  if (!lieuxPick.value && !avisPick.value) return;
   importBusy.value = true;
   try {
-    const r = await store.importerAdresses(lieuxPick.value.items);
+    const r = await store.importerAdresses(lieuxPick.value ? lieuxPick.value.items : avisPick.value.items);
     if (r && r.error) { errImport.value = "Import impossible : " + r.error; return; }
     let rattaches = 0, orphelins = [];
-    if (avisPick.value && avisPick.value.items.length) {
+    if (lieuxPick.value && avisPick.value && avisPick.value.items.length) {
       const ra = await store.rattacherAvis(avisPick.value.items);
       if (ra && !ra.error) { rattaches = ra.rattaches || 0; orphelins = ra.orphelins || []; }
     }
-    resultatImport.value = { ...r, rattaches, orphelins };
+    const sansLieu = avisPick.value && !lieuxPick.value ? (avisPick.value.sansLieu || 0) : 0;
+    resultatImport.value = { ...r, rattaches, orphelins, sansLieu };
     lieuxPick.value = null; avisPick.value = null;
   } finally {
     importBusy.value = false;
@@ -327,32 +331,33 @@ async function exporterJSON() {
           :style="{ border: '1px solid ' + (lieuxPick ? 'var(--c-accent)' : 'var(--c-hairline)') }">
           <label class="flex-1 text-[11px] leading-tight cursor-pointer">
             <span class="block font-semibold text-sm" :class="lieuxPick ? 'text-accent' : ''">
-              {{ lieuxPick ? "✓ " + lieuxPick.nom : "1. Tes lieux enregistrés" }}</span>
-            <span class="text-muted">Obligatoire — export Takeout Google (produit « Maps (vos adresses) »)</span>
+              {{ lieuxPick ? "✓ " + lieuxPick.nom : "1. Tes listes de lieux — optionnel" }}</span>
+            <span class="text-muted">Fichier de listes de l'export Takeout (.csv / .kml / .json)</span>
             <input type="file" accept=".kml,.xml,.csv,.json,.txt" class="hidden" @change="onPickLieux" :disabled="importBusy" />
           </label>
           <Ic name="pin" class="w-4 h-4 text-muted" />
         </div>
         <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2 cursor-pointer"
-          :style="{ border: '1px solid ' + (avisPick ? 'var(--c-accent)' : 'var(--c-hairline)'), opacity: lieuxPick ? '1' : '.55' }">
+          :style="{ border: '1px solid ' + (avisPick ? 'var(--c-accent)' : 'var(--c-hairline)') }">
           <label class="flex-1 text-[11px] leading-tight cursor-pointer">
             <span class="block font-semibold text-sm" :class="avisPick ? 'text-accent' : ''">
-              {{ avisPick ? "✓ " + avisPick.nom : "2. Tes avis Google — optionnel" }}</span>
-            <span class="text-muted">Notes ★★★★★ et commentaires — ajoutable plus tard</span>
-            <input type="file" accept=".json" class="hidden" @change="onPickAvis" :disabled="importBusy || !lieuxPick" />
+              {{ avisPick ? "✓ " + avisPick.nom : "2. Tes avis Google (JSON) — suffit seul" }}</span>
+            <span class="text-muted">Chaque avis crée une fiche : nom, adresse, ta note ★ et ton commentaire</span>
+            <input type="file" accept=".json" class="hidden" @change="onPickAvis" :disabled="importBusy" />
           </label>
           <Ic name="star" class="w-4 h-4 text-muted" />
         </div>
 
-        <p v-if="lieuxPick" class="text-[11px] text-muted mb-2">
-          {{ lieuxPick.items.length }} lieu{{ lieuxPick.items.length > 1 ? "x" : "" }} trouvé{{ lieuxPick.items.length > 1 ? "s" : "" }}
-          <template v-if="avisPick"> · {{ avisPick.items.length }} avis à rattacher</template>
+        <p v-if="lieuxPick || avisPick" class="text-[11px] text-muted mb-2">
+          <template v-if="lieuxPick">{{ lieuxPick.items.length }} lieu{{ lieuxPick.items.length > 1 ? "x" : "" }} trouvé{{ lieuxPick.items.length > 1 ? "s" : "" }}</template>
+          <template v-if="lieuxPick && avisPick"> · </template>
+          <template v-if="avisPick">{{ avisPick.items.length }} avis prêt{{ avisPick.items.length > 1 ? "s" : "" }} à devenir des fiches<template v-if="avisPick.sansLieu"> · {{ avisPick.sansLieu }} avis sans lieu, ignoré{{ avisPick.sansLieu > 1 ? "s" : "" }}</template></template>
         </p>
         <p v-if="errImport" class="text-[11px] text-red-600 mb-2">{{ errImport }}</p>
 
         <div class="flex gap-2">
           <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-accent text-white disabled:opacity-40"
-            :disabled="!lieuxPick || importBusy" @click="validerImport">
+            :disabled="(!lieuxPick && !avisPick) || importBusy" @click="validerImport">
             {{ importBusy ? "Import en cours…" : "Importer" }}</button>
           <button v-if="lieuxPick || avisPick" class="rounded-xl px-4 text-sm text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }"
@@ -368,6 +373,8 @@ async function exporterJSON() {
           <span v-if="resultatImport.rattaches" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">★ {{ resultatImport.rattaches }} avis rattachés</span>
           <span v-if="resultatImport.orphelins && resultatImport.orphelins.length" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.orphelins.length }} avis sans lieu correspondant</span>
+          <span v-if="resultatImport.sansLieu" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
+            :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.sansLieu }} avis sans lieu identifié par Google, ignorés</span>
         </div>
         <button class="w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft"
           @click="resultatImport = null">Import d'autres fichiers</button>
