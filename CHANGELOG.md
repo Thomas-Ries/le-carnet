@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.35 — Notifications : signature cœur
+
+- Le logo de l'app est déjà attaché à chaque notif (sw.js : icon/badge icon-192.png ; iOS affiche l'icône de l'app installée). Ce qui manquait : la chaleur du texte.
+- Corps des trois notifications (note créée, flash envoyé, rappel J-6) terminés par un cœur ♥ — signature discrète, en accord avec le trio du logo, hors du périmètre « zéro emoji dans l'app ».
+
 ## V0.4.34 — Flash : « Pour qui ? » au-dessus du commentaire
 
 - FlashSheet : le sélecteur de carnets (« Pour qui ? ») remonte AU-DESSUS du champ commentaire, pour une lecture dans l'ordre : photo, pour qui, mot optionnel, envoyé. Aide-étape mise à jour (1. la photo · 2. pour qui · 3. envoyé).
