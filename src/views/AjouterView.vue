@@ -4,7 +4,7 @@ import { ref, computed, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
-import { noteLabel, CATS } from "../lib/util.js";
+import { noteLabel, CATS, chargerPhoto } from "../lib/util.js";
 
 const store = useCarnetStore();
 const route = useRoute();
@@ -29,24 +29,18 @@ function toggle(id) {
     : [...sel.value, id];
 }
 
-function onFile(e) {
+const photoErr = ref(false);
+async function onFile(e) {
   const file = e.target.files[0];
+  e.target.value = ""; // permet de re-choisir le même fichier après un échec
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 900;
-      const k = Math.min(1, max / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width * k;
-      canvas.height = img.height * k;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      photo.value = canvas.toDataURL("image/jpeg", 0.72);
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  photoErr.value = false;
+  try {
+    photo.value = await chargerPhoto(file);
+  } catch (err) {
+    photoErr.value = true;
+    toast("Photo illisible — essaie une autre image");
+  }
 }
 
 async function valider() {
@@ -139,8 +133,15 @@ async function valider() {
       </div>
 
       <!-- Photo optionnelle -->
+      <div v-if="photo" class="relative rounded-2xl overflow-hidden mb-2">
+        <img :src="photo" alt="" class="w-full aspect-[4/3] object-cover" />
+        <button @click="photo = null; photoErr = false"
+          class="absolute top-2 right-2 rounded-full p-2 bg-surface border border-hairline">
+          <Ic name="trash" class="w-4 h-4 text-muted" />
+        </button>
+      </div>
       <label class="w-full rounded-xl py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer bg-gold/10 text-muted"
-        style="border: 1px dashed var(--c-hairline)">
+        :style="{ border: photoErr ? '1px dashed var(--c-accent)' : '1px dashed var(--c-hairline)' }">
         <Ic name="camera" class="w-4 h-4" />
         {{ photo ? "Photo prise — taper pour changer" : "Photo (optionnelle)" }}
         <input type="file" accept="image/*" class="hidden" @change="onFile" />

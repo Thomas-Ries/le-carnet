@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.4.32 — Fix photo : chargement robuste + aperçu réel
+
+- Diagnostic prod (carnet de test) : le serveur stocke et renvoie parfaitement les photos (testé de 1 Ko à 400 Ko). L'échec était côté iPhone : décodage d'une photo via dataURL en entrée d'Image, fragile sur WebKit — et **100 % silencieux** (aucun aperçu dans la vue d'ajout, aucune erreur affichée).
+- Nouveau `chargerPhoto(file)` dans util.js : décodage via **objectURL** (fiable sur iOS), rejet explicite si le fichier n'est pas une image ou si le décodage échoue.
+- AjouterView : **aperçu réel de la photo** (4:3) avant d'enregistrer + bouton retirer + toast « Photo illisible » en cas d'échec (plus jamais muet).
+- FicheView (édition) et FlashSheet : même durcissement, même toast d'erreur.
+- `e.target.value = ""` après chaque sélection : on peut re-choisir le même fichier après un échec.
+
 ## V0.4.31 — Profil allégé
 
 - Suppression de la section « Inviter dans un carnet » du profil : redondante avec le partage intégré dans la vue Carnet (WhatsApp / SMS / Copier par carnet).

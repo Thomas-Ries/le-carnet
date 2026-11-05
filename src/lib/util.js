@@ -12,6 +12,40 @@ export const fmtDate = (iso) => {
 };
 
 /* Export JSON : partage natif iOS si dispo (Web Share API), sinon téléchargement — pattern Ma Cave. */
+// Charge un fichier image -> dataURL JPEG (max côté le plus long : max px).
+// objectURL plutôt que dataURL : WebKit/iOS décode parfois mal les gros data:
+// en entrée d'Image — le décodage direct du fichier est fiable.
+// Rejette en cas de fichier non-image ou d'échec de décodage (à toaster côté UI).
+export function chargerPhoto(file, max = 900) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith("image/")) {
+      reject(new Error("format"));
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * k));
+        canvas.height = Math.max(1, Math.round(img.height * k));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.72));
+      } catch (err) {
+        reject(err);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("decodage"));
+    };
+    img.src = url;
+  });
+}
+
 export async function exporterFichierJSON(nomFichier, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const fichier = new File([blob], nomFichier, { type: "application/json" });

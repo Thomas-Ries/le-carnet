@@ -3,6 +3,7 @@
 import { ref, inject } from "vue";
 import Ic from "./Ic.vue";
 import { useCarnetStore } from "../stores/carnet.js";
+import { chargerPhoto } from "../lib/util.js";
 
 const emit = defineEmits(["close"]);
 const store = useCarnetStore();
@@ -17,24 +18,15 @@ const toggle = (id) => {
     : [...sel.value, id];
 };
 
-function onFile(e) {
+async function onFile(e) {
   const file = e.target.files[0];
+  e.target.value = ""; // permet de re-choisir le même fichier après un échec
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 900;
-      const k = Math.min(1, max / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width * k;
-      canvas.height = img.height * k;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      photo.value = canvas.toDataURL("image/jpeg", 0.72);
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  try {
+    photo.value = await chargerPhoto(file);
+  } catch (err) {
+    toast("Photo illisible — essaie une autre image");
+  }
 }
 
 async function envoyer() {

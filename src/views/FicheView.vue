@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
-import { noteLabel, fmtDate } from "../lib/util.js";
+import { noteLabel, fmtDate, chargerPhoto } from "../lib/util.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -20,24 +20,15 @@ const titre = ref("");
 const com = ref("");
 const photoModif = ref(undefined); // undefined = inchangée, "" = retirée, dataURL = nouvelle
 
-function onFile(e) {
+async function onFile(e) {
   const file = e.target.files[0];
+  e.target.value = ""; // permet de re-choisir le même fichier après un échec
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 900;
-      const k = Math.min(1, max / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width * k;
-      canvas.height = img.height * k;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      photoModif.value = canvas.toDataURL("image/jpeg", 0.72);
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  try {
+    photoModif.value = await chargerPhoto(file);
+  } catch (err) {
+    toast("Photo illisible — essaie une autre image");
+  }
 }
 const confirmSuppr = ref(false);
 const zoom = ref(false);
