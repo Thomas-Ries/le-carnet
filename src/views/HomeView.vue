@@ -6,6 +6,7 @@ import Avatar from "../components/Avatar.vue";
 import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
 import * as api from "../lib/api.js";
+import { partagerWhatsapp } from "../lib/util.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -66,6 +67,43 @@ const fichesTri = computed(() => {
   }
   return fiches.value;
 });
+
+/* Inspiration : piocher une idee de sortie dans les adresses deja notees.
+   Le bandeau n'apparait que si le carnet contient au moins une adresse. */
+const inspirOpen = ref(false);
+const inspirTheme = ref(null);
+const themesDispos = computed(() => {
+  const n = {};
+  for (const f of fiches.value) {
+    if (f.type !== "adresse") continue;
+    for (const t of String(f.cat || "").split(",").map((x) => x.trim()).filter(Boolean)) {
+      n[t] = (n[t] || 0) + 1;
+    }
+  }
+  return Object.entries(n).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({ t, c }));
+});
+const inspirSelection = computed(() => {
+  if (!inspirTheme.value) return [];
+  return fiches.value
+    .filter((f) => f.type === "adresse" &&
+      String(f.cat || "").split(",").map((x) => x.trim()).includes(inspirTheme.value))
+    .sort((a, b) => b.note - a.note || (a.date < b.date ? 1 : -1))
+    .slice(0, 5);
+});
+async function partagerSelection() {
+  const sel = inspirSelection.value;
+  if (!sel.length) return;
+  const lignes = sel.map((f) => "— « " + f.titre + (f.lieu ? " (" + f.lieu + ")" : "") + " »");
+  const texte = "Envie " + (inspirTheme.value.toLowerCase().startsWith("bar") ? "d'un " : "de ") + inspirTheme.value.toLowerCase() + " ? Ça vous tente, je réserve ?\n" + lignes.join("\n");
+  if (navigator.share) {
+    try { await navigator.share({ text: texte }); return; } catch (e) { /* annulé ou indisponible */ }
+  }
+  partagerWhatsapp(texte);
+}
+function inspirFermer() {
+  inspirOpen.value = false;
+  inspirTheme.value = null;
+}
 
 /* Scroll infini facon feed : rendu par tranches de 20, rechargees quand on approche du bas.
    (Avant, seules les 8 premieres fiches etaient affichees : les suivantes etaient invisibles.) */
@@ -168,7 +206,7 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
       </div>
 
       <!-- Tuiles -->
-      <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="grid grid-cols-2 gap-3 mb-3">
         <button @click="$router.push('/add?type=adresse')" class="rounded-2xl p-4 text-left bg-surface border border-hairline active:scale-[.98] transition">
           <span class="inline-flex items-center justify-center rounded-full w-9 h-9 mb-2 bg-gold/15 text-gold"><Ic name="pin" /></span>
           <p class="text-lg font-serif">Noter une adresse</p>
@@ -179,6 +217,61 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
           <p class="text-lg font-serif">Partager une recette</p>
           <p class="text-[11px] leading-tight text-muted mt-0.5">Le tiramisu de Chetto, la tarte de Mamie…</p>
         </button>
+      </div>
+
+      <!-- Bandeau inspiration : piocher une idée de sortie dans le carnet -->
+      <button v-if="fiches.length" @click="inspirOpen = true"
+        class="w-full rounded-2xl p-3.5 mb-6 flex items-center gap-3 text-left active:scale-[.99] transition"
+        style="background: var(--c-soft); border: 1px solid var(--c-hairline)">
+        <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 text-accent"
+          style="background: var(--c-surface)"><Ic name="sparkle" class="w-4 h-4" /></span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-semibold text-accent">Envie d'inspiration ?</span>
+          <span class="block text-[11px] text-muted leading-snug">Un after-work, un tête à tête… pioche une idée dans le carnet.</span>
+        </span>
+        <Ic name="chevron" class="w-4 h-4 text-muted rotate-90 shrink-0" :sw="2" />
+      </button>
+
+      <!-- Modale inspiration : choix du thème puis sélection des mieux notées -->
+      <div v-if="inspirOpen" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
+        style="background: rgba(20, 14, 12, .55)" @click.self="inspirFermer">
+        <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline max-h-[82vh] overflow-y-auto">
+          <template v-if="!inspirTheme">
+            <p class="text-base font-serif mb-1">Ce soir, l'ambiance est plutôt…</p>
+            <p class="text-[11px] text-muted mb-3.5 leading-relaxed">Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.</p>
+            <div class="flex flex-wrap gap-1.5 mb-1">
+              <button v-for="t in themesDispos" :key="t.t" @click="inspirTheme = t.t"
+                class="rounded-full px-3 py-2 text-xs font-medium"
+                :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)', border: '1px solid var(--c-accent)' }">
+                {{ t.t }} <span class="text-[10px] opacity-70">{{ t.c }}</span>
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex items-center justify-between mb-3.5">
+              <button @click="inspirTheme = null" class="rounded-full p-2 bg-surface border border-hairline">
+                <Ic name="back" class="w-4 h-4" />
+              </button>
+              <p class="text-sm font-serif flex-1 text-center">Envie de {{ inspirTheme.toLowerCase() }} ?</p>
+              <button @click="inspirFermer" class="rounded-full p-2 bg-surface border border-hairline">
+                <Ic name="x" class="w-4 h-4" />
+              </button>
+            </div>
+            <div class="space-y-2 mb-3">
+              <FicheRow v-for="f in inspirSelection" :key="f.id" :fiche="f" @click="inspirOpen = false" />
+              <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">Pas encore d'adresse ici — note la première.</p>
+            </div>
+            <button v-if="inspirSelection.length" @click="partagerSelection"
+              class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-white mb-2"
+              style="background: var(--c-accent)">
+              <Ic name="shareUp" class="w-4 h-4" /> Ça vous tente, je réserve ?
+            </button>
+            <button @click="inspirTheme = null"
+              class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted bg-surface border border-hairline">
+              Changer de thème
+            </button>
+          </template>
+        </div>
       </div>
 
       <!-- Tri : CTA façon e-commerce — un bouton qui ouvre le choix du tri -->

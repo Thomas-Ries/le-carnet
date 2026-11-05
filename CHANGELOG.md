@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.44 — Inspiration de sortie + fiche des carnets
+
+- **« Envie d'inspiration ? »** : bandeau sous les deux tuiles de l'accueil (après-work, tête à tête…). Clic → modale « Ce soir, l'ambiance est plutôt… » avec les thèmes réellement présents dans le carnet (compteur par puce), puis les 5 adresses les mieux notées du thème — cartes cliquables (détail + partage), et bouton « Ça vous tente, je réserve ? » qui partage la sélection en texte (feuille native, sinon WhatsApp). Zéro serveur : tout vient des fiches déjà notées.
+- **Fiche des carnets** : « code les-copains » → « code : les-copains » (deux points sur toutes les cards).
+
 ## V0.4.43 — Suppression de compte + ergonomie
 
 - **Supprimer mon compte** : bouton tout en bas du profil → modale qui explique comment désinstaller la PWA et propose le choix : supprimer aussi ses notes, likes, commentaires et flashes, ou les garder dans les carnets. Définitif : pour revenir il faut refaire une demande d'invitation. Worker `deleteAccount` (purge ou conservation), l'admin du carnet reste membre — le carnet survit à son départ.

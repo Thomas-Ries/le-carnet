@@ -109,7 +109,7 @@ async function exporterJSON() {
           :style="{ background: c.id === store.carnetId ? 'var(--c-surface)' : 'var(--c-soft)' }">{{ c.nom[0] }}</span>
         <span class="flex-1">
           <span class="block text-sm font-semibold">{{ c.nom }}</span>
-          <span class="block text-[11px] text-muted">{{ c.membres.length }} membre(s) · code {{ c.code }}</span>
+          <span class="block text-[11px] text-muted">{{ c.membres.length }} membre(s) · code : {{ c.code }}</span>
         </span>
         <Ic v-if="c.id === store.carnetId" name="check" class="w-4 h-4 text-accent" />
       </button>
