@@ -90,7 +90,7 @@ async function changerCode() {
 
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
         <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter dans ce carnet</p>
-        <p class="text-[11px] text-muted mb-2.5">Code carnet : <span class="font-semibold text-accent tracking-widest">{{ carnet?.code }}</span> — à donner à la main ou via le lien.</p>
+        <p class="text-[11px] text-muted mb-2.5">Mot-clé d'invitation : <span class="font-semibold text-accent">{{ carnet?.code }}</span> — à donner à la main ou via le lien.</p>
         <button @click="navigator.clipboard?.writeText(location.origin + location.pathname + '#/join/' + carnet?.code); toast('Lien copié')"
           class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5 mb-3">
           <Ic name="share" class="w-4 h-4" /> Copier le lien
@@ -103,7 +103,7 @@ async function changerCode() {
       </div>
 
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
-        <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Changer mon code admin</p>
+        <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Changer mon code admin — 4 ou 6 chiffres</p>
         <input v-model="nouveauCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Nouveau code"
           @input="nouveauCode = nouveauCode.replace(/\D/g, '').slice(0, 6)"
           class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-2 tracking-[.3em]" />

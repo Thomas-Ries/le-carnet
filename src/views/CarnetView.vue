@@ -11,6 +11,10 @@ const toast = inject("toast");
 const modeCreer = ref(false);
 const nom = ref("");
 const codeInvite = ref("");
+// Normalise un mot-clé : minuscules, sans accents, espaces -> tirets, max 15
+const normMot = (v) =>
+  (v || "").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 15);
 const codeAdmin = ref("");
 const codeAdmin2 = ref("");
 const err = ref("");
@@ -22,7 +26,7 @@ const lien = computed(() => {
 });
 
 async function creer() {
-  if (!nom.value.trim() || codeAdmin.value.length !== 6) return;
+  if (!nom.value.trim() || ![4, 6].includes(codeAdmin.value.length)) return;
   if (!store.profil.prenom) {
     err.value = "Ton prénom est manquant — renseigne-le dans Profil, puis reviens créer ton carnet.";
     return;
@@ -31,13 +35,13 @@ async function creer() {
     err.value = "Le code admin doit être saisi deux fois à l'identique.";
     return;
   }
-  if (codeInvite.value.length === 6 && codeAdmin.value === codeInvite.value) {
-    err.value = "Le code admin doit être différent du code d'invitation — sinon tous les invités pourraient reprendre le carnet.";
+  if (codeInvite.value.trim() && !normMot(codeInvite.value)) {
+    err.value = "Le mot-clé d'invitation doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets).";
     return;
   }
   const r = await store.creerCarnet(
     nom.value.trim(),
-    codeInvite.value.length === 6 ? codeInvite.value : null,
+    codeInvite.value.trim() ? normMot(codeInvite.value) : null,
     codeAdmin.value
   );
   if (r && r.id) {
@@ -125,16 +129,16 @@ async function exporterJSON() {
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1" />
       <p class="text-[11px] text-muted mb-3">Visible seulement par les membres que tu invites.</p>
 
-      <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Code d'invitation — 6 chiffres</label>
-      <input id="lc-code" v-model="codeInvite" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
-        placeholder="123456 (auto si vide)"
-        @input="codeInvite = codeInvite.replace(/\D/g, '').slice(0, 6)"
+      <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Mot-clé d'invitation — 4 à 15 caractères</label>
+      <input id="lc-code" v-model="codeInvite" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
+        placeholder="ex. famille-ries (auto si vide)"
+        @input="codeInvite = codeInvite.slice(0, 15)"
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
-      <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites. Généré automatiquement si tu laisses vide.</p>
+      <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites — plus facile à retenir qu'un numéro. Généré automatiquement si tu laisses vide.</p>
 
-      <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code admin — 6 chiffres</label>
+      <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code admin — 4 ou 6 chiffres</label>
       <input id="lc-code-admin" v-model="codeAdmin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
-        placeholder="654321"
+        placeholder="4 chiffres ou 6, à toi de choisir"
         @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
       <input v-model="codeAdmin2" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
@@ -146,7 +150,7 @@ async function exporterJSON() {
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button @click="modeCreer = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
-        <button @click="creer" :disabled="!nom.trim() || codeAdmin.length !== 6 || codeAdmin2.length !== 6"
+        <button @click="creer" :disabled="!nom.trim() || ![4, 6].includes(codeAdmin.length) || codeAdmin.length !== codeAdmin2.length"
           class="rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Créer</button>
       </div>
     </div>

@@ -32,7 +32,7 @@ export async function exporterFichierJSON(nomFichier, data) {
    voyagent dans le message, plus besoin de copier-coller. */
 export const texteInvitation = (prenom, carnet, lien) =>
   (prenom ? prenom + " t'invite dans" : "Tu es invité dans") +
-  " le carnet « " + carnet.nom + " » sur Le Carnet — code " + carnet.code + ". Rejoins-le : " + lien;
+  " le carnet « " + carnet.nom + " » sur Le Carnet — mot-clé « " + carnet.code + " ». Rejoins-le : " + lien;
 
 export function partagerWhatsapp(texte) {
   window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank");

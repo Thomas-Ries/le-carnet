@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.27 — Invitation par mot-clé + code admin 4 ou 6 chiffres
+
+- L'invitation devient un MOT-CLÉ de 4 à 15 caractères (minuscules, sans accents, chiffres et tirets ; « Pâques 2027 » → « paques-2027 »), plus mémorisable et partageable à l'oral qu'un numéro. Auto-généré en syllabes prononçables si vide ; unique entre carnets.
+- Le code admin passe à 4 OU 6 chiffres (au choix), obligatoirement différent du mot-clé d'invitation, à la création comme au changement.
+- Join, création, récupération admin, régénération d'invitation, liens WhatsApp/SMS et messages alignés partout.
+- ⚠️ Migration : les anciens carnets en 6 chiffres ne matchent plus le validateur côté join — à recréer sur une base propre (DROP + schema.sql), comme prévu.
+
 ## 0.4.26 — Sécurité codes + fil rafraîchi au retour au premier plan
 
 - Le code admin doit être différent du code d'invitation (refus côté serveur à la création ET au changement de code, message explicite côté client). Sinon tout détenteur du lien d'invitation peut reprendre le carnet en admin.

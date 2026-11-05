@@ -87,10 +87,26 @@ const devicesOfCarnet = async (db, carnetId, exceptPrenom) => {
   return results.filter((r) => r.prenom !== exceptPrenom).map((r) => r.device_id);
 };
 
-const isCode = (c) => /^[0-9]{6}$/.test(String(c || ""));
+const isCode = (c) => /^([0-9]{4}|[0-9]{6})$/.test(String(c || ""));
 const cleanPrenom = (p) => String(p || "").trim().slice(0, 20);
 const cleanText = (t, n) => String(t == null ? "" : t).slice(0, n);
 
+// Invitation : MOT-CLÉ 4-15 caractères, minuscules sans accents, chiffres et tirets.
+// « Pâques 2027 » -> « paques-2027 ». Retourne "" si invalide.
+function cleanInvite(v) {
+  if (typeof v !== "string") return "";
+  let s = v.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = s.replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 15);
+  return /^[a-z0-9-]{4,15}$/.test(s) ? s : "";
+}
+// Mot-clé d'invitation auto : syllabes prononçables, ex. « mira-liso-42 »
+function newInviteMot() {
+  const syl = ["ba","de","fa","gi","lo","mi","na","pa","ra","so","ta","vi","za","lu","ke","mo","ri","sa","to","vi","ne","la"];
+  let m = "";
+  for (let i = 0; i < 3; i++) m += syl[Math.floor(Math.random() * syl.length)];
+  m += "-" + String(Math.floor(100 + Math.random() * 900));
+  return m.slice(0, 15);
+}
 function newInviteCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
@@ -247,14 +263,17 @@ export default {
             const prenom = cleanPrenom(p.prenom);
             if (!nom) return json({ error: "Le nom du carnet est manquant." }, 400);
             if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil, puis recrée ton carnet." }, 400);
-            if (!isCode(p.codeAdmin)) return json({ error: "Le code admin doit contenir exactement 6 chiffres." }, 400);
-            let code = isCode(p.codeInvite) ? p.codeInvite : newInviteCode();
+            if (!isCode(p.codeAdmin)) return json({ error: "Le code admin doit contenir 4 ou 6 chiffres." }, 400);
+            let code = cleanInvite(p.codeInvite);
+            if (String(p.codeInvite || "").trim() && !code)
+              return json({ error: "Le mot-clé d'invitation doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets)." }, 400);
+            if (!code) code = newInviteMot();
             for (let i = 0; i < 5; i++) {
               const dup = await db.prepare(`SELECT id FROM Carnets WHERE code=?`).bind(code).first();
               if (!dup) break;
-              code = newInviteCode();
+              code = newInviteMot();
             }
-            if (p.codeAdmin === code) return json({ error: "Le code admin doit être différent du code d'invitation — sinon n'importe quel invité pourrait reprendre le carnet en admin." }, 400);
+            if (p.codeAdmin === code) return json({ error: "Le code admin doit être différent du mot-clé d'invitation — sinon n'importe quel invité pourrait reprendre le carnet en admin." }, 400);
             const id = crypto.randomUUID();
             const hash = await hashCode(p.codeAdmin);
             await db.prepare(
@@ -270,8 +289,9 @@ export default {
           case "join": {
             const prenom = cleanPrenom(p.prenom);
             if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil." }, 400);
-            if (!isCode(p.code)) return json({ error: "Le code d'invitation doit contenir exactement 6 chiffres." }, 400);
-            const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(p.code).first();
+            const invite = cleanInvite(p.code);
+            if (!invite) return json({ error: "Le mot-clé du carnet doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets)." }, 400);
+            const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(invite).first();
             if (!c) return json({ error: "carnet introuvable" }, 404);
             // Doublon de prénom dans le carnet (insensible à la casse) : refus, sauf retour
             // d'un appareil qui porte déjà ce prénom là (changement d'appareil du même membre).
@@ -295,11 +315,11 @@ export default {
           case "verifyAdmin": {
             // Identification par id (appareil qui voit déjà le carnet) OU par code
             // d'invitation (récupération admin sur un nouvel appareil, après réinstallation).
-            if (!isCode(p.code)) return json({ error: "code invalide" }, 400);
+            if (!isCode(p.code)) return json({ error: "code admin invalide — 4 ou 6 chiffres." }, 400);
             const c = p.carnetId
               ? await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first()
-              : isCode(p.codeInvite)
-                ? await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(p.codeInvite).first()
+              : cleanInvite(p.codeInvite)
+                ? await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(cleanInvite(p.codeInvite)).first()
                 : null;
             if (!c) return json({ error: "carnet introuvable" }, 404);
             if (!(await verifyCode(p.code, c.admin_code_hash))) return json({ ok: false }, 200);
@@ -317,21 +337,20 @@ export default {
 
           case "regenerateInvite": {
             if (!(await isAdminOf(p.carnetId))) return json({ error: "réservé à l'admin" }, 403);
-            let code = newInviteCode();
+            let code = newInviteMot();
             for (let i = 0; i < 5; i++) {
               const dup = await db.prepare(`SELECT id FROM Carnets WHERE code=? AND id<>?`).bind(code, p.carnetId).first();
               if (!dup) break;
-              code = newInviteCode();
+              code = newInviteMot();
             }
             await db.prepare(`UPDATE Carnets SET code=? WHERE id=?`).bind(code, p.carnetId).run();
             return json({ code });
           }
 
           case "changeAdminCode": {
-            if (!isCode(p.newCode)) return json({ error: "code invalide" }, 400);
-            if (!(await isAdminOf(p.carnetId))) return json({ error: "réservé à l'admin" }, 403);
+            if (!isCode(p.newCode)) return json({ error: "Le nouveau code admin doit contenir 4 ou 6 chiffres." }, 400);
             const carnetCode = (await db.prepare(`SELECT code FROM Carnets WHERE id=?`).bind(p.carnetId).first()) || {};
-            if (p.newCode === carnetCode.code) return json({ error: "Le code admin doit être différent du code d'invitation." }, 400);
+            if (p.newCode === carnetCode.code) return json({ error: "Le code admin doit être différent du mot-clé d.invitation." }, 400);
             await db.prepare(`UPDATE Carnets SET admin_code_hash=? WHERE id=?`)
               .bind(await hashCode(p.newCode), p.carnetId).run();
             return json({ ok: true });

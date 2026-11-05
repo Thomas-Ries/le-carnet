@@ -82,7 +82,7 @@ async function mutate(action, payload) {
 function demoMutate(db, action, p) {
   switch (action) {
     case "createCarnet": {
-      const c = { id: demo.uid("c"), nom: p.nom, code: p.codeInvite || String(Math.floor(100000 + Math.random() * 900000)), adminCode: p.codeAdmin, admin: p.prenom, membres: [p.prenom] };
+      const c = { id: demo.uid("c"), nom: p.nom, code: p.codeInvite || "carnet-" + String(Math.floor(100 + Math.random() * 900)), adminCode: p.codeAdmin, admin: p.prenom, membres: [p.prenom] };
       db.carnets.push(c);
       demo.save(db);
       return { carnet: c, role: "admin" };
@@ -106,7 +106,7 @@ function demoMutate(db, action, p) {
     case "regenerateInvite": {
       const c = db.carnets.find((x) => x.id === p.carnetId);
       if (!c) return { error: "introuvable" };
-      c.code = String(Math.floor(100000 + Math.random() * 900000));
+      c.code = "carnet-" + String(Math.floor(100 + Math.random() * 900));
       demo.save(db);
       return { code: c.code };
     }

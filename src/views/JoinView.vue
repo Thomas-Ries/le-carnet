@@ -1,5 +1,5 @@
 <script setup>
-// Onboarding : prénom puis code carnet (6 chiffres) — ou lien direct avec code pré-rempli.
+// Onboarding : prénom puis mot-clé du carnet (4-15 caractères) — ou lien direct pré-rempli.
 import { ref, computed, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
@@ -12,13 +12,17 @@ const toast = inject("toast");
 
 const step = ref(route.params.code ? 2 : 1);
 const prenom = ref(store.profil.prenom || "");
-const code = ref((route.params.code || "").replace(/\D/g, "").slice(0, 6));
+// Normalise un mot-clé : minuscules, sans accents, espaces -> tirets, max 15
+const normMot = (v) =>
+  (v || "").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 15);
+const code = ref(normMot(route.params.code));
 const err = ref("");
 const dupErr = ref("");
 const codeAdmin = ref("");
 const recupErr = ref("");
 const recupOK = ref(false);
-const connu = computed(() => store.carnets.find((c) => c.code === code.value));
+const connu = computed(() => store.carnets.find((c) => c.code === normMot(code.value)));
 
 function goStep2() {
   if (!prenom.value.trim()) return;
@@ -27,8 +31,8 @@ function goStep2() {
   step.value = 2;
 }
 async function rejoindre() {
-  if (code.value.length !== 6) return;
-  const r = await store.rejoindre(code.value);
+  if (normMot(code.value).length < 4) return;
+  const r = await store.rejoindre(normMot(code.value));
   if (r && r.error === "prenom_pris") {
     // Le prénom est déjà pris dans ce carnet : on repart du champ prénom,
     // l'inscription ne passe pas tant que le doublon n'est pas résolu.
@@ -42,12 +46,12 @@ async function rejoindre() {
     toast("Bienvenue dans « " + store.carnet.nom + " »");
     router.push("/");
   } else {
-    err.value = "Carnet introuvable — vérifie le code.";
+    err.value = "Carnet introuvable — vérifie le mot-clé qui t'a été donné.";
   }
 }
 
 // C'est moi sur un nouvel appareil (réinstallation) : le prénom est refusé en doublon
-// mais le code d'invitation + le code admin restaurant la session admin.
+// mais le mot-clé d'invitation + le code admin restaurent la session admin.
 async function reprendre() {
   if (codeAdmin.value.length !== 6) return;
   recupErr.value = "";
@@ -57,7 +61,7 @@ async function reprendre() {
     toast("Carnet repris — tu es de retour en admin");
     router.push("/");
   } else {
-    recupErr.value = (r && r.error) || "Code admin refusé — vérifie les 6 chiffres.";
+    recupErr.value = (r && r.error) || "Code admin refusé — vérifie les 4 ou 6 chiffres.";
   }
 }
 </script>
@@ -98,17 +102,17 @@ async function reprendre() {
         class="w-full rounded-xl py-4 text-sm font-semibold text-white bg-accent disabled:opacity-40">
         Continuer
       </button>
-      <p class="text-center text-xs text-muted mt-4">Pas de mot de passe. Juste ton prénom et le code d'un carnet.</p>
+      <p class="text-center text-xs text-muted mt-4">Pas de mot de passe. Juste ton prénom et le mot-clé du carnet.</p>
     </div>
 
     <!-- Étape 2 : code -->
     <div v-else class="w-full max-w-sm mx-auto">
-      <p class="text-sm text-muted text-center mb-4">Entre le code du carnet qu'on t'a donné — 6 chiffres.</p>
-      <input v-model="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autofocus
-        placeholder="• • • • • •"
+      <p class="text-sm text-muted text-center mb-4">Entre le mot-clé du carnet qu'on t'a donné — 4 à 15 caractères.</p>
+      <input v-model="code" type="text" autocapitalize="none" autocomplete="off" maxlength="15" autofocus
+        placeholder="famille-ries"
         class="w-full rounded-xl px-4 py-4 text-2xl text-center tracking-[.5em] bg-surface border border-hairline outline-none mb-2" />
       <p v-if="err" class="text-xs text-accent text-center mb-2">{{ err }}</p>
-      <button @click="rejoindre" :disabled="code.length !== 6"
+      <button @click="rejoindre" :disabled="code.trim().length < 4"
         class="w-full rounded-xl py-4 text-sm font-semibold text-white bg-accent disabled:opacity-40">
         {{ connu ? "Revenir dans « " + connu.nom + " »" : "Rejoindre le carnet" }}
       </button>
