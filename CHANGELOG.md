@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.72c — Fix : `_worker.js` tronqué à la V0.4.72 (build wrangler en échec)
+
+- Le `_worker.js` poussé en V0.4.72 était coupé au milieu du `case "rename"` : `wrangler pages deploy` échouait avec « Unexpected end of file ». Reconstitué intégralement (V0.4.71 complète + blocs V0.4.72) et re-validé en syntaxe ESM stricte.
+- Règle de validation ajoutée pour les fichiers ESM : `node --check --input-type=module` (le simple `node --check fichier.js` ne reporte pas les erreurs de syntaxe sur les modules — faux positif).
+
 ## V0.4.72b — Astuce import : Le Carnet est aussi un site web (Mac / PC)
 
 - Carte d'import « Mes adresses » (Profil) : encart « Plus simple sur ordi » avant les slots — l'adresse du site s'affiche (`location.origin`), l'utilisateur est invité à rejoindre ses carnets avec ses codes et à faire l'import Takeout au clavier. Les adresses partagées se retrouvent sur tous les écrans.

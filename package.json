@@ -1,7 +1,7 @@
 {
   "name": "le-carnet",
   "private": true,
-  "version": "0.4.72b",
+  "version": "0.4.72c",
   "type": "module",
   "scripts": {
     "dev": "vite",
