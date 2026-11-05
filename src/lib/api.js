@@ -96,7 +96,8 @@ function demoMutate(db, action, p) {
       return { carnet: c, role: "admin" };
     }
     case "importAdresses": {
-      // V0.4.71 demo : mêmes règles que le serveur (carnet privé, note 0, dédup normNom).
+      // V0.4.72 demo : mêmes règles que le serveur (carnet privé créé à la volée,
+      // note pré-remplie si avis rattaché, dédup normNom).
       let cp = db.carnets.find((x) => x.prive === "1");
       if (!cp) {
         cp = { id: demo.uid("c"), nom: "Mes adresses", code: "perso-demo", adminCode: "", admin: p.deviceId || "demo", membres: [p.deviceId || "demo"], prive: 1 };
@@ -115,11 +116,74 @@ function demoMutate(db, action, p) {
         const cle = nn(it && it.titre);
         if (!it || !it.titre || cle.length < 4 || seen.has(cle)) { ignores++; continue; }
         seen.add(cle);
-        db.fiches.push({ id: demo.uid("f"), auteur: p.deviceId || "demo", type: "adresse", cat: null, titre: String(it.titre).slice(0, 60), lieu: String(it.lieu || "").slice(0, 60), note: 0, com: String(it.com || "").slice(0, 500), photo: null, recette: null, demandeRecette: [], reacts: [], comments: [], date: new Date().toISOString().slice(0, 10), carnets: [cp.id] });
+        const nImp = Math.min(100, Math.max(0, parseInt(it.note, 10) || 0));
+        db.fiches.push({ id: demo.uid("f"), auteur: p.deviceId || "demo", type: "adresse", cat: null, titre: String(it.titre).slice(0, 60), lieu: String(it.lieu || "").slice(0, 60), note: (nImp >= 70 && nImp <= 100) ? nImp : 0, com: String(it.com || "").slice(0, 500), photo: null, recette: null, demandeRecette: [], reacts: [], comments: [], date: new Date().toISOString().slice(0, 10), carnets: [cp.id] });
         importes++;
       }
       demo.save(db);
-      return { importes, ignores };
+      return { importes, ignores, carnetId: cp.id };
+    }
+    case "rattacherAvis": {
+      const cp = db.carnets.find((x) => x.prive === "1");
+      if (!cp) return { error: "pas de carnet prive" };
+      const nn = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+      let rattaches = 0; const orphelins = [];
+      for (const av of (Array.isArray(p.items) ? p.items : []).slice(0, 500)) {
+        const f = db.fiches.find((x) => (x.carnets || []).includes(cp.id) && nn(x.titre) === nn(av && av.titre));
+        if (!f) { if (av && av.titre) orphelins.push(av.titre.slice(0, 60)); continue; }
+        if (!f.note) f.note = Math.min(100, Math.max(70, parseInt(av.note, 10) || 0));
+        if (!f.com) f.com = String(av.com || "").slice(0, 500);
+        rattaches++;
+      }
+      demo.save(db);
+      return { rattaches, orphelins: orphelins.slice(0, 20) };
+    }
+    case "partagerFiches": {
+      const cp = db.carnets.find((x) => x.prive === "1");
+      if (!cp) return { error: "pas d espace prive" };
+      let partagees = 0; const ignorees = [];
+      const nn = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+      for (const fid of (Array.isArray(p.ficheIds) ? p.ficheIds : []).slice(0, 100)) {
+        const f = db.fiches.find((x) => x.id === fid && (x.carnets || []).includes(cp.id));
+        if (!f) { ignorees.push({ titre: "?", raison: "hors espace prive" }); continue; }
+        let places = [];
+        for (const cid of (Array.isArray(p.carnetIds) ? p.carnetIds : []).slice(0, 10)) {
+          const c = db.carnets.find((x) => x.id === cid);
+          if (!c || c.prive) continue;
+          const doublon = db.fiches.some((x) => (x.carnets || []).includes(cid) && nn(x.titre) === nn(f.titre));
+          if (doublon) { ignorees.push({ titre: f.titre, raison: "deja note dans le carnet" }); continue; }
+          if (!f.carnets.includes(cid)) f.carnets.push(cid);
+          places.push(cid);
+        }
+        if (places.length) {
+          f.carnets = f.carnets.filter((x) => x !== cp.id);
+          partagees++;
+        }
+      }
+      demo.save(db);
+      return { partagees, ignorees };
+    }
+    case "demoPrive": {
+      // Demo du demo : pas de pass requis en mode démo, on seed 4 fiches utiles.
+      let cp = db.carnets.find((x) => x.prive === "1");
+      if (!cp) {
+        cp = { id: demo.uid("c"), nom: "Mes adresses", code: "perso-demo", adminCode: "", admin: "demo", membres: ["demo"], prive: 1 };
+        db.carnets.push(cp);
+      }
+      const DEMO = [
+        ["Météoreat", "12 rue des Marronniers, 75011 Paris", 93, "Punaise, c'était bon — le menu du soir est une leçon"],
+        ["Chez Norbert", "Lyon 2e", 0, null],
+        ["Café Meridian", "10 rue de la République, 69002 Lyon", 88, "Le latte du samedi matin"],
+        ["Bar du Marché", "Nice", 0, null],
+      ];
+      let ajoutees = 0;
+      for (const [titre, lieu, note, com] of DEMO) {
+        if (db.fiches.some((x) => (x.carnets || []).includes(cp.id) && x.titre === titre)) continue;
+        db.fiches.push({ id: demo.uid("f"), auteur: "demo", type: "adresse", cat: null, titre, lieu, note, com, photo: null, recette: null, demandeRecette: [], reacts: [], comments: [], date: new Date().toISOString().slice(0, 10), carnets: [cp.id] });
+        ajoutees++;
+      }
+      demo.save(db);
+      return { ok: true, carnetId: cp.id, ajoutees };
     }
     case "join": {
       const c = db.carnets.find((x) => x.code === String(p.code));
@@ -315,6 +379,9 @@ export const regenerateInvite = (payload) => mutate("regenerateInvite", payload)
 export const changeAdminCode = (payload) => mutate("changeAdminCode", payload);
 export const addFiche = (fiche) => mutate("addFiche", { fiche });
 export const importAdresses = (carnetId, items, deviceId) => mutate("importAdresses", { carnetId, items, deviceId });
+export const rattacherAvis = (carnetId, items, deviceId) => mutate("rattacherAvis", { carnetId, items, deviceId });
+export const partagerFiches = (ficheIds, carnetIds, deviceId) => mutate("partagerFiches", { ficheIds, carnetIds, deviceId });
+export const demoPrive = (pass) => mutate("demoPrive", { pass });
 export const updateFiche = (id, patch) => mutate("updateFiche", { id, patch });
 export const deleteFiche = (id) => mutate("deleteFiche", { id });
 export const addFlash = (flash) => mutate("addFlash", { flash });

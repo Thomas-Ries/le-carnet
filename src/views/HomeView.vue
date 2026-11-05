@@ -5,6 +5,7 @@ import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
+import ConfirmModal from "../components/ConfirmModal.vue";
 import * as api from "../lib/api.js";
 import { partagerSelectionFiches } from "../lib/util.js";
 
@@ -207,12 +208,40 @@ function tapCard(e, f) {
   if (!selIds.value.length) selMode.value = false;
 }
 function annulerSel() { selIds.value = []; selMode.value = false; }
+/* V0.4.72 — carnet privé « Mes adresses » : le partage n'est plus une carte PNG
+   mais un TRANSFERT vers un ou plusieurs carnets (chips multi-sélection + modale
+   de confirmation, bandeau d'action au-dessus de la zone basse). */
+const partageOuvert = ref(false);
+const carnetIdsChoisis = ref([]);
+const confirmPartage = ref(false);
+const carnetsPartageables = computed(() => store.carnets.filter((c) => !(c.prive === "1" || c.prive === 1) && c.id !== store.carnetId));
+const estChoisi = (id) => carnetIdsChoisis.value.includes(id);
+function toggleChoix(id) {
+  carnetIdsChoisis.value = estChoisi(id)
+    ? carnetIdsChoisis.value.filter((x) => x !== id)
+    : [...carnetIdsChoisis.value, id];
+}
+const RAISONS = {
+  "deja note dans le carnet": "déjà notée dans le carnet",
+  "hors espace prive": "plus dans ton espace privé",
+  "fiche introuvable": "fiche introuvable",
+};
 async function partagerSel() {
+  if (store.carnet?.prive) { carnetIdsChoisis.value = []; partageOuvert.value = true; return; }
   const sel = fichesTri.value.filter((f) => selIds.value.includes(f.id));
   if (!sel.length) return;
   toast(sel.length > 1 ? "Préparation du PDF…" : "Préparation de la carte…");
   const r = await partagerSelectionFiches(sel);
   if (r === "telecharge") toast("Fichier téléchargé — partage-le depuis ton téléphone");
+}
+async function confirmerPartage() {
+  confirmPartage.value = false;
+  const r = await store.partagerFiches([...selIds.value], [...carnetIdsChoisis.value]);
+  if (r && r.error) { toast("Partage impossible : " + r.error); return; }
+  if (r.partagees) toast(r.partagees + " fiche" + (r.partagees > 1 ? "s" : "") + " partagée" + (r.partagees > 1 ? "s" : ""));
+  (r.ignorees || []).forEach((x) => toast("« " + x.titre + " » non partagée : " + (RAISONS[x.raison] || x.raison)));
+  partageOuvert.value = false; carnetIdsChoisis.value = [];
+  selIds.value = []; selMode.value = false;
 }
 </script>
 
@@ -465,7 +494,7 @@ async function partagerSel() {
         </p>
         <div class="flex items-center gap-2">
           <button v-if="selMode" @click="annulerSel" class="text-[10px] font-semibold text-muted underline">Annuler</button>
-          <button v-if="selIds.length" @click="partagerSel" title="Partager la sélection"
+          <button v-if="selIds.length && !store.carnet?.prive" @click="partagerSel" title="Partager la sélection"
             class="w-8 h-8 rounded-full border flex items-center justify-center active:scale-95 transition"
             :style="{ background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }">
             <Ic name="share" class="w-4 h-4" :sw="2" />
@@ -510,5 +539,41 @@ async function partagerSel() {
     </template>
 
     <CompleteFlashSheet v-if="flashComplet" :flash="flashComplet" @close="flashComplet = null" @done="flashComplet = null" />
+
+    <!-- V0.4.72 — bandeau d'action carnet privé : au-dessus de la zone basse, style charte -->
+    <div v-if="store.carnet?.prive && selMode"
+      class="fixed left-0 right-0 z-40 flex items-center justify-between gap-2 px-4 py-3"
+      :style="{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)', background: 'var(--c-surface)', borderTop: '1px solid var(--c-hairline)', boxShadow: '0 -8px 24px rgba(43,35,32,.18)' }">
+      <p class="text-sm font-semibold text-accent shrink-0">{{ selIds.length }} sélectionnée{{ selIds.length > 1 ? "s" : "" }}</p>
+      <button class="text-[11px] font-semibold text-muted underline shrink-0" @click="annulerSel">Tout désélectionner</button>
+      <button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40"
+        :disabled="!selIds.length" @click="partagerSel">Partager</button>
+    </div>
+
+    <!-- Sheet : choix des carnets destinataires (chips multi-sélection, bordure active) -->
+    <div v-if="partageOuvert" class="fixed inset-0 z-[70] flex items-end justify-center"
+      style="background: rgba(43,35,32,.45)" @click.self="partageOuvert = false">
+      <div class="w-full max-w-[430px] rounded-t-2xl bg-surface p-5 pb-7" style="border-top: 1px solid var(--c-hairline)">
+        <p class="font-serif text-lg mb-1">Partager dans quel carnet ?</p>
+        <p class="text-xs text-muted mb-4 leading-relaxed">Les fiches quittent ton espace privé pour rejoindre le ou les carnets choisis. Tes notes et commentaires suivent.</p>
+        <div class="flex flex-wrap gap-2 mb-5">
+          <button v-for="c in carnetsPartageables" :key="c.id" @click="toggleChoix(c.id)"
+            class="rounded-full px-3.5 py-2 text-sm font-medium transition"
+            :style="{ border: '1.5px solid ' + (estChoisi(c.id) ? 'var(--c-accent)' : 'var(--c-hairline)'), background: estChoisi(c.id) ? 'var(--c-soft)' : 'transparent', color: estChoisi(c.id) ? 'var(--c-accent)' : 'var(--c-ink)' }">
+            {{ c.nom }} <span v-if="estChoisi(c.id)">✓</span>
+          </button>
+          <p v-if="!carnetsPartageables.length" class="text-xs text-muted">Tu n'es membre d'aucun autre carnet pour l'instant.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="rounded-xl py-3 text-sm font-semibold border border-hairline" @click="partageOuvert = false">Annuler</button>
+          <button class="rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40"
+            :disabled="!carnetIdsChoisis.length" @click="confirmPartage = true">Continuer</button>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmModal :open="confirmPartage" title="Partager tes fiches privées ?"
+      :text="'Tu vas partager tes fiches privées avec : ' + carnetIdsChoisis.map((id) => store.carnets.find((c) => c.id === id)?.nom).filter(Boolean).join(' et ')"
+      confirmLabel="Valider" @confirm="confirmerPartage" @cancel="confirmPartage = false" />
   </div>
 </template>

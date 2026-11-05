@@ -43,10 +43,11 @@ export const useCarnetStore = defineStore("carnet", {
 
   actions: {
     // V0.4.71 : import d'adresses dans « Mes adresses » (batches de 100, refresh à la fin)
+    // V0.4.72 : import dans « Mes adresses » — le serveur crée l'espace privé
+    // à la volée au premier import (carnetId null = pas encore d'espace).
     async importerAdresses(items) {
       const cp = this.mesAdresses;
-      if (!cp && !api.state.demoMode) return { error: "pas de carnet prive" };
-      const carnetId = cp ? cp.id : null; // en démo, l'api crée « Mes adresses » à la volée
+      const carnetId = cp ? cp.id : null;
       let importes = 0, ignores = 0;
       for (let i = 0; i < items.length; i += 100) {
         const r = await api.importAdresses(carnetId, items.slice(i, i + 100), this.deviceId);
@@ -58,6 +59,37 @@ export const useCarnetStore = defineStore("carnet", {
       this.connexionPerdue = api.state.connexionPerdue;
       await this.refresh();
       return { importes, ignores };
+    },
+    // V0.4.72 : rattacher les avis Google (optionnel, ajoutable plus tard)
+    async rattacherAvis(items) {
+      const cp = this.mesAdresses;
+      if (!cp) return { error: "pas encore d espace prive — importe d'abord tes lieux" };
+      let rattaches = 0; let orphelins = [];
+      for (let i = 0; i < items.length; i += 100) {
+        const r = await api.rattacherAvis(cp.id, items.slice(i, i + 100), this.deviceId);
+        if (r && r.error) return r;
+        rattaches += r.rattaches || 0;
+        orphelins = orphelins.concat(r.orphelins || []);
+      }
+      await this.refresh();
+      return { rattaches, orphelins };
+    },
+    // V0.4.72 : TRANSFERT de fiches privées vers des carnets (modale validée côté vue)
+    async partagerFiches(ficheIds, carnetIds) {
+      const r = await api.partagerFiches(ficheIds, carnetIds, this.deviceId);
+      if (r && r.error) return r;
+      await this.refresh();
+      return r;
+    },
+    // V0.4.72 : espace privé de démo super-admin
+    async demoPrive(pass) {
+      const r = await api.demoPrive(pass);
+      if (r && r.error) return r;
+      if (r && r.ok === false) return { error: "pass super-admin refuse" };
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      await this.refresh();
+      return r;
     },
     async boot() {
       // Splash 3,5 s

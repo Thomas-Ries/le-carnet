@@ -188,27 +188,6 @@ export default {
         const { results: membres } = await db.prepare(
           `SELECT carnet_id, prenom FROM Membres WHERE carnet_id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
-        // V0.4.71 « Mes adresses » : crée le carnet privé de l'appareil s'il manque.
-        // Il n'a pas de mot-clé partageable (le join refuse les carnets privés).
-        if (!carnets.some((c) => c.prive === "1") && sess.length) {
-          const prenomPrive = cleanPrenom(sess[0].prenom);
-          if (prenomPrive) {
-            const pid = crypto.randomUUID();
-            const codePrive = "perso-" + Math.random().toString(36).slice(2, 8);
-            await db.prepare(
-              `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
-            ).bind(pid, "Mes adresses", codePrive, prenomPrive, "", "1", new Date().toISOString()).run();
-            await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(pid, prenomPrive).run();
-            await db.prepare(
-              `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
-            ).bind(device, pid, prenomPrive, "member", new Date().toISOString()).run();
-            carnetIds.push(pid);
-            roles[pid] = "member";
-            carnets.push({ id: pid, nom: "Mes adresses", code: codePrive, admin: prenomPrive, admin_code_hash: "", prive: "1", created_at: new Date().toISOString() });
-            membres.push({ carnet_id: pid, prenom: prenomPrive });
-            logEvent(db, "create_prive", { device, prenom: prenomPrive, carnet: pid });
-          }
-        }
         const { results: fichesRaw } = await db.prepare(
           `SELECT DISTINCT f.* FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
            WHERE l.carnet_id IN ${inClause(carnetIds.length)} ORDER BY f.created_at DESC`
@@ -576,16 +555,37 @@ export default {
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
           }
 
-          // V0.4.71 « Mes adresses » : import en masse dans le carnet PRIVÉ uniquement.
-          // Note 0 = « à noter » ; le partage vers un carnet passe par addFiche (doublons inclus).
+          // V0.4.72 « Mes adresses » : import dans le carnet PRIVÉ uniquement, créé à la
+          // volée au premier import (plus d'auto-création au boot). item.note = note
+          // pré-remplie (avis Google rattaché côté client), sinon 0 = « à noter ».
           case "importAdresses": {
-            const s = await sessionOf(p.carnetId);
-            if (!s) return json({ error: "pas membre" }, 403);
-            const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(p.carnetId).first();
-            if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
+            let carnetPriveId = p.carnetId || null;
+            if (carnetPriveId) {
+              const s = await sessionOf(carnetPriveId);
+              if (!s) return json({ error: "pas membre" }, 403);
+              const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(carnetPriveId).first();
+              if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
+            } else {
+              // pas encore d'espace privé : on le crée (V0.4.72 — à la demande)
+              const { results: sess } = await db.prepare(`SELECT prenom FROM Sessions WHERE device_id=? AND prenom IS NOT NULL LIMIT 1`).bind(device).all();
+              const prenomPrive = sess.length ? cleanPrenom(sess[0].prenom) : cleanPrenom(p.prenom);
+              if (!prenomPrive) return json({ error: "prenom manquant" }, 400);
+              const pid = crypto.randomUUID();
+              const codePrive = "perso-" + Math.random().toString(36).slice(2, 8);
+              await db.prepare(
+                `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
+              ).bind(pid, "Mes adresses", codePrive, prenomPrive, "", "1", now).run();
+              await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(pid, prenomPrive).run();
+              await db.prepare(
+                `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+              ).bind(device, pid, prenomPrive, "member", now).run();
+              carnetPriveId = pid;
+              logEvent(db, "create_prive", { device, prenom: prenomPrive, carnet: pid });
+            }
+            const s = await sessionOf(carnetPriveId);
             const { results: existantes } = await db.prepare(
               `SELECT f.titre FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
-            ).bind(p.carnetId).all();
+            ).bind(carnetPriveId).all();
             const vues = new Set(existantes.map((x) => normNom(x.titre)).filter((k) => k.length >= 4));
             let importes = 0, ignores = 0;
             const seen = new Set();
@@ -594,17 +594,154 @@ export default {
               const cle = normNom(titre);
               if (!titre || cle.length < 4 || vues.has(cle) || seen.has(cle)) { ignores++; continue; }
               seen.add(cle);
+              const noteImp = Math.min(100, Math.max(0, parseInt(it && it.note, 10) || 0));
               const id = crypto.randomUUID();
               await db.prepare(
                 `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
                  VALUES (?,?,?,?,?,?,?,?,?,?,?)`
-              ).bind(id, s.prenom, "adresse", null, titre, cleanText(it.lieu, 60), 0,
-                cleanText(it.com, 500), null, null, now).run();
-              await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, p.carnetId).run();
+              ).bind(id, s.prenom, "adresse", null, titre, cleanText(it && it.lieu, 60),
+                (noteImp >= 70 && noteImp <= 100) ? noteImp : 0,
+                cleanText(it && it.com, 500), null, null, now).run();
+              await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, carnetPriveId).run();
               importes++;
             }
-            logEvent(db, "import_adresses", { device, prenom: s.prenom, carnet: p.carnetId, meta: { importes, ignores } });
-            return json({ importes, ignores });
+            logEvent(db, "import_adresses", { device, prenom: s.prenom, carnet: carnetPriveId, meta: { importes, ignores } });
+            return json({ importes, ignores, carnetId: carnetPriveId });
+          }
+
+          // V0.4.72 : rattacher les avis Google (fichier optionnel, ajoutable plus tard)
+          // aux fiches déjà importées — par nom normalisé. Ne touche QUE le carnet privé.
+          case "rattacherAvis": {
+            const s = await sessionOf(p.carnetId);
+            if (!s) return json({ error: "pas membre" }, 403);
+            const cible = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!cible || cible.prive !== "1") return json({ error: "carnet non prive" }, 403);
+            const { results: fichesPrivees } = await db.prepare(
+              `SELECT f.id, f.titre, f.note FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
+            ).bind(p.carnetId).all();
+            let rattaches = 0;
+            const orphelins = [];
+            for (const av of (Array.isArray(p.items) ? p.items : []).slice(0, 500)) {
+              const cle = normNom(av && av.titre);
+              const f = fichesPrivees.find((x) => normNom(x.titre) === cle);
+              if (!f) { if (cle.length >= 4) orphelins.push(cleanText(av.titre, 60)); continue; }
+              const noteAv = Math.min(100, Math.max(70, parseInt(av.note, 10) || 0));
+              await db.prepare(`UPDATE Fiches SET note=?, com=CASE WHEN com IS NULL OR com='' THEN ? ELSE com END WHERE id=?`)
+                .bind(f.note ? f.note : noteAv, cleanText(av.com, 500), f.id).run();
+              rattaches++;
+            }
+            logEvent(db, "rattacher_avis", { device, prenom: s.prenom, meta: { rattaches } });
+            return json({ rattaches, orphelins: orphelins.slice(0, 20) });
+          }
+
+          // V0.4.72 : TRANSFERT des fiches privées vers un ou plusieurs carnets.
+          // La fiche garde son id (likes/commentaires suivent) ; le lien privé est
+          // retiré. Les doublons dans un carnet ciblé sont ignorés avec leur raison.
+          case "partagerFiches": {
+            const ficheIds = (Array.isArray(p.ficheIds) ? p.ficheIds : []).slice(0, 100);
+            const carnetIds = (Array.isArray(p.carnetIds) ? p.carnetIds : []).slice(0, 10);
+            if (!ficheIds.length || !carnetIds.length) return json({ error: "rien a partager" }, 400);
+            const cp = await db.prepare(`SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?)`).bind(device).first();
+            if (!cp) return json({ error: "pas d espace prive" }, 403);
+            for (const cid of carnetIds) {
+              if (!(await sessionOf(cid))) return json({ error: "pas membre de " + cid }, 403);
+              const cPriv = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(cid).first();
+              if (cPriv && cPriv.prive === "1") return json({ error: "carnet prive" }, 403);
+            }
+            let partagees = 0;
+            const ignorees = [];
+            for (const fid of ficheIds) {
+              const f = await db.prepare(`SELECT id, titre FROM Fiches WHERE id=?`).bind(fid).first();
+              if (!f) { ignorees.push({ titre: "?", raison: "fiche introuvable" }); continue; }
+              const { results: liensF } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(fid).all();
+              if (!liensF.some((l) => l.carnet_id === cp.id)) { ignorees.push({ titre: f.titre, raison: "hors espace prive" }); continue; }
+              let places = [];
+              for (const cid of carnetIds) {
+                const { results: existantes } = await db.prepare(
+                  `SELECT f2.titre FROM Fiches f2 JOIN FichesCarnets fc ON fc.fiche_id=f2.id WHERE fc.carnet_id=?`
+                ).bind(cid).all();
+                const doublon = existantes.find((x) => normNom(x.titre) === normNom(f.titre));
+                if (doublon) { ignorees.push({ titre: f.titre, raison: "deja note dans le carnet" }); continue; }
+                await db.prepare(`INSERT OR IGNORE INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(fid, cid).run();
+                places.push(cid);
+              }
+              if (places.length) {
+                await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=? AND carnet_id=?`).bind(fid, cp.id).run();
+                partagees++;
+              }
+            }
+            // Notif push aux membres des carnets destinataires (une par carnet, si au moins 1 fiche)
+            (async () => {
+              const sP = await sessionOf(cp.id);
+              if (sP && partagees > 0) {
+                const dests = new Set();
+                for (const cid of carnetIds) for (const d of await devicesOfCarnet(db, cid, sP.prenom)) dests.add(d);
+                await sendPushTo(env, db, [...dests], {
+                  title: sP.prenom + " partage une adresse aimée",
+                  body: partagees + " adresse" + (partagees > 1 ? "s" : "") + " nouvellement recommandée" + (partagees > 1 ? "s" : "") + " dans ton carnet ♥",
+                  url: "/",
+                }).catch(() => {});
+              }
+            })().catch(() => {});
+            logEvent(db, "partager_fiches", { device, meta: { partagees, ignorees: ignorees.length, carnets: carnetIds.length } });
+            return json({ partagees, ignorees });
+          }
+
+          // V0.4.72 : espace privé de DÉMO pour le super-admin (Thomas) — pass vérifié
+          // comme superAdmin (SHA-256 vs SUPER_ADMIN_HASH). Crée l'espace + 10 fiches.
+          case "demoPrive": {
+            const attendu = String(env.SUPER_ADMIN_HASH || "");
+            if (!attendu) return json({ error: "super admin non configure" }, 404);
+            const pass = String(p.pass || "");
+            if (pass.length < 8 || (await sha256hex(pass)) !== attendu) return json({ ok: false }, 200);
+            let cp = await db.prepare(
+              `SELECT id FROM Carnets WHERE prive='1' AND id IN (SELECT carnet_id FROM Sessions WHERE device_id=?)`
+            ).bind(device).first();
+            let carnetId = cp && cp.id;
+            if (!carnetId) {
+              const { results: sess } = await db.prepare(`SELECT prenom FROM Sessions WHERE device_id=? AND prenom IS NOT NULL LIMIT 1`).bind(device).all();
+              const prenomPrive = sess.length ? cleanPrenom(sess[0].prenom) : "Demo";
+              carnetId = crypto.randomUUID();
+              const codePrive = "perso-" + Math.random().toString(36).slice(2, 8);
+              await db.prepare(
+                `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, prive, created_at) VALUES (?,?,?,?,?,?,?)`
+              ).bind(carnetId, "Mes adresses", codePrive, prenomPrive, "", "1", now).run();
+              await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(carnetId, prenomPrive).run();
+              await db.prepare(
+                `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+              ).bind(device, carnetId, prenomPrive, "member", now).run();
+            }
+            const { results: deja } = await db.prepare(
+              `SELECT f.titre FROM Fiches f JOIN FichesCarnets fc ON fc.fiche_id=f.id WHERE fc.carnet_id=?`
+            ).bind(carnetId).all();
+            const vues = new Set(deja.map((x) => normNom(x.titre)));
+            const DEMO = [
+              ["Météoreat", "12 rue des Marronniers, 75011 Paris", 93, "Punaise, c'était bon — le menu du soir est une leçon"],
+              ["L'Arpège", "84 rue de Varenne, 75007 Paris", 100, "Le repas d'une vie"],
+              ["Chez Norbert", "Lyon 2e", 0, null],
+              ["Le Petit Bistrot", "Bordeaux", 85, "Bistrot comme on les aime"],
+              ["Boulangerie Dupont", "Strasbourg", 0, null],
+              ["Café Meridian", "10 rue de la République, 69002 Lyon", 88, "Le latte du samedi matin"],
+              ["La Petite Chaise", "36 rue de Grenelle, 75007 Paris", 77, "Brasserie classique, un peu daté"],
+              ["Bar du Marché", "Nice", 0, null],
+              ["Trattoria Rossi", "4 rue Sainte-Catherine, 33000 Bordeaux", 90, "Les pâtes fraîches du mardi"],
+              ["Fruits et Légumes Chez Malika", "Montreuil", 0, null],
+            ];
+            let ajoutees = 0;
+            for (const [titre, lieu, note, com] of DEMO) {
+              const cle = normNom(titre);
+              if (vues.has(cle)) continue;
+              vues.add(cle);
+              const id = crypto.randomUUID();
+              await db.prepare(
+                `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+              ).bind(id, "Demo", "adresse", null, titre, lieu, note, com, null, null, now).run();
+              await db.prepare(`INSERT INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(id, carnetId).run();
+              ajoutees++;
+            }
+            logEvent(db, "demo_prive", { device, meta: { ajoutees } });
+            return json({ ok: true, carnetId, ajoutees });
           }
 
           case "updateFiche": {
@@ -899,128 +1036,3 @@ export default {
             // Changer de prénom : le serveur vérifie les doublons dans TOUS les carnets
             // de l'appareil (casse indifférente), puis renomme partout — membres,
             // sessions, notes, likes, commentaires, demandes, flashes, admin.
-            const nvP = cleanPrenom(p.nouveau);
-            const ancienP = cleanPrenom(p.ancien);
-            if (!nvP) return json({ error: "Prénom vide" }, 400);
-            if (nvP === ancienP) return json({ error: "C'est déjà ton prénom" }, 400);
-            const { results: sesRename } = await db.prepare(
-              `SELECT carnet_id, prenom FROM Sessions WHERE device_id=?`
-            ).bind(device).all();
-            if (!sesRename.length) return json({ error: "aucune session" }, 404);
-            // Conflit : un AUTRE membre porte déjà ce prénom dans un de mes carnets
-            const conflits = [];
-            for (const se of sesRename) {
-              if (se.prenom === nvP) continue;
-              const { results: mm } = await db.prepare(
-                `SELECT prenom FROM Membres WHERE carnet_id=? AND prenom<>? AND lower(prenom)=lower(?)`
-              ).bind(se.carnet_id, se.prenom, nvP).all();
-              if (mm.length) {
-                const c = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(se.carnet_id).first();
-                conflits.push(c ? c.nom : "?");
-              }
-            }
-            if (conflits.length) return json({ error: "prenom_pris", carnets: conflits });
-            for (const se of sesRename) {
-              if (se.prenom === nvP) continue;
-              const old = se.prenom;
-              const fichesC = `SELECT fiche_id FROM FichesCarnets WHERE carnet_id=?`;
-              await db.prepare(`INSERT OR IGNORE INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(se.carnet_id, nvP).run();
-              await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(se.carnet_id, old).run();
-              await db.prepare(`UPDATE Sessions SET prenom=? WHERE device_id=? AND carnet_id=?`).bind(nvP, device, se.carnet_id).run();
-              await db.prepare(`UPDATE Carnets SET admin=? WHERE id=? AND admin=?`).bind(nvP, se.carnet_id, old).run();
-              await db.prepare(`UPDATE Fiches SET auteur=? WHERE auteur=? AND id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`INSERT OR IGNORE INTO FicheLikes (fiche_id, prenom) SELECT fiche_id, ? FROM FicheLikes WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`DELETE FROM FicheLikes WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(old, se.carnet_id).run();
-              await db.prepare(`UPDATE FicheComments SET prenom=? WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`INSERT OR IGNORE INTO DemandesRecette (fiche_id, prenom, created_at) SELECT fiche_id, ?, created_at FROM DemandesRecette WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`DELETE FROM DemandesRecette WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(old, se.carnet_id).run();
-              await db.prepare(`UPDATE Flashes SET auteur=? WHERE auteur=? AND carnet_id=?`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`INSERT OR IGNORE INTO FlashReactions (flash_id, prenom) SELECT flash_id, ? FROM FlashReactions WHERE prenom=? AND flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`).bind(nvP, old, se.carnet_id).run();
-              await db.prepare(`DELETE FROM FlashReactions WHERE prenom=? AND flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`).bind(old, se.carnet_id).run();
-            }
-            logEvent(db, "rename", { device, prenom: nvP });
-            return json({ ok: true, prenom: nvP });
-          }
-
-          case "go": {
-            // Mesure H1-H4 : la fiche se transforme en action (bouton On y va -> Maps).
-            logEvent(db, "go", { device, meta: { fiche: cleanText(p.id, 64) } });
-            return json({ ok: true });
-          }
-
-          case "leaveCarnet": {
-            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
-            if (!c) return json({ ok: true });
-            const s = await sessionOf(c.id);
-            if (!s) return json({ error: "tu n'es pas dans ce carnet" }, 404);
-            if (s.role === "admin" || s.prenom === c.admin) {
-              return json({ error: "L'admin ne peut pas quitter son propre carnet" }, 403);
-            }
-            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND device_id=?`).bind(c.id, device).run();
-            const autre = await db.prepare(`SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).first();
-            if (!autre) await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).run();
-            return json({ ok: true });
-          }
-
-          case "subscribePush": {
-            const sub = p.sub || {};
-            if (!device || !sub.endpoint || !sub.keys) return json({ error: "abonnement invalide" }, 400);
-            await db.prepare(
-              `INSERT OR REPLACE INTO PushSubscriptions (device_id, endpoint, p256dh, auth, created_at) VALUES (?,?,?,?,?)`
-            ).bind(device, cleanText(sub.endpoint, 500), cleanText(sub.keys.p256dh, 200),
-              cleanText(sub.keys.auth, 100), now).run();
-            logEvent(db, "notifs_on", { device });
-            return json({ ok: true });
-          }
-
-          case "unsubscribePush": {
-            await db.prepare(`DELETE FROM PushSubscriptions WHERE endpoint=?`).bind(cleanText(p.endpoint, 500)).run();
-            return json({ ok: true });
-          }
-
-          case "removeMember": {
-            const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
-            if (!c) return json({ error: "introuvable" }, 404);
-            if (!(await isAdminOf(p.carnetId))) return json({ error: "réservé à l'admin" }, 403);
-            const membre = cleanPrenom(p.membre);
-            if (membre === c.admin) return json({ error: "impossible de retirer l'admin" }, 403);
-            await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(p.carnetId, membre).run();
-            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(p.carnetId, membre).run();
-            const { results: membres } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(p.carnetId).all();
-            return json({ carnet: { id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) } });
-          }
-
-          case "superAdmin": {
-            // Créateur de l'app : une phrase de passe LONGUE, dont seul le SHA-256
-            // existe côté serveur (variable d'environnement SUPER_ADMIN_HASH).
-            // Restaure des sessions admin sur TOUS les carnets, tout appareil.
-            const attendu = String(env.SUPER_ADMIN_HASH || "");
-            if (!attendu) return json({ error: "super admin non configuré" }, 404);
-            const pass = String(p.pass || "");
-            if (pass.length < 8 || (await sha256hex(pass)) !== attendu)
-              return json({ ok: false }, 200);
-            const { results: tous } = await db.prepare(`SELECT * FROM Carnets`).all();
-            const roles = {};
-            const carnets = [];
-            for (const c of tous) {
-              await db.prepare(
-                `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
-              ).bind(device, c.id, c.admin, "admin", now).run();
-              roles[c.id] = "admin";
-              const { results: membres } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(c.id).all();
-              carnets.push({ id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) });
-            }
-            return json({ ok: true, carnets, roles });
-          }
-
-          default:
-            return json({ error: "unknown action" }, 400);
-        }
-      } catch (e) {
-        return json({ error: "mutate: " + String((e && e.message) || e) }, 500);
-      }
-    }
-
-    return new Response("Not found", { status: 404, headers: CORS });
-  },
-};

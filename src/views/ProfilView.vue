@@ -6,6 +6,7 @@ import Ic from "../components/Ic.vue";
 import InstallCard from "../components/InstallCard.vue";
 import Avatar from "../components/Avatar.vue";
 import { exporterFichierJSON } from "../lib/util.js";
+import { parseLieux, parseAvis } from "../lib/import.js";
 import pkg from "../../package.json";
 import * as api from "../lib/api.js";
 
@@ -74,45 +75,87 @@ const appInstallee = (typeof window !== "undefined") &&
    window.navigator.standalone === true);
 const toast = inject("toast");
 
-// V0.4.71 « Mes adresses » : import des lieux enregistrés Google Maps (export KML).
-// Le parsing est local (rien ne quitte l'appareil), l'import part au serveur en batches.
+// V0.4.72 « Mes adresses » : import Google Maps — 2 fichiers (le 2e optionnel),
+// parsing 100 % LOCAL (.kml/.csv/.json selon le compte, cf. src/lib/import.js),
+// puis envoi au serveur qui crée l'espace privé à la volée au premier import.
 const importBusy = ref(false);
 const nbMesAdresses = computed(() => {
   const cp = store.mesAdresses;
   return cp ? store.fiches.filter((f) => f.carnets.includes(cp.id)).length : 0;
 });
-function parseKML(texte) {
-  const doc = new DOMParser().parseFromString(texte, "text/xml");
-  const places = [...doc.getElementsByTagName("Placemark")];
-  return places
-    .map((pm) => {
-      const nom = (pm.getElementsByTagName("name")[0]?.textContent || "").trim();
-      const addr = (pm.getElementsByTagName("address")[0]?.textContent
-        || pm.getElementsByTagName("description")[0]?.textContent || "").trim();
-      return { titre: nom.slice(0, 60), lieu: addr.slice(0, 60) };
-    })
-    .filter((x) => x.titre);
-}
-async function onImportKML(e) {
+const lieuxPick = ref(null);   // { nom, items }
+const avisPick = ref(null);    // { nom, items }
+const errImport = ref("");
+const resultatImport = ref(null); // { importes, ignores, rattaches, orphelins }
+async function onPickLieux(e) {
   const file = e.target.files[0];
   e.target.value = "";
   if (!file) return;
+  errImport.value = ""; resultatImport.value = null;
+  try {
+    const r = parseLieux(file.name, await file.text());
+    if (r.erreur) { errImport.value = "Lieux : " + r.erreur; return; }
+    lieuxPick.value = { nom: file.name, items: r.items };
+  } catch (err) {
+    errImport.value = "Lieux : fichier illisible — vérifie que c'est un export takeout.google.com (Maps).";
+  }
+}
+async function onPickAvis(e) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  errImport.value = ""; resultatImport.value = null;
+  try {
+    const r = parseAvis(file.name, await file.text());
+    if (r.erreur) { errImport.value = "Avis : " + r.erreur; return; }
+    avisPick.value = { nom: file.name, items: r.items };
+  } catch (err) {
+    errImport.value = "Avis : fichier illisible — seul le JSON de Takeout (Maps) est attendu.";
+  }
+}
+async function validerImport() {
+  if (!lieuxPick.value) return;
   importBusy.value = true;
   try {
-    const items = parseKML(await file.text());
-    if (!items.length) {
-      toast("Aucun lieu trouvé dans ce fichier — exporte « Enregistrés » depuis Google Maps (format KML)");
-      return;
+    const r = await store.importerAdresses(lieuxPick.value.items);
+    if (r && r.error) { errImport.value = "Import impossible : " + r.error; return; }
+    let rattaches = 0, orphelins = [];
+    if (avisPick.value && avisPick.value.items.length) {
+      const ra = await store.rattacherAvis(avisPick.value.items);
+      if (ra && !ra.error) { rattaches = ra.rattaches || 0; orphelins = ra.orphelins || []; }
     }
-    const r = await store.importerAdresses(items);
-    if (r && r.error) { toast("Import impossible : " + r.error); return; }
-    toast(r.importes + " adresse" + (r.importes > 1 ? "s" : "") + " importée" + (r.importes > 1 ? "s" : "")
-      + (r.ignores ? " — " + r.ignores + " ignorée" + (r.ignores > 1 ? "s" : "") + " (doublons)" : ""));
-  } catch (err) {
-    toast("Fichier illisible — vérifie que c'est un export KML Google Maps");
+    resultatImport.value = { ...r, rattaches, orphelins };
+    lieuxPick.value = null; avisPick.value = null;
   } finally {
     importBusy.value = false;
   }
+}
+function ouvrirMesAdresses() {
+  const cp = store.mesAdresses;
+  if (!cp) return;
+  store.switchCarnet(cp.id);
+  router.push("/");
+}
+// Super-admin : appui long sur la version → espace privé de démo (pass vérifié serveur)
+const demoPopin = ref(false);
+const demoPass = ref("");
+let demoTimer = null, demoPos = null;
+function demoStart(e) {
+  const p = e.touches?.[0] || e;
+  demoPos = { x: p.clientX, y: p.clientY };
+  demoTimer = setTimeout(() => { demoPopin.value = true; }, 600);
+}
+function demoMove(e) {
+  if (!demoPos) return;
+  const p = e.touches?.[0] || e;
+  if (Math.abs(p.clientX - demoPos.x) > 8 || Math.abs(p.clientY - demoPos.y) > 8) clearTimeout(demoTimer);
+}
+function demoEnd() { clearTimeout(demoTimer); demoTimer = null; demoPos = null; }
+async function demoValider() {
+  const r = await store.demoPrive(demoPass.value);
+  demoPopin.value = false; demoPass.value = "";
+  if (r && r.ok) toast("Espace privé de démo prêt — " + r.ajoutees + " fiches");
+  else toast(r && r.error ? r.error : "Pass super-admin refusé");
 }
 const prenom = ref(store.profil.prenom);
 
@@ -259,20 +302,69 @@ async function exporterJSON() {
     </div>
 
     
-    <!-- V0.4.71 : Mes adresses — réservoir privé, rien n'est partagé sans geste explicite -->
+    <!-- V0.4.72 : Mes adresses — import Google (lieux + avis optionnel), espace privé créé au premier import -->
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes adresses — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }}</p>
       <p class="text-[11px] text-muted leading-relaxed mb-3">
-        Ton réservoir privé : visible de toi seul. Importe tes lieux enregistrés Google Maps,
-        puis partage une adresse dans un carnet quand tu veux, avec ta vraie note.
+        Ton réservoir privé : visible de toi seul. Rien n'est partagé sans ton geste explicite.
       </p>
-      <label class="w-full rounded-xl py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer bg-soft text-accent"
-        :style="{ border: '1px dashed var(--c-hairline)', opacity: importBusy ? '.5' : '1' }">
-        <Ic name="pin" class="w-4 h-4" />
-        {{ importBusy ? "Import en cours…" : "Importer depuis Google Maps (.kml)" }}
-        <input type="file" accept=".kml,.xml,text/xml" class="hidden" @change="onImportKML" :disabled="importBusy" />
-      </label>
-      <p class="text-[10px] text-muted mt-2">Google Maps → Tes lieux → ⋮ → Exporter (KML). Les doublons sont ignorés.</p>
+
+      <template v-if="!resultatImport">
+        <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2 cursor-pointer"
+          :style="{ border: '1px solid ' + (lieuxPick ? 'var(--c-accent)' : 'var(--c-hairline)') }">
+          <label class="flex-1 text-[11px] leading-tight cursor-pointer">
+            <span class="block font-semibold text-sm" :class="lieuxPick ? 'text-accent' : ''">
+              {{ lieuxPick ? "✓ " + lieuxPick.nom : "1. Tes lieux enregistrés" }}</span>
+            <span class="text-muted">Obligatoire — export Takeout Google (carte « Enregistrés »)</span>
+            <input type="file" accept=".kml,.xml,.csv,.json,.txt" class="hidden" @change="onPickLieux" :disabled="importBusy" />
+          </label>
+          <Ic name="pin" class="w-4 h-4 text-muted" />
+        </div>
+        <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2 cursor-pointer"
+          :style="{ border: '1px solid ' + (avisPick ? 'var(--c-accent)' : 'var(--c-hairline)'), opacity: lieuxPick ? '1' : '.55' }">
+          <label class="flex-1 text-[11px] leading-tight cursor-pointer">
+            <span class="block font-semibold text-sm" :class="avisPick ? 'text-accent' : ''">
+              {{ avisPick ? "✓ " + avisPick.nom : "2. Tes avis Google — optionnel" }}</span>
+            <span class="text-muted">Notes ★★★★★ et commentaires — ajoutable plus tard</span>
+            <input type="file" accept=".json" class="hidden" @change="onPickAvis" :disabled="importBusy || !lieuxPick" />
+          </label>
+          <Ic name="star" class="w-4 h-4 text-muted" />
+        </div>
+
+        <p v-if="lieuxPick" class="text-[11px] text-muted mb-2">
+          {{ lieuxPick.items.length }} lieu{{ lieuxPick.items.length > 1 ? "x" : "" }} trouvé{{ lieuxPick.items.length > 1 ? "s" : "" }}
+          <template v-if="avisPick"> · {{ avisPick.items.length }} avis à rattacher</template>
+        </p>
+        <p v-if="errImport" class="text-[11px] text-red-600 mb-2">{{ errImport }}</p>
+
+        <div class="flex gap-2">
+          <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-accent text-white disabled:opacity-40"
+            :disabled="!lieuxPick || importBusy" @click="validerImport">
+            {{ importBusy ? "Import en cours…" : "Importer" }}</button>
+          <button v-if="lieuxPick || avisPick" class="rounded-xl px-4 text-sm text-muted"
+            :style="{ border: '1px solid var(--c-hairline)' }"
+            @click="lieuxPick = null; avisPick = null; errImport = ''">Plus tard</button>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">✓ {{ resultatImport.importes }} importés</span>
+          <span v-if="resultatImport.ignores" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
+            :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.ignores }} doublons ignorés</span>
+          <span v-if="resultatImport.rattaches" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">★ {{ resultatImport.rattaches }} avis rattachés</span>
+          <span v-if="resultatImport.orphelins && resultatImport.orphelins.length" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
+            :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.orphelins.length }} avis sans lieu correspondant</span>
+        </div>
+        <button class="w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft"
+          @click="resultatImport = null">Import d'autres fichiers</button>
+      </template>
+
+      <button v-if="store.mesAdresses" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
+        @click="ouvrirMesAdresses">
+        <Ic name="book" class="w-4 h-4" /> Ouvrir Mes adresses ({{ nbMesAdresses }}) →
+      </button>
+      <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → Maps → « Enregistrés » (et « Mes avis »). Aucun compte Google requis.</p>
     </div>
 
     <InstallCard v-if="!appInstallee" />
@@ -388,10 +480,30 @@ async function exporterJSON() {
     </button>
 
 
-    <p class="text-[11px] text-muted text-center leading-relaxed">
+    <p class="text-[11px] text-muted text-center leading-relaxed select-none"
+      @touchstart="demoStart" @touchmove="demoMove" @touchend="demoEnd"
+      @mousedown="demoStart" @mousemove="demoMove" @mouseup="demoEnd">
       Tes données t'appartiennent — export disponible à tout moment.<br />
       Le Carnet · V{{ pkg.version }}
     </p>
+
+    <!-- Popin super-admin : crée l'espace privé de démo (pass vérifié serveur) -->
+    <div v-if="demoPopin" class="fixed inset-0 z-50 flex items-end" :style="{ background: 'rgba(0,0,0,.35)' }"
+      @click.self="demoPopin = false">
+      <div class="w-full rounded-t-2xl bg-surface p-5 pb-7" style="max-width: 480px; margin: 0 auto;">
+        <p class="text-sm font-semibold mb-1">Espace privé de démo</p>
+        <p class="text-[11px] text-muted mb-3">Super-admin : entre ton pass pour créer « Mes adresses » avec des fiches de démonstration.</p>
+        <input v-model="demoPass" type="password" inputmode="numeric" placeholder="Pass super-admin"
+          class="w-full rounded-xl px-3 py-2.5 text-sm mb-3 bg-soft"
+          style="border: 1px solid var(--c-hairline)" />
+        <div class="flex gap-2">
+          <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted"
+            :style="{ border: '1px solid var(--c-hairline)' }" @click="demoPopin = false">Annuler</button>
+          <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-accent text-white disabled:opacity-40"
+            :disabled="!demoPass" @click="demoValider">Valider</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Zone sensible : tout en bas du profil, bien séparée -->
     <div class="mt-4 pt-4 border-t border-hairline">

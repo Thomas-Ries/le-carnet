@@ -291,7 +291,8 @@ async function exporterJSON() {
         </div>
       </div>
 
-      <!-- Invitation -->
+      <!-- Invitation (masquée pour l'espace privé — on n'invite personne chez soi) -->
+      <template v-if="!store.carnet?.prive">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter</p>
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
         <p class="text-[11px] text-muted mb-2.5 leading-relaxed">Partage ce lien — ou le code <span class="font-semibold text-accent tracking-widest">{{ store.carnet.code }}</span> à la main. Toute personne invitée peut aussi créer son propre carnet.</p>
@@ -307,6 +308,10 @@ async function exporterJSON() {
           </button>
         </div>
       </div>
+      </template>
+      <p v-else class="text-[11px] text-muted leading-relaxed mb-4 rounded-2xl p-4 bg-surface border border-hairline">
+        Espace privé — visible de toi seul. Pour offrir une adresse à un carnet, sélectionne-la (appui long) dans la liste puis partage-la.
+      </p>
 
       <button v-if="!store.isAdminCarnet(store.carnetId)" @click="popinQuitter = true"
         class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 mb-3"

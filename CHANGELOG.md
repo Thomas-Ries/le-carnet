@@ -1,5 +1,15 @@
 # Changelog
 
+## V0.4.72 — Mes adresses : import Google complet (lieux + avis), partage-transfert par sélection
+
+- **Import Google Maps à 2 fichiers** (Profil) : lieux enregistrés Takeout (.kml / .csv / .json selon le compte) + avis Google en JSON optionnel. Parsing 100 % local, espace privé « Mes adresses » créé à la volée au premier import (plus d'auto-création au boot).
+- **Avis rattachés** par nom (normNom) : notes ★→{70, 78, 85, 93, 100} et commentaires. Un avis ne remplace jamais une note ou un commentaire existant. Ajoutable plus tard (« Plus tard »).
+- **Partage = transfert** : sélection longue-press dans « Mes adresses » → bandeau d'action au-dessus de la nav → chips de carnets (multi-sélection, bordure active) → modale de confirmation → les fiches quittent l'espace privé, likes et commentaires suivent (même id).
+- **Échecs toujours expliqués** : doublon déjà noté dans le carnet cible, fiche hors espace privé — toast par fiche ignorée.
+- **Espace privé** : bloc « Inviter » masqué (pas d'invitation possible), le join serveur refuse les carnets privés. Le bloc de partage fiche-par-fiche V0.4.71 est retiré au profit du flux de sélection.
+- **Super-admin** : appui long (600 ms) sur la version au pied du Profil → popin pass → espace privé de démo avec 10 fiches (pass vérifié contre SUPER_ADMIN_HASH côté serveur).
+- Pas de recherche dans la liste : scroll infini seul, comme validé en preview.
+
 ## V0.4.71 — « Mes adresses » : carnet privé + import Google Maps
 
 - Nouveau carnet privé **« Mes adresses »**, créé automatiquement au boot : visible de son seul propriétaire, invisible aux autres, mot-clé inutilisable (le serveur refuse le join d'un carnet privé).
