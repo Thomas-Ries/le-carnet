@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.23 — Nouvelle icône : cœur + fourchette
+- Décision produit de Thomas après exploration (livre = religieux, verre seul = Ma Cave, assiette illisible, cœur seul = rencontre) : **fourchette penchée (10°) + cœur riesling** sur badge bordeaux — « l'amour de la table à partager ».
+- logo.svg refait dans ce motif ; PNG 192/512 régénérés (carré plein opaque, motif dans la zone de sécurité maskable) — livrés dans le canvas de livraison (le connecteur GitHub corrompt les binaires).
+
 ## 0.4.22 — Fix icône iOS : carré plein opaque
 - Les PNG 192/512 précédents avaient des coins arrondis TRANSPARENTS : iOS ne supporte pas la transparence sur les icônes d'écran d'accueil (remplacée par du blanc) et rognait le motif. PNG régénérés en carré PLEIN OPAQUE bordeaux bord à bord (iOS arrondit lui-même), motif ramené dans la zone de sécurité maskable (cercle interne 80 %).
 - index.html : apple-touch-icon passe du SVG (ignoré par iOS pour l'écran d'accueil) à /icons/icon-192.png.

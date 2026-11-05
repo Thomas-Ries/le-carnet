@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Badge bordeaux du splashscreen (dégradé 140deg, coins arrondis 27/86) -->
+  <!-- Icône « Le Carnet » : fourchette penchée + cœur riesling — l'amour de la table à partager -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7A2E3E"/>
@@ -7,19 +7,11 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="160" fill="url(#bg)"/>
-  <!-- Motif du splash : fourchette · verre · couteau, traits blancs, gap 2px/86 -->
-  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
-    <!-- fourchette 23px/86 -->
-    <g transform="translate(11,187) scale(5.71)" stroke-width="1.8">
-      <path d="M5.5 2v6a3 3 0 003 3h2a3 3 0 003-3V2M9.5 2v20"/>
-    </g>
-    <!-- verre 36px/86 -->
-    <g transform="translate(151,149) scale(8.92)" stroke-width="1.7">
-      <path d="M12 15a3 3 0 003-3V4H9v8a3 3 0 003 3zM12 15v7M8 22h8"/>
-    </g>
-    <!-- couteau 23px/86 -->
-    <g transform="translate(369,187) scale(5.71)" stroke-width="1.8">
-      <path d="M18.5 2v20M18.5 2c-3 1.5-5 5-5 9.2 0 1.7 1.4 3.1 3.1 3.1h1.9"/>
-    </g>
+  <g fill="none" stroke="#FFFFFF" stroke-width="21.2" stroke-linecap="round" stroke-linejoin="round"
+     transform="translate(63,130) scale(11.175) rotate(10 9.5 12)">
+    <path d="M5.5 2v6a3 3 0 003 3h2a3 3 0 003-3V2M9.5 2v20"/>
+  </g>
+  <g transform="translate(249.2,100.2) scale(6.1835)">
+    <path d="M21 8.18c0 4.94-6.5 8.32-9 9.64-2.5-1.32-9-4.7-9-9.64A4.68 4.68 0 017.68 3.5a4.68 4.68 0 014.32 2.5A4.68 4.68 0 0116.32 3.5 4.68 4.68 0 0121 8.18z" fill="#D9C589"/>
   </g>
 </svg>
