@@ -105,10 +105,11 @@ onMounted(async () => {
           <Ic name="camera" class="w-6 h-6 text-white" />
         </button>
         <router-link v-for="n in NAV" :key="n.to" :to="n.to"
-          class="flex-1 flex flex-col items-center gap-0.5 py-2.5"
+          class="flex-1 flex flex-col items-center gap-[2px] py-1.5 transition-transform"
           :style="{ color: route.path === n.to ? 'var(--c-accent)' : 'var(--c-muted)' }">
-          <Ic :name="n.icon" :filled="route.path === n.to" class="w-6 h-6" />
-          <span class="text-[10px] font-medium">{{ n.label }}</span>
+          <Ic :name="n.icon" :filled="route.path === n.to" :sw="route.path === n.to ? 2.3 : 2"
+            class="w-6 h-6 transition-transform" :class="route.path === n.to ? 'scale-110' : ''" />
+          <span class="text-[10px]" :class="route.path === n.to ? 'font-semibold' : 'font-medium'">{{ n.label }}</span>
         </router-link>
       </div>
     </nav>

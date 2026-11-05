@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.60 — sélection & partage + nav compacte
+
+- **Sélection longue-press sur l'accueil** : appui long sur une card entre en mode sélection (vibration, coche en haut à droite), tap pour en ajouter/retirer ; une icône de partage apparaît à gauche du tri dès qu'une card est cochée. 1 card = sa carte PNG ; plusieurs = un PDF regroupé (une page par fiche, écrit à la main, zéro dépendance) pour ne pas noyer le destinataire.
+- **Modale inspiration** : le fond ne scrolle plus quand elle est ouverte ; puces de tri rejoignent un bouton « Sélectionner » qui coche une ou plusieurs cards ; le CTA « Ça vous tente, je réserve ? » devient « Partager la sélection » (carte PNG ou PDF selon le nombre).
+- **Nav basse compacte** façon Dégustations entre amis : icônes en trait plus épais, onglet actif accentué (bordeaux, icône plus grasse et agrandie), hauteur réduite.
+
 ## V0.4.59 — commentaires façon Instagram
 
 - La saisie devient un champ multi-lignes : le retour à la ligne insère une vraie ligne (plus de validation accidentelle), l'envoi se fait par le bouton, le champ grandit avec le texte (plafonné).

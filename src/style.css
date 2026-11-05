@@ -44,7 +44,7 @@
 /* ---------- Coquille responsive (mobile / PWA / iPad / ordi) ---------- */
 :root {
   --lc-safe-b: env(safe-area-inset-bottom, 0px);
-  --lc-nav-h: 60px;          /* hauteur réelle de la nav (hors safe-area) */
+  --lc-nav-h: 54px;          /* hauteur réelle de la nav (hors safe-area) */
 }
 html, body {
   touch-action: manipulation;

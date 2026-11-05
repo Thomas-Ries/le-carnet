@@ -6,7 +6,7 @@ import Avatar from "../components/Avatar.vue";
 import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
 import * as api from "../lib/api.js";
-import { partagerWhatsapp } from "../lib/util.js";
+import { partagerSelectionFiches } from "../lib/util.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -100,17 +100,30 @@ const inspirSelection = computed(() => {
     : [...sel].sort((x, y) => y.note - x.note || (x.date < y.date ? 1 : -1))
   ).slice(0, 5);
 });
-async function partagerSelection() {
-  const sel = inspirSelection.value;
-  if (!sel.length) return;
-  const lignes = sel.map((f) => "— « " + f.titre + (f.lieu ? " (" + f.lieu + ")" : "") + " »");
-  const nom = (ambianceChoisie.value ? ambianceChoisie.value.t : "").toLowerCase();
-  const texte = "Envie " + (nom.startsWith("bar") ? "d'un " : "de ") + nom + " ? Ça vous tente, je réserve ?\n" + lignes.join("\n");
-  if (navigator.share) {
-    try { await navigator.share({ text: texte }); return; } catch (e) { /* annulé ou indisponible */ }
-  }
-  partagerWhatsapp(texte);
+/* Sélection dans la modale : mode cases à cocher, puis « Partager la sélection ».
+   1 fiche = sa carte PNG ; plusieurs = un PDF qui les regroupe. */
+const inspirMode = ref(false);
+const inspirSel = ref([]);
+const estSelInspir = (id) => inspirSel.value.includes(id);
+function tapInspir(e, f) {
+  if (!inspirMode.value) return;
+  e.preventDefault(); e.stopPropagation();
+  inspirSel.value = estSelInspir(f.id)
+    ? inspirSel.value.filter((x) => x !== f.id)
+    : [...inspirSel.value, f.id];
 }
+async function partagerSelInspir() {
+  const sel = inspirSelection.value.filter((f) => inspirSel.value.includes(f.id));
+  if (!sel.length) return;
+  toast(sel.length > 1 ? "Préparation du PDF…" : "Préparation de la carte…");
+  await partagerSelectionFiches(sel);
+}
+/* Le fond ne doit plus scroller quand la modale est ouverte : on scrolle dedans. */
+watch(inspirOpen, (o) => {
+  document.body.classList.toggle("no-scroll", o);
+  if (!o) { inspirMode.value = false; inspirSel.value = []; }
+});
+watch(inspirTheme, () => { inspirMode.value = false; inspirSel.value = []; });
 function inspirFermer() {
   store.inspir = { open: false, theme: null, tri: "note" };
 }
@@ -157,7 +170,50 @@ onMounted(() => {
   window.addEventListener("scroll", surScroll, { passive: true });
   surScroll(); // liste courte écran grand : charger la 2e tranche tout de suite
 });
-onUnmounted(() => window.removeEventListener("scroll", surScroll));
+onUnmounted(() => { window.removeEventListener("scroll", surScroll); document.body.classList.remove("no-scroll"); });
+
+/* Sélection longue-press sur une card → partage de la sélection.
+   1 card = sa carte PNG ; plusieurs = un PDF qui les regroupe (pas de flood). */
+const selMode = ref(false);
+const selIds = ref([]);
+const estSel = (id) => selIds.value.includes(id);
+let pressTimer = null, pressPos = null, pressFired = false;
+function pressStart(e, f) {
+  pressPos = { x: e.clientX, y: e.clientY };
+  pressTimer = setTimeout(() => {
+    pressFired = true;
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) { /* ok */ } }
+    selMode.value = true;
+    if (!selIds.value.includes(f.id)) selIds.value.push(f.id);
+    toast("Sélection — tape les cards, partage en haut");
+  }, 450);
+}
+function pressMove(e) {
+  if (!pressPos) return;
+  if (Math.abs(e.clientX - pressPos.x) > 10 || Math.abs(e.clientY - pressPos.y) > 10) {
+    clearTimeout(pressTimer); pressTimer = null;
+  }
+}
+function pressEnd() {
+  if (pressTimer) clearTimeout(pressTimer);
+  pressTimer = null; pressPos = null;
+}
+function tapCard(e, f) {
+  // le click qui suit l'appui long ne doit rien faire (ni naviguer, ni décocher)
+  if (pressFired) { pressFired = false; e.preventDefault(); e.stopPropagation(); return; }
+  if (!selMode.value) return;
+  e.preventDefault(); e.stopPropagation();
+  selIds.value = estSel(f.id) ? selIds.value.filter((x) => x !== f.id) : [...selIds.value, f.id];
+  if (!selIds.value.length) selMode.value = false;
+}
+function annulerSel() { selIds.value = []; selMode.value = false; }
+async function partagerSel() {
+  const sel = fichesTri.value.filter((f) => selIds.value.includes(f.id));
+  if (!sel.length) return;
+  toast(sel.length > 1 ? "Préparation du PDF…" : "Préparation de la carte…");
+  const r = await partagerSelectionFiches(sel);
+  if (r === "telecharge") toast("Fichier téléchargé — partage-le depuis ton téléphone");
+}
 </script>
 
 <template>
@@ -353,7 +409,7 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
                 <Ic name="x" class="w-4 h-4" />
               </button>
             </div>
-            <div class="flex gap-1.5 mb-3">
+            <div class="flex gap-1.5 mb-3 items-center">
               <button v-for="fl in [{ id: 'note', label: 'Les mieux notés' }, { id: 'aime', label: 'Les plus aimés' }]"
                 :key="fl.id" @click="store.inspir.tri = fl.id"
                 class="rounded-full px-3 py-1.5 text-xs font-medium"
@@ -362,17 +418,41 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
                   color: store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-muted)',
                   border: '1px solid ' + (store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-hairline)'),
                 }">{{ fl.label }}</button>
+              <!-- Basculer en sélection : coche une ou plusieurs cards à partager -->
+              <button @click="inspirMode = !inspirMode; inspirSel = []"
+                class="ml-auto rounded-full px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 transition"
+                :style="{
+                  background: inspirMode ? 'var(--c-accent)' : 'var(--c-surface)',
+                  color: inspirMode ? '#fff' : 'var(--c-muted)',
+                  border: '1px solid ' + (inspirMode ? 'var(--c-accent)' : 'var(--c-hairline)'),
+                }">
+                <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" /> Sélectionner
+              </button>
             </div>
             <div class="space-y-2 mb-3">
-              <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection -->
-              <FicheRow v-for="f in inspirSelection" :key="f.id" :fiche="f" />
+              <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection.
+                   En mode sélection, le tap coche la card au lieu de naviguer. -->
+              <div v-for="f in inspirSelection" :key="f.id" class="relative rounded-xl"
+                :class="estSelInspir(f.id) ? 'ring-2 ring-[#7A2E3E]' : ''"
+                @click.capture="tapInspir($event, f)">
+                <FicheRow :fiche="f" />
+                <span v-if="inspirMode" class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center border"
+                  :style="estSelInspir(f.id)
+                    ? { background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }
+                    : { background: 'var(--c-surface)', borderColor: 'var(--c-hairline)', color: 'transparent' }">
+                  <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" />
+                </span>
+              </div>
               <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">Pas encore d'adresse ici — note la première.</p>
             </div>
-            <button v-if="inspirSelection.length" @click="partagerSelection"
+            <button v-if="inspirMode && inspirSel.length" @click="partagerSelInspir"
               class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-white mb-2"
               style="background: var(--c-accent)">
-              <Ic name="share" class="w-4 h-4" /> Ça vous tente, je réserve ?
+              <Ic name="share" class="w-4 h-4" /> Partager la sélection
             </button>
+            <p v-if="inspirMode && !inspirSel.length" class="text-[11px] text-muted text-center mb-2">
+              Coche une ou plusieurs adresses à partager.
+            </p>
             <button @click="store.inspir.theme = null"
               class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted bg-surface border border-hairline">
               Changer de thème
@@ -381,31 +461,56 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
         </div>
       </div>
 
-      <!-- Tri : CTA façon e-commerce — un bouton qui ouvre le choix du tri -->
+      <!-- Tri : CTA façon e-commerce — un bouton qui ouvre le choix du tri.
+           En sélection : compteur + partage (icône à gauche du tri) + annulation. -->
       <div v-if="fiches.length" class="flex items-center justify-between mb-2 gap-2 relative">
-        <p class="text-xs uppercase tracking-widest text-muted shrink-0">
-          {{ tri === "recent" ? "Dernièrement dans le carnet" : tri === "aime" ? "Les plus aimés du carnet" : "Le carnet de A à Z" }}
+        <p class="text-xs uppercase tracking-widest shrink-0"
+          :style="selMode ? { color: 'var(--c-accent)' } : { color: 'var(--c-muted)' }">
+          <template v-if="selMode">{{ selIds.length }} sélectionnée{{ selIds.length > 1 ? "s" : "" }}</template>
+          <template v-else>{{ tri === "recent" ? "Dernièrement dans le carnet" : tri === "aime" ? "Les plus aimés du carnet" : "Le carnet de A à Z" }}</template>
         </p>
-        <div class="relative">
-          <button @click="triOpen = !triOpen" title="Choisir le tri"
-            class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
-            :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
-            <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
+        <div class="flex items-center gap-2">
+          <button v-if="selMode" @click="annulerSel" class="text-[10px] font-semibold text-muted underline">Annuler</button>
+          <button v-if="selIds.length" @click="partagerSel" title="Partager la sélection"
+            class="w-8 h-8 rounded-full border flex items-center justify-center active:scale-95 transition"
+            :style="{ background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }">
+            <Ic name="share" class="w-4 h-4" :sw="2" />
           </button>
-          <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
-            style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
-            <button v-for="t in TRIS" :key="t.id"
-              @click="tri = t.id; triOpen = false"
-              class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
-              :style="{ color: t.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: t.id === tri ? 'var(--c-soft)' : 'transparent' }">
-              <span>{{ t.label }}<span v-if="t.defaut" class="text-[10px] text-muted ml-1">défaut</span></span>
-              <Ic v-if="t.id === tri" name="check" class="w-3.5 h-3.5" />
+          <div class="relative">
+            <button @click="triOpen = !triOpen" title="Choisir le tri"
+              class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
+              :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
+              <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
             </button>
+            <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
+              style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
+              <button v-for="t in TRIS" :key="t.id"
+                @click="tri = t.id; triOpen = false"
+                class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+                :style="{ color: t.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: t.id === tri ? 'var(--c-soft)' : 'transparent' }">
+                <span>{{ t.label }}<span v-if="t.defaut" class="text-[10px] text-muted ml-1">défaut</span></span>
+                <Ic v-if="t.id === tri" name="check" class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
       <div class="space-y-2">
-        <FicheRow v-for="f in affiches" :key="f.id" :fiche="f" />
+        <!-- Appui long sur une card = entrer en sélection ; en sélection, le tap coche/décoche -->
+        <div v-for="f in affiches" :key="f.id" class="relative rounded-xl"
+          :class="estSel(f.id) ? 'ring-2 ring-[#7A2E3E]' : ''"
+          style="-webkit-touch-callout: none; user-select: none"
+          @pointerdown="pressStart($event, f)" @pointermove="pressMove"
+          @pointerup="pressEnd" @pointercancel="pressEnd"
+          @click.capture="tapCard($event, f)">
+          <FicheRow :fiche="f" />
+          <span v-if="selMode" class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center border z-10"
+            :style="estSel(f.id)
+              ? { background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }
+              : { background: 'var(--c-surface)', borderColor: 'var(--c-hairline)', color: 'transparent' }">
+            <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" />
+          </span>
+        </div>
       </div>
 
       <p v-if="affiches.length < fichesTri.length" class="text-center text-[10px] text-muted pt-2">Fais défiler pour découvrir les {{ fichesTri.length }} adresses du carnet…</p>
