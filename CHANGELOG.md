@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.62 — nav : centrage vertical
+
+- La rangée de la nav a une hauteur fixe (50px) et le contenu (icône + label) s'y centre verticalement — padding identique en haut et en bas, quel que soit l'onglet actif.
+
 ## V0.4.61 — allègement sélection + nav
 
 - La coche des cards sélectionnées disparaît (accueil et modale) : seul le liseré bordeaux s'active — plus d'empètement sur la note.

@@ -105,7 +105,7 @@ onMounted(async () => {
           <Ic name="camera" class="w-6 h-6 text-white" />
         </button>
         <router-link v-for="n in NAV" :key="n.to" :to="n.to"
-          class="flex-1 flex flex-col items-center gap-[2px] py-1 transition-transform"
+          class="flex-1 flex flex-col items-center justify-center gap-[2px] transition-transform"
           :style="{ color: route.path === n.to ? 'var(--c-accent)' : 'var(--c-muted)' }">
           <Ic :name="n.icon" :filled="route.path === n.to" :sw="route.path === n.to ? 2.3 : 2"
             class="w-6 h-6 transition-transform" :class="route.path === n.to ? 'scale-110' : ''" />
