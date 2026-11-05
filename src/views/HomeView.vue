@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, inject, onMounted, onUnmounted, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
@@ -10,6 +11,7 @@ import * as api from "../lib/api.js";
 import { partagerSelectionFiches, zoneFiche, drapeauPays } from "../lib/util.js";
 
 const store = useCarnetStore();
+const router = useRouter();
 const toast = inject("toast");
 const q = ref("");
 const flashComplet = ref(null);
@@ -187,11 +189,39 @@ function inspirFermer() {
    pour toujours (drapeau lc-bienvenue). */
 const bienvenue = ref(false);
 const notifBienvenue = ref("attente"); // attente | ok | refuse | indispo
+
+/* V0.4.81 — Popin « Nouveauté » : présentée UNE fois aux comptes existants
+   quand une grosse feature arrive (drapeau lc-news). Les nouveaux ne la voient
+   jamais : ils ont la modale Bienvenue, qui présente aussi l'import G-Maps. */
+const NOUVEAUTE = {
+  version: "0.4.81",
+  titre: "Tes adresses Google Maps, dans Le Carnet",
+  texte: "Importe ton export takeout.google.com (« Maps (vos adresses) ») : chaque lieu devient une fiche, et tes avis apportent la note ★ et ton commentaire. Tout arrive dans ton espace privé « Mon G-Maps » — rien n'est partagé sans ton geste.",
+};
+const nouveaute = ref(false);
 onMounted(() => {
   try {
-    if (localStorage.getItem("lc-bienvenue") === "pending") bienvenue.value = true;
+    if (localStorage.getItem("lc-bienvenue") === "pending") {
+      bienvenue.value = true;
+      // Nouvel arrivant : pas de popin nouveauté, l'onboarding suffit.
+      localStorage.setItem("lc-news", NOUVEAUTE.version);
+    }
+  } catch (e) { /* ok */ }
+  try {
+    if (
+      localStorage.getItem("lc-news") !== NOUVEAUTE.version &&
+      store.profil.prenom && store.carnets.length && fiches.value.length && !store.demoMode
+    ) nouveaute.value = true;
   } catch (e) { /* ok */ }
 });
+function fermerNouveaute() {
+  nouveaute.value = false;
+  try { localStorage.setItem("lc-news", NOUVEAUTE.version); } catch (e) { /* ok */ }
+}
+function voirNouveaute() {
+  fermerNouveaute();
+  router.push("/profil?gmaps=1");
+}
 function fermerBienvenue() {
   bienvenue.value = false;
   try { localStorage.setItem("lc-bienvenue", "vu"); } catch (e) { /* ok */ }
@@ -416,6 +446,25 @@ async function confirmerPartage() {
         <Ic name="chevron" class="w-4 h-4 text-muted rotate-90 shrink-0" :sw="2" />
       </button>
 
+      <!-- V0.4.81 — Popin nouveauté : comptes existants, une seule fois -->
+      <div v-if="nouveaute" class="fixed inset-0 z-[94] flex items-end sm:items-center justify-center p-4"
+        style="background: rgba(20, 14, 12, .55)" @click.self="fermerNouveaute">
+        <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
+          <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">Nouveauté</p>
+          <p class="text-lg font-serif leading-tight mb-3">{{ NOUVEAUTE.titre }}</p>
+          <div class="flex items-start gap-3 mb-4">
+            <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="pin" class="w-4 h-4" /></span>
+            <p class="text-xs leading-relaxed flex-1">{{ NOUVEAUTE.texte }}</p>
+          </div>
+          <button @click="voirNouveaute"
+            class="w-full rounded-xl py-3 text-sm font-semibold text-white mb-2 flex items-center justify-center gap-1.5"
+            style="background: var(--c-accent)">
+            <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps dans mon profil →
+          </button>
+          <button @click="fermerNouveaute" class="w-full py-1 text-xs font-semibold text-muted">Plus tard</button>
+        </div>
+      </div>
+
       <!-- Modale Bienvenue : premiere connexion -->
       <div v-if="bienvenue" class="fixed inset-0 z-[95] flex items-end sm:items-center justify-center p-4"
         style="background: rgba(20, 14, 12, .6)">
@@ -439,6 +488,10 @@ async function confirmerPartage() {
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="sparkle" class="w-4 h-4" /></span>
               <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Envie d'inspiration ?</span> — le carnet te propose une sortie par thème, à partager.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="book" class="w-4 h-4" /></span>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Tes adresses Google Maps</span> — importe-les depuis ton profil (« Mon G-Maps »), puis offre celles que tu veux au carnet.</p>
             </div>
           </div>
 

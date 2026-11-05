@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, inject, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import InstallCard from "../components/InstallCard.vue";
@@ -61,6 +61,11 @@ async function toggleNotif() {
 
 const store = useCarnetStore();
 const router = useRouter();
+const route = useRoute();
+// V0.4.81 : la popin nouveauté envoie ici — on ouvre la section G-Maps.
+onMounted(() => {
+  if (route.query && route.query.gmaps) importOuvert.value = true;
+});
 const supprCompte = ref(false);
 const supprPurge = ref(true);
 async function confirmerSupprCompte() {

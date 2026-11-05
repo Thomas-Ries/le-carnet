@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.81 — Popin « Nouveauté » pour les gros ajouts
+
+- Quand une grosse feature sort, les comptes existants voient une petite popin élégante (une seule fois) qui dit où elle est et ce qu'elle permet — première édition : l'import Google Maps.
+- CTA « Ouvrir Mon G-Maps dans mon profil » qui ouvre directement la section repliée ; « Plus tard » referme sans reparaître.
+- Les nouveaux ne la voient jamais (onboarding non pollué) : la modale Bienvenue présente désormais aussi l'import Google Maps.
+
 ## V0.4.80 — Filtre lieu façon menu de tri
 
 - Le filtre pays/ville troque ses chips e-commerce contre un bouton pilule discret « Lieu » à côté du bouton de tri, qui ouvre un menu en deux niveaux : pays (drapeaux + comptes), puis villes du pays choisi. Même langage visuel que le menu de tri.
