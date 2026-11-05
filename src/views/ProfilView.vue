@@ -84,8 +84,6 @@ const toast = inject("toast");
 // parsing 100 % LOCAL (.kml/.csv/.json selon le compte, cf. src/lib/import.js),
 // puis envoi au serveur qui crée l'espace privé à la volée au premier import.
 const importBusy = ref(false);
-// Astuce import : Le Carnet est aussi un site web (Mac / PC) — même compte, mêmes carnets.
-const urlApp = typeof location !== "undefined" ? location.origin : "https://le-carnet-adresses-animees.pages.dev";
 const nbMesAdresses = computed(() => {
   const cp = store.mesAdresses;
   return cp ? store.fiches.filter((f) => f.carnets.includes(cp.id)).length : 0;
@@ -344,17 +342,6 @@ async function exporterJSON() {
         </span>
       </button>
       <template v-if="importOuvert || resultatImport">
-
-      <!-- Astuce : l'import est plus simple au clavier — Le Carnet est aussi un site web -->
-      <div class="rounded-xl px-3 py-2.5 mb-3 flex items-start gap-2 bg-soft">
-        <Ic name="share" class="w-4 h-4 text-accent shrink-0 mt-0.5" />
-        <p class="text-[11px] text-muted leading-snug">
-          Plus simple sur ordi : Le Carnet est aussi un site web — ouvre
-          <span class="font-semibold text-accent">{{ urlApp }}</span>
-          sur Mac ou PC, rejoins tes carnets avec tes codes, et fais l'import Takeout au clavier.
-          Les adresses partagées se retrouvent sur tous tes écrans.
-        </p>
-      </div>
 
       <template v-if="!resultatImport">
         <label class="w-full rounded-xl px-3 py-3 mb-2 flex items-center justify-between gap-2 cursor-pointer"
