@@ -132,6 +132,17 @@ export const useCarnetStore = defineStore("carnet", {
     },
 
     setPrenom(prenom) { this.setProfil(prenom); },
+
+    // Changer de prénom pour de vrai : le serveur vérifie les doublons dans tous
+    // les carnets de l'appareil puis renomme partout (membres, notes, likes,
+    // commentaires, flashes). En cas de conflit, renvoie { error: "prenom_pris", carnets }.
+    async changerPrenom(nv) {
+      const r = await api.rename(this.profil.prenom, nv);
+      if (r && r.error) return r;
+      this.setProfil(nv);
+      this.refresh(); // les likes/commentaires affichent le nouveau prénom
+      return r;
+    },
     setAvatar(avatar) { this.setProfil(this.profil.prenom, avatar); },
     setDark() { this.toggleDark(); },
 

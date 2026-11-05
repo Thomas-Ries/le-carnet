@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.65 — changer de prénom, pour de vrai
+
+- Le changement de prénom n'était que local : le serveur ne savait pas, les likes et commentaires restaient sous l'ancien nom. Nouvelle action « rename » : le serveur vérifie les doublons dans tous les carnets de l'appareil (casse indifférente) puis renomme partout — membres, sessions, admin, notes, likes, commentaires, demandes, flashes.
+- Profil : message rouge sous le champ en cas de conflit (avec les carnets concernés), CTA de validation, pastille verte de confirmation après succès.
+
 ## V0.4.64 — nav PWA : centrage sur toute la barre
 
 - En PWA installée (viewport-fit=cover), la safe-area iPhone (~34px de barre d'accueil) s'ajoutait SOUS la rangée de 50px : barre visuellement grande, icônes collées en haut. La rangée inclut maintenant la safe-area dans sa hauteur et le contenu se centre sur toute la barre — padding identique haut/bas, navigateur comme PWA.

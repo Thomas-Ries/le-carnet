@@ -128,6 +128,34 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { ok: true };
     }
+    case "rename": {
+      // Même logique que le worker : doublon d'abord, renommage partout ensuite.
+      const nv = String(p.nouveau || "").trim().slice(0, 20);
+      const ancien = String(p.ancien || "").trim().slice(0, 20);
+      if (!nv) return { error: "Prénom vide" };
+      if (nv === ancien) return { error: "C'est déjà ton prénom" };
+      const pris = db.carnets.filter((c) =>
+        (c.membres || []).some((m) => m !== ancien && m.toLowerCase() === nv.toLowerCase())
+      );
+      if (pris.length) return { error: "prenom_pris", carnets: pris.map((c) => c.nom) };
+      const ren = (x) => (x === ancien ? nv : x);
+      for (const c of db.carnets) {
+        c.membres = (c.membres || []).map(ren);
+        if (c.admin === ancien) c.admin = nv;
+      }
+      for (const f of db.fiches) {
+        f.auteur = ren(f.auteur);
+        if (Array.isArray(f.reacts)) f.reacts = f.reacts.map(ren);
+        if (Array.isArray(f.comments)) f.comments = f.comments.map((cm) => ({ ...cm, prenom: ren(cm.prenom) }));
+        if (Array.isArray(f.demandeRecette)) f.demandeRecette = f.demandeRecette.map(ren);
+      }
+      for (const fl of db.flashes || []) {
+        fl.auteur = ren(fl.auteur);
+        if (Array.isArray(fl.reacts)) fl.reacts = fl.reacts.map(ren);
+      }
+      demo.save(db);
+      return { ok: true, prenom: nv };
+    }
     case "subscribePush":
     case "unsubscribePush":
       return { ok: true };
@@ -243,6 +271,7 @@ export const deleteAccount = (purge) => mutate("deleteAccount", { purge });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });
 export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });
+export const rename = (ancien, nouveau) => mutate("rename", { ancien, nouveau });
 export const subscribePush = (sub) => mutate("subscribePush", { sub });
 export const unsubscribePush = (endpoint) => mutate("unsubscribePush", { endpoint });
 

@@ -78,22 +78,29 @@ const prenom = ref(store.profil.prenom);
 const exportCarnetId = ref(store.carnetId);
 
 const dupErr = ref("");
-function savePrenom() {
+const saveOk = ref(false);
+const enCours = ref(false);
+let okTimer = null;
+async function savePrenom() {
   const nv = prenom.value.trim();
-  if (!nv) return;
-  // Pas de doublon avec un autre membre d'un de mes carnets (insensible à la casse)
-  const conflit = store.carnets.some((c) =>
-    (c.membres || []).some(
-      (m) => m.toLowerCase() === nv.toLowerCase() && m !== store.profil.prenom
-    )
-  );
-  if (conflit) {
-    dupErr.value = "« " + nv + " » est déjà pris dans un de tes carnets — ajoute une initiale, ex. " + nv + " M.";
+  if (!nv || enCours.value) return;
+  enCours.value = true;
+  dupErr.value = "";
+  // Le contrôle de doublon est fait par le serveur, sur TOUS les carnets de
+  // l'appareil — un membre qui rejoint plus tard ne peut pas créer d'homonyme.
+  const r = await store.changerPrenom(nv);
+  enCours.value = false;
+  if (r && r.error) {
+    dupErr.value = r.error === "prenom_pris"
+      ? "« " + nv + " » est déjà pris dans " + (r.carnets || []).map((c) => "« " + c + " »").join(", ")
+        + " — ajoute une initiale, ex. " + nv + " M."
+      : r.error === "C'est déjà ton prénom" || r.error === "Prénom vide" ? r.error
+      : "Impossible d'enregistrer : " + r.error;
     return;
   }
-  dupErr.value = "";
-  store.setPrenom(nv);
-  toast("Prénom enregistré");
+  saveOk.value = true;
+  clearTimeout(okTimer);
+  okTimer = setTimeout(() => (saveOk.value = false), 2600);
 }
 function onAvatar(e) {
   const file = e.target.files[0];
@@ -174,8 +181,12 @@ async function exporterJSON() {
           class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg outline-none"
           :style="dupErr ? 'border-color: var(--c-accent); background: var(--c-soft)' : 'border: 1px solid var(--c-hairline)'" />
         <p v-if="dupErr" class="text-xs text-accent mt-1.5 leading-relaxed">{{ dupErr }}</p>
-        <button v-if="prenom.trim() && prenom !== store.profil.prenom" @click="savePrenom"
-          class="mt-2 text-xs font-semibold text-accent">Enregistrer</button>
+        <p v-if="saveOk" class="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+          :style="{ color: 'var(--c-green)', background: 'rgba(74,120,86,.12)' }">
+          <Ic name="check" class="w-3 h-3" :sw="2.5" /> Prénom mis à jour dans tous tes carnets
+        </p>
+        <button v-if="prenom.trim() && prenom !== store.profil.prenom" @click="savePrenom" :disabled="enCours"
+          class="mt-2 text-xs font-semibold text-accent">{{ enCours ? "Enregistrement…" : "Enregistrer" }}</button>
       </div>
     </div>
 

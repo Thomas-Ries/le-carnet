@@ -759,6 +759,53 @@ export default {
             return json({ ok: true });
           }
 
+          case "rename": {
+            // Changer de prénom : le serveur vérifie les doublons dans TOUS les carnets
+            // de l'appareil (casse indifférente), puis renomme partout — membres,
+            // sessions, notes, likes, commentaires, demandes, flashes, admin.
+            const nvP = cleanPrenom(p.nouveau);
+            const ancienP = cleanPrenom(p.ancien);
+            if (!nvP) return json({ error: "Prénom vide" }, 400);
+            if (nvP === ancienP) return json({ error: "C'est déjà ton prénom" }, 400);
+            const { results: sesRename } = await db.prepare(
+              `SELECT carnet_id, prenom FROM Sessions WHERE device_id=?`
+            ).bind(device).all();
+            if (!sesRename.length) return json({ error: "aucune session" }, 404);
+            // Conflit : un AUTRE membre porte déjà ce prénom dans un de mes carnets
+            const conflits = [];
+            for (const se of sesRename) {
+              if (se.prenom === nvP) continue;
+              const { results: mm } = await db.prepare(
+                `SELECT prenom FROM Membres WHERE carnet_id=? AND prenom<>? AND lower(prenom)=lower(?)`
+              ).bind(se.carnet_id, se.prenom, nvP).all();
+              if (mm.length) {
+                const c = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(se.carnet_id).first();
+                conflits.push(c ? c.nom : "?");
+              }
+            }
+            if (conflits.length) return json({ error: "prenom_pris", carnets: conflits });
+            for (const se of sesRename) {
+              if (se.prenom === nvP) continue;
+              const old = se.prenom;
+              const fichesC = `SELECT fiche_id FROM FichesCarnets WHERE carnet_id=?`;
+              await db.prepare(`INSERT OR IGNORE INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(se.carnet_id, nvP).run();
+              await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(se.carnet_id, old).run();
+              await db.prepare(`UPDATE Sessions SET prenom=? WHERE device_id=? AND carnet_id=?`).bind(nvP, device, se.carnet_id).run();
+              await db.prepare(`UPDATE Carnets SET admin=? WHERE id=? AND admin=?`).bind(nvP, se.carnet_id, old).run();
+              await db.prepare(`UPDATE Fiches SET auteur=? WHERE auteur=? AND id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`INSERT OR IGNORE INTO FicheLikes (fiche_id, prenom) SELECT fiche_id, ? FROM FicheLikes WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`DELETE FROM FicheLikes WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(old, se.carnet_id).run();
+              await db.prepare(`UPDATE FicheComments SET prenom=? WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`INSERT OR IGNORE INTO DemandesRecette (fiche_id, prenom, created_at) SELECT fiche_id, ?, created_at FROM DemandesRecette WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`DELETE FROM DemandesRecette WHERE prenom=? AND fiche_id IN (${fichesC})`).bind(old, se.carnet_id).run();
+              await db.prepare(`UPDATE Flashes SET auteur=? WHERE auteur=? AND carnet_id=?`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`INSERT OR IGNORE INTO FlashReactions (flash_id, prenom) SELECT flash_id, ? FROM FlashReactions WHERE prenom=? AND flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`).bind(nvP, old, se.carnet_id).run();
+              await db.prepare(`DELETE FROM FlashReactions WHERE prenom=? AND flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`).bind(old, se.carnet_id).run();
+            }
+            logEvent(db, "rename", { device, prenom: nvP });
+            return json({ ok: true, prenom: nvP });
+          }
+
           case "go": {
             // Mesure H1-H4 : la fiche se transforme en action (bouton On y va -> Maps).
             logEvent(db, "go", { device, meta: { fiche: cleanText(p.id, 64) } });
