@@ -17,7 +17,9 @@ const liked = computed(() => fiche.value && likers.value.includes(store.profil.p
 const demandeEnvoyee = computed(() => fiche.value && fiche.value.demandeRecette?.includes(store.profil.prenom));
 const edit = ref(false);
 const titre = ref("");
+const lieu = ref("");
 const com = ref("");
+const note = ref(80);
 const photoModif = ref(undefined); // undefined = inchangée, "" = retirée, dataURL = nouvelle
 
 async function onFile(e) {
@@ -77,7 +79,9 @@ async function partager() {
 
 function startEdit() {
   titre.value = fiche.value.titre;
+  lieu.value = fiche.value.lieu || "";
   com.value = fiche.value.com || "";
+  note.value = fiche.value.note && fiche.value.note >= 70 ? fiche.value.note : 80;
   photoModif.value = undefined;
   edit.value = true;
   store.ficheEnEdition = true;
@@ -88,7 +92,7 @@ function annulerEdit() {
 }
 onUnmounted(() => { store.ficheEnEdition = false; });
 async function saveEdit() {
-  const patch = { titre: titre.value.trim(), com: com.value.trim() };
+  const patch = { titre: titre.value.trim(), com: com.value.trim(), lieu: lieu.value.trim(), note: note.value };
   if (photoModif.value !== undefined) patch.photo = photoModif.value;
   await store.majFiche(fiche.value.id, patch);
   edit.value = false;
@@ -132,7 +136,17 @@ async function supprimer() {
 
     <div v-if="edit" class="space-y-2 mb-4">
       <input v-model="titre" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
+      <input v-model="lieu" placeholder="Lieu — adresse, ville, quartier"
+        class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="3" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[10px] uppercase tracking-widest text-muted">Ta note</span>
+          <span class="text-sm font-semibold text-accent">{{ note }} · {{ noteLabel(note) }}</span>
+        </div>
+        <input type="range" min="70" max="100" v-model.number="note" class="w-full accent-[#7A2E3E]" />
+        <div class="flex justify-between text-[10px] text-muted mt-1"><span>70</span><span>85</span><span>100</span></div>
+      </div>
       <img v-if="photoModif !== undefined && photoModif" :src="photoModif" alt="" class="w-full rounded-xl max-h-44 object-cover" />
       <div class="flex gap-2">
         <label class="flex-1 rounded-xl py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer text-muted"

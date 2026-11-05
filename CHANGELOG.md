@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.57 — édition : la note et le lieu deviennent modifiables
+
+- L'écran d'édition d'une fiche affiche désormais le slider de note (prérempli avec la note actuelle, 70-100) et un champ lieu — on peut retourner à l'endroit et réviser son jugement. Le worker accepte la mise à jour du lieu (tronqué 80 caractères, COALESCE comme les autres champs).
+
 ## V0.4.56 — carte de partage : lieu + note
 
 - La carte image d'une fiche affiche désormais le lieu (italique, à gauche) et la note sur 100 (or, à droite) sur une ligne sous le titre. La note n'apparaît que si elle est posée (70-100) — pas sur les fiches « à noter ».

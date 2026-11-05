@@ -490,12 +490,13 @@ export default {
             })() : null;
             if (!adminNimporte && !s) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
             await db.prepare(
-              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo) WHERE id=?`
+              `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo), lieu=COALESCE(?,lieu) WHERE id=?`
             ).bind(patch.titre != null ? cleanText(patch.titre, 60) : null,
               patch.com != null ? cleanText(patch.com, 500) : null,
               patch.recette != null ? cleanText(patch.recette, 4000) : null,
               patch.note != null ? Math.min(100, Math.max(70, parseInt(patch.note, 10) || 80)) : null,
               patch.photo !== undefined ? String(patch.photo).slice(0, 400000) : null,
+              patch.lieu != null ? cleanText(patch.lieu, 80) : null,
               p.id).run();
             return json({ ok: true });
           }
