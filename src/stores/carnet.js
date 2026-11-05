@@ -237,6 +237,9 @@ export const useCarnetStore = defineStore("carnet", {
       this.carnets.push(r.carnet);
       this.roles[r.carnet.id] = r.role || "admin";
       this.switchCarnet(r.carnet.id);
+      // V0.4.85 : recharger les fiches du nouveau carnet immédiatement,
+      // sinon les notes n'apparaissent qu'après relance de l'app.
+      await this.refresh();
       return r.carnet;
     },
 
@@ -263,6 +266,8 @@ export const useCarnetStore = defineStore("carnet", {
       }
       this.roles[r.carnet.id] = this.roles[r.carnet.id] || r.role || "member";
       this.switchCarnet(r.carnet.id);
+      // V0.4.85 : idem rejoindre — les fiches doivent être là tout de suite.
+      await this.refresh();
       return r.carnet;
     },
 
@@ -275,6 +280,7 @@ export const useCarnetStore = defineStore("carnet", {
         this.roles[c.id] = "admin";
       }
       if (r.carnets && r.carnets.length) this.switchCarnet(r.carnets[0].id);
+      await this.refresh(); // V0.4.85 : fiches immédiatement visibles
       return r;
     },
 
@@ -287,6 +293,7 @@ export const useCarnetStore = defineStore("carnet", {
         if (!this.carnets.some((c) => c.id === r.carnet.id)) this.carnets.push(r.carnet);
         this.roles[r.carnet.id] = "admin";
         this.switchCarnet(r.carnet.id);
+        await this.refresh(); // V0.4.85 : fiches immédiatement visibles
       }
       return r;
     },
