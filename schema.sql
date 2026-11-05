@@ -91,6 +91,16 @@ CREATE TABLE IF NOT EXISTS PushSubscriptions (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS Events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  device_id TEXT,
+  prenom TEXT,
+  carnet_id TEXT,
+  meta TEXT,
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_liens_carnet ON FichesCarnets(carnet_id);
 CREATE INDEX IF NOT EXISTS idx_flash_expiry ON Flashes(expires_at);
 CREATE INDEX IF NOT EXISTS idx_session_device ON Sessions(device_id);

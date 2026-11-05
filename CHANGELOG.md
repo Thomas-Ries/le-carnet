@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.39 — Boucle sociale + analytics minimal
+
+- **« X a aimé ton adresse »** : quand quelqu'un aime une fiche ou un flash, son auteur reçoit une notification push (sauf s'il s'agit de lui-même). Uniquement au like NOUVEAU (INSERT OR IGNORE + meta.changes) — pas de spam au re-like. La boucle noter -> réaction -> retour est fermée.
+- **Analytics minimal (H1-H4)** : table Events créée paresseusement au bootstrap (aucune console D1 à lancer). Événements loggés côté worker, zéro changement client : open (chaque bootstrap = proxy des ouvertures), join, create_carnet, note, flash, like, notifs_on. Requêtes de mesure fournies dans le KNOWLEDGE.
+- schema.sql : table Events ajoutée.
+
 ## V0.4.38 — Liens d'invitation courts
 
 - Le lien partagé (WhatsApp / SMS / Copier) passe de `.../#/join/famille-a` à `https://le-carnet-adresses-animees.pages.dev/join/famille-a` — plus propre, sans dièse.

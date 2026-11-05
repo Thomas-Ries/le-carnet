@@ -87,6 +87,20 @@ const devicesOfCarnet = async (db, carnetId, exceptPrenom) => {
   return results.filter((r) => r.prenom !== exceptPrenom).map((r) => r.device_id);
 };
 
+// Analytics minimal : chaque evenement = une ligne Events. Echec toujours silencieux.
+const logEvent = (db, type, o) =>
+  db.prepare(`INSERT INTO Events (type, device_id, prenom, carnet_id, meta, created_at) VALUES (?,?,?,?,?,?)`)
+    .bind(type, cleanText(o.device, 64) || null, cleanText(o.prenom, 20) || null,
+      cleanText(o.carnet, 64) || null, o.meta ? cleanText(JSON.stringify(o.meta), 200) : null,
+      new Date().toISOString())
+    .run()
+    .catch(() => {});
+const ensureEvents = (db) =>
+  db.prepare(`CREATE TABLE IF NOT EXISTS Events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, device_id TEXT,
+    prenom TEXT, carnet_id TEXT, meta TEXT, created_at TEXT NOT NULL)`)
+    .run().catch(() => {});
+
 const isCode = (c) => /^([0-9]{4}|[0-9]{6})$/.test(String(c || ""));
 const cleanPrenom = (p) => String(p || "").trim().slice(0, 20);
 const cleanText = (t, n) => String(t == null ? "" : t).slice(0, n);
@@ -131,6 +145,8 @@ export default {
     if (url.pathname === "/api/bootstrap" && request.method === "GET") {
       try {
         const device = cleanText(url.searchParams.get("device"), 64);
+        await ensureEvents(db);
+        logEvent(db, "open", { device });
         const roles = {};
         let carnetIds = [];
         if (device) {
@@ -288,6 +304,7 @@ export default {
             await db.prepare(
               `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
             ).bind(device, id, prenom, "admin", now).run();
+            logEvent(db, "create_carnet", { device, prenom, carnet: id });
             return json({ carnet: { id, nom, code, admin: prenom, membres: [prenom] }, role: "admin" });
           }
 
@@ -314,6 +331,7 @@ export default {
                VALUES (?,?,?, COALESCE((SELECT role FROM Sessions WHERE device_id=? AND carnet_id=?), 'member'), ?)`
             ).bind(device, c.id, prenom, device, c.id, now).run();
             const { results: membres } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(c.id).all();
+            logEvent(db, "join", { device, prenom, carnet: c.id });
             return json({ carnet: { id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) }, role: "member" });
           }
 
@@ -389,6 +407,7 @@ export default {
                 url: "/fiche/" + id,
               }).catch(() => {});
             })().catch(() => {});
+            logEvent(db, "note", { device, prenom: s.prenom, carnet: f.carnets && f.carnets[0], meta: { titre: cleanText(f.titre, 60) } });
             return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: f.cat, titre: f.titre, lieu: f.lieu,
               note, com: f.com, photo: f.photo || null, recette: f.recette || null, date: now,
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
@@ -459,6 +478,7 @@ export default {
                 url: "/",
               })
             ).catch(() => {});
+            logEvent(db, "flash", { device, prenom: s.prenom, carnet: fl.carnetId });
             return json({ flash: { id, carnets: [fl.carnetId], auteur: s.prenom, photo: fl.photo, com: fl.com || null, date: now, reacts: [] } });
           }
 
@@ -483,7 +503,7 @@ export default {
           }
 
           case "react": {
-            const onFiche = await db.prepare(`SELECT id FROM Fiches WHERE id=?`).bind(p.targetId).first();
+            const onFiche = await db.prepare(`SELECT * FROM Fiches WHERE id=?`).bind(p.targetId).first();
             const onFlash = await db.prepare(`SELECT id, carnet_id FROM Flashes WHERE id=?`).bind(p.targetId).first();
             let prenom = cleanPrenom(p.prenom);
             if (onFiche) {
@@ -491,16 +511,57 @@ export default {
               let ok = false;
               for (const l of liens) { if (await sessionOf(l.carnet_id)) { ok = true; break; } }
               if (!ok) return json({ error: "pas membre" }, 403);
-              if (p.on) await db.prepare(`INSERT OR IGNORE INTO FicheLikes (fiche_id, prenom) VALUES (?,?)`).bind(p.targetId, prenom).run();
-              else await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=? AND prenom=?`).bind(p.targetId, prenom).run();
+              let likeNouveau = false;
+              if (p.on) {
+                const r = await db.prepare(`INSERT OR IGNORE INTO FicheLikes (fiche_id, prenom) VALUES (?,?)`).bind(p.targetId, prenom).run();
+                likeNouveau = !!(r.meta && r.meta.changes);
+                if (likeNouveau) logEvent(db, "like", { device, prenom, carnet: liens[0] && liens[0].carnet_id, meta: { fiche: p.targetId } });
+                // Boucle sociale : prevenir l'auteur qu'on aime son adresse (pas si c'est lui-meme)
+                if (likeNouveau && onFiche.auteur && onFiche.auteur !== prenom) {
+                  (async () => {
+                    const devAuteur = [];
+                    for (const l of liens) {
+                      const { results } = await db.prepare(
+                        `SELECT DISTINCT device_id FROM Sessions WHERE carnet_id=? AND prenom=?`
+                      ).bind(l.carnet_id, onFiche.auteur).all();
+                      for (const x of results) devAuteur.push(x.device_id);
+                    }
+                    await sendPushTo(env, db, [...new Set(devAuteur)], {
+                      title: prenom + " a aimé ton adresse",
+                      body: "« " + cleanText(onFiche.titre, 60) + " » — ça plaît dans le carnet ♥",
+                      url: "/fiche/" + p.targetId,
+                    });
+                  })().catch(() => {});
+                }
+              } else {
+                await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=? AND prenom=?`).bind(p.targetId, prenom).run();
+              }
               const { results: likes } = await db.prepare(`SELECT prenom FROM FicheLikes WHERE fiche_id=?`).bind(p.targetId).all();
               return json({ reacts: likes.map((l) => l.prenom) });
             }
             if (onFlash) {
               const s = await sessionOf(onFlash.carnet_id);
               if (!s) return json({ error: "pas membre" }, 403);
-              if (p.on) await db.prepare(`INSERT OR IGNORE INTO FlashReactions (flash_id, prenom) VALUES (?,?)`).bind(p.targetId, s.prenom).run();
-              else await db.prepare(`DELETE FROM FlashReactions WHERE flash_id=? AND prenom=?`).bind(p.targetId, s.prenom).run();
+              if (p.on) {
+                const r = await db.prepare(`INSERT OR IGNORE INTO FlashReactions (flash_id, prenom) VALUES (?,?)`).bind(p.targetId, s.prenom).run();
+                if (r.meta && r.meta.changes) {
+                  logEvent(db, "like", { device, prenom: s.prenom, carnet: onFlash.carnet_id, meta: { flash: p.targetId } });
+                  if (onFlash.auteur && onFlash.auteur !== s.prenom) {
+                    (async () => {
+                      const { results } = await db.prepare(
+                        `SELECT DISTINCT device_id FROM Sessions WHERE carnet_id=? AND prenom=?`
+                      ).bind(onFlash.carnet_id, onFlash.auteur).all();
+                      await sendPushTo(env, db, results.map((x) => x.device_id), {
+                        title: s.prenom + " a aimé ton flash",
+                        body: "Ton flash plaît — pense à le noter en fiche ♥",
+                        url: "/",
+                      });
+                    })().catch(() => {});
+                  }
+                }
+              } else {
+                await db.prepare(`DELETE FROM FlashReactions WHERE flash_id=? AND prenom=?`).bind(p.targetId, s.prenom).run();
+              }
               const { results: rs } = await db.prepare(`SELECT prenom FROM FlashReactions WHERE flash_id=?`).bind(p.targetId).all();
               return json({ reacts: rs.map((r) => r.prenom) });
             }
@@ -544,6 +605,7 @@ export default {
               `INSERT OR REPLACE INTO PushSubscriptions (device_id, endpoint, p256dh, auth, created_at) VALUES (?,?,?,?,?)`
             ).bind(device, cleanText(sub.endpoint, 500), cleanText(sub.keys.p256dh, 200),
               cleanText(sub.keys.auth, 100), now).run();
+            logEvent(db, "notifs_on", { device });
             return json({ ok: true });
           }
 
