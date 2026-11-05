@@ -85,53 +85,58 @@ const nbMesAdresses = computed(() => {
   const cp = store.mesAdresses;
   return cp ? store.fiches.filter((f) => f.carnets.includes(cp.id)).length : 0;
 });
-const lieuxPick = ref(null);   // { nom, items }
-const avisPick = ref(null);    // { nom, items }
+const picks = ref([]);        // [{ nom, type: "avis"|"lieux", items, sansLieu? }]
 const errImport = ref("");
-const resultatImport = ref(null); // { importes, ignores, rattaches, orphelins }
-async function onPickLieux(e) {
-  const file = e.target.files[0];
+const resultatImport = ref(null); // { importes, ignores, rattaches, orphelins, sansLieu }
+const nbAvis = computed(() => picks.value.filter((p) => p.type === "avis").reduce((n, p) => n + p.items.length, 0));
+const nbLieux = computed(() => picks.value.filter((p) => p.type === "lieux").reduce((n, p) => n + p.items.length, 0));
+const sansLieuTotal = computed(() => picks.value.reduce((n, p) => n + (p.sansLieu || 0), 0));
+// V0.4.74 : UN SEUL bouton multi-fichiers — le parser détecte tout seul le contenu
+// (JSON d'avis → fiches avec note ★ ; listes CSV/KML/JSON → fiches « à noter »).
+async function onPickExport(e) {
+  const files = [...e.target.files];
   e.target.value = "";
-  if (!file) return;
+  if (!files.length) return;
   errImport.value = ""; resultatImport.value = null;
-  try {
-    const r = parseLieux(file.name, await file.text());
-    if (r.erreur) { errImport.value = "Lieux : " + r.erreur; return; }
-    lieuxPick.value = { nom: file.name, items: r.items };
-  } catch (err) {
-    errImport.value = "Lieux : fichier illisible — vérifie que c'est un export takeout.google.com (Maps).";
+  for (const file of files) {
+    if (picks.value.some((p) => p.nom === file.name)) continue; // déjà choisi
+    try {
+      const txt = await file.text();
+      const a = parseAvis(file.name, txt);
+      if (a.items && a.items.length) {
+        picks.value.push({ nom: file.name, type: "avis", items: a.items, sansLieu: a.sansLieu || 0 });
+        continue;
+      }
+      const l = parseLieux(file.name, txt);
+      if (l.items && l.items.length) {
+        picks.value.push({ nom: file.name, type: "lieux", items: l.items });
+        continue;
+      }
+      errImport.value = "Rien de reconnaissable dans « " + file.name + " » — vérifie que c'est l'export takeout.google.com (« Maps (vos adresses) »).";
+    } catch (err) {
+      errImport.value = "Fichier illisible : " + file.name + " — vérifie que c'est un export takeout.google.com.";
+    }
   }
 }
-async function onPickAvis(e) {
-  const file = e.target.files[0];
-  e.target.value = "";
-  if (!file) return;
-  errImport.value = ""; resultatImport.value = null;
-  try {
-    const r = parseAvis(file.name, await file.text());
-    if (r.erreur) { errImport.value = "Avis : " + r.erreur; return; }
-    avisPick.value = { nom: file.name, items: r.items, sansLieu: r.sansLieu || 0 };
-  } catch (err) {
-    errImport.value = "Avis : fichier illisible — seul le JSON d'avis de Takeout (« Maps (vos adresses) ») est attendu.";
-  }
-}
+function retirerPick(nom) { picks.value = picks.value.filter((p) => p.nom !== nom); }
 async function validerImport() {
-  // V0.4.73 : le fichier d'avis SUFFIT SEUL — chaque avis porte nom, adresse, note ★ et
-  // commentaire, donc il crée directement des fiches. Les listes de lieux restent utiles
-  // si l'export en contient ; si les deux sont fournis : lieux importés, avis rattachés.
-  if (!lieuxPick.value && !avisPick.value) return;
+  // Détection automatique : avis → fiches complètes (nom, adresse, note ★, commentaire) ;
+  // listes → fiches « à noter » ; si les deux : lieux importés puis avis rattachés.
+  const lieux = picks.value.filter((p) => p.type === "lieux").flatMap((p) => p.items);
+  const avis = picks.value.filter((p) => p.type === "avis").flatMap((p) => p.items);
+  if (!lieux.length && !avis.length) return;
   importBusy.value = true;
   try {
-    const r = await store.importerAdresses(lieuxPick.value ? lieuxPick.value.items : avisPick.value.items);
+    const r = await store.importerAdresses(lieux.length ? lieux : avis);
     if (r && r.error) { errImport.value = "Import impossible : " + r.error; return; }
     let rattaches = 0, orphelins = [];
-    if (lieuxPick.value && avisPick.value && avisPick.value.items.length) {
-      const ra = await store.rattacherAvis(avisPick.value.items);
+    if (lieux.length && avis.length) {
+      const ra = await store.rattacherAvis(avis);
       if (ra && !ra.error) { rattaches = ra.rattaches || 0; orphelins = ra.orphelins || []; }
     }
-    const sansLieu = avisPick.value && !lieuxPick.value ? (avisPick.value.sansLieu || 0) : 0;
+    const sansLieu = !lieux.length ? sansLieuTotal.value : 0;
     resultatImport.value = { ...r, rattaches, orphelins, sansLieu };
-    lieuxPick.value = null; avisPick.value = null;
+    picks.value = [];
   } finally {
     importBusy.value = false;
   }
@@ -327,43 +332,37 @@ async function exporterJSON() {
       </div>
 
       <template v-if="!resultatImport">
-        <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2 cursor-pointer"
-          :style="{ border: '1px solid ' + (lieuxPick ? 'var(--c-accent)' : 'var(--c-hairline)') }">
-          <label class="flex-1 text-[11px] leading-tight cursor-pointer">
-            <span class="block font-semibold text-sm" :class="lieuxPick ? 'text-accent' : ''">
-              {{ lieuxPick ? "✓ " + lieuxPick.nom : "1. Tes listes de lieux — optionnel" }}</span>
-            <span class="text-muted">Fichier de listes de l'export Takeout (.csv / .kml / .json)</span>
-            <input type="file" accept=".kml,.xml,.csv,.json,.txt" class="hidden" @change="onPickLieux" :disabled="importBusy" />
-          </label>
-          <Ic name="pin" class="w-4 h-4 text-muted" />
-        </div>
-        <div class="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2 cursor-pointer"
-          :style="{ border: '1px solid ' + (avisPick ? 'var(--c-accent)' : 'var(--c-hairline)') }">
-          <label class="flex-1 text-[11px] leading-tight cursor-pointer">
-            <span class="block font-semibold text-sm" :class="avisPick ? 'text-accent' : ''">
-              {{ avisPick ? "✓ " + avisPick.nom : "2. Tes avis Google (JSON) — suffit seul" }}</span>
-            <span class="text-muted">Chaque avis crée une fiche : nom, adresse, ta note ★ et ton commentaire</span>
-            <input type="file" accept=".json" class="hidden" @change="onPickAvis" :disabled="importBusy" />
-          </label>
-          <Ic name="star" class="w-4 h-4 text-muted" />
-        </div>
+        <label class="w-full rounded-xl px-3 py-3 mb-2 flex items-center justify-between gap-2 cursor-pointer"
+          :style="{ border: '1px dashed ' + (picks.length ? 'var(--c-accent)' : 'var(--c-hairline)') }">
+          <span class="text-[11px] leading-tight">
+            <span class="block font-semibold text-sm" :class="picks.length ? 'text-accent' : ''">
+              {{ picks.length ? picks.length + " fichier" + (picks.length > 1 ? "s" : "") + " choisi" + (picks.length > 1 ? "s" : "") : "Choisir mes fichiers d'export" }}</span>
+            <span class="text-muted">Ton export takeout.google.com (« Maps (vos adresses) ») — tout seul ou tout le zip : on détecte ce qui est dedans. Les avis deviennent des fiches avec ta note ★ et ton commentaire ; les listes deviennent des fiches « à noter ».</span>
+            <input type="file" accept=".json,.kml,.xml,.csv,.txt" multiple class="hidden" @change="onPickExport" :disabled="importBusy" />
+          </span>
+          <Ic name="pin" class="w-4 h-4 text-muted shrink-0" />
+        </label>
 
-        <p v-if="lieuxPick || avisPick" class="text-[11px] text-muted mb-2">
-          <template v-if="lieuxPick">{{ lieuxPick.items.length }} lieu{{ lieuxPick.items.length > 1 ? "x" : "" }} trouvé{{ lieuxPick.items.length > 1 ? "s" : "" }}</template>
-          <template v-if="lieuxPick && avisPick"> · </template>
-          <template v-if="avisPick">{{ avisPick.items.length }} avis prêt{{ avisPick.items.length > 1 ? "s" : "" }} à devenir des fiches<template v-if="avisPick.sansLieu"> · {{ avisPick.sansLieu }} avis sans lieu, ignoré{{ avisPick.sansLieu > 1 ? "s" : "" }}</template></template>
-        </p>
+        <div v-if="picks.length" class="mb-2">
+          <div v-for="p in picks" :key="p.nom" class="flex items-center justify-between rounded-xl px-3 py-2 mb-1.5 bg-soft">
+            <p class="text-[11px] leading-tight min-w-0">
+              <span class="block font-semibold truncate">{{ p.type === "avis" ? "★ " : "· " }}{{ p.nom }}</span>
+              <span class="text-muted">{{ p.items.length }} {{ p.type === "avis" ? "avis → fiches complètes" : "lieux → fiches « à noter »" }}<template v-if="p.sansLieu"> · {{ p.sansLieu }} avis sans lieu, ignoré{{ p.sansLieu > 1 ? "s" : "" }}</template></span>
+            </p>
+            <button class="text-muted p-1 shrink-0" @click="retirerPick(p.nom)"><Ic name="x" class="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
         <p v-if="errImport" class="text-[11px] text-red-600 mb-2">{{ errImport }}</p>
 
         <div class="flex gap-2">
           <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-accent text-white disabled:opacity-40"
-            :disabled="(!lieuxPick && !avisPick) || importBusy" @click="validerImport">
+            :disabled="!picks.length || importBusy" @click="validerImport">
             {{ importBusy ? "Import en cours…" : "Importer" }}</button>
-          <button v-if="lieuxPick || avisPick" class="rounded-xl px-4 text-sm text-muted"
+          <button v-if="picks.length" class="rounded-xl px-4 text-sm text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }"
-            @click="lieuxPick = null; avisPick = null; errImport = ''">Plus tard</button>
+            @click="picks = []; errImport = ''">Plus tard</button>
         </div>
-      </template>
+            </template>
 
       <template v-else>
         <div class="flex flex-wrap gap-2 mb-3">

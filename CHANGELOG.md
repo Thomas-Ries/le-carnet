@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.74 — Un seul import : bouton multi-fichiers avec détection automatique
+
+- Simplification demandée par Thomas : plus de deux slots. **Un seul bouton « Choisir mes fichiers d'export »** (sélection multiple possible, on peut balancer tout le contenu du dossier Takeout).
+- Détection automatique par contenu : JSON d'avis (note ★ + lieu) → fiches complètes ; listes CSV / KML / JSON → fiches « à noter ». Chaque fichier choisi apparaît dans la liste avec son type, son compte, et un bouton pour le retirer.
+- Si les deux types sont fournis : lieux importés puis avis rattachés (comportement inchangé). Anti-doublons serveur inchangé (réimport = 0 importé, tout ignoré).
+
 ## V0.4.73b — Sortie de flow : l'import envoie vers l'espace privé
 
 - Après un import, le CTA principal devient **« Voir mes adresses (N) → »** (bascule sur le carnet privé et ouvre la liste) — plus de cul-de-sac « Import d'autres fichiers ». Rappel du partage sous le CTA (« appui long sur une fiche, puis Partager »), « Import d'autres fichiers » passe en lien discret.
