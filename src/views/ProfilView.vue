@@ -246,7 +246,7 @@ async function exporterJSON() {
 
       <details class="group border-t border-hairline">
         <summary class="lc-sum">
-          <Ic name="shareUp" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
+          <Ic name="share" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
           <span class="flex-1 text-left leading-tight">
             <span class="block text-sm font-semibold">Exporter mes données</span>
             <span class="block text-[10px] text-muted">fichier JSON du carnet, à tout moment</span>
@@ -267,7 +267,7 @@ async function exporterJSON() {
           <button @click="exporterJSON"
             class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
             :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-            <Ic name="shareUp" class="w-4 h-4" /> Exporter en JSON
+            <Ic name="share" class="w-4 h-4" /> Exporter en JSON
           </button>
         </div>
       </details>
@@ -301,6 +301,21 @@ async function exporterJSON() {
       <span class="relative rounded-full w-11 h-6 transition" :style="{ background: store.dark ? '#7A2E3E' : 'var(--c-hairline)' }">
         <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
           :style="{ left: store.dark ? '22px' : '2px' }" />
+      </span>
+    </button>
+
+    <button @click="store.setInspirOn(!store.inspirOn)"
+      class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
+      <span class="flex items-center gap-2.5 text-sm">
+        <Ic name="sparkle" class="w-4 h-4 text-muted" />
+        <span class="min-w-0">
+          <span class="block">Idées de sorties</span>
+          <span class="block text-[10px] text-muted leading-tight">le bandeau d'inspiration sur l'accueil</span>
+        </span>
+      </span>
+      <span class="relative rounded-full w-11 h-6 transition" :style="{ background: store.inspirOn ? '#7A2E3E' : 'var(--c-hairline)' }">
+        <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
+          :style="{ left: store.inspirOn ? '22px' : '2px' }" />
       </span>
     </button>
 

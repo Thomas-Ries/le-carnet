@@ -22,6 +22,8 @@ export const useCarnetStore = defineStore("carnet", {
     roles: {}, // { carnetId: "admin" | "member" }
     installEvent: null, // événement beforeinstallprompt (Android/Chrome) — capturé par App.vue
     connexionPerdue: false, // true = une mutation n'a pas atteint le serveur (bascule démo en cours de session)
+    inspir: { open: false, theme: null }, // modale inspiration : survit à la navigation (retour du détail)
+    inspirOn: true, // réglage profil : bandeau idées de sorties visible ou non
   }),
 
   getters: {
@@ -46,6 +48,7 @@ export const useCarnetStore = defineStore("carnet", {
         if (p) this.profil = p;
       } catch (e) { /* ok */ }
       this.dark = localStorage.getItem(LS.theme) === "dark";
+      this.inspirOn = localStorage.getItem("lc-inspir") !== "off";
       document.documentElement.classList.toggle("dark", this.dark);
       const carnetId = localStorage.getItem(LS.carnetId);
 
@@ -131,6 +134,12 @@ export const useCarnetStore = defineStore("carnet", {
     setPrenom(prenom) { this.setProfil(prenom); },
     setAvatar(avatar) { this.setProfil(this.profil.prenom, avatar); },
     setDark() { this.toggleDark(); },
+
+    setInspirOn(v) {
+      this.inspirOn = !!v;
+      if (!v) this.inspir = { open: false, theme: null };
+      try { localStorage.setItem("lc-inspir", v ? "on" : "off"); } catch (e) { /* ok */ }
+    },
 
     toggleDark() {
       this.dark = !this.dark;

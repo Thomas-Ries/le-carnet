@@ -101,7 +101,7 @@ async function supprimer() {
         <Ic name="back" class="w-4 h-4" />
       </button>
       <div class="flex gap-1.5">
-        <button v-if="!edit" class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="shareUp" class="w-4 h-4 text-accent" /></button>
+        <button v-if="!edit" class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="share" class="w-4 h-4 text-accent" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
       </div>

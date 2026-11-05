@@ -69,18 +69,22 @@ const fichesTri = computed(() => {
 });
 
 /* Inspiration : piocher une idee de sortie dans les adresses deja notees.
-   Le bandeau n'apparait que si le carnet contient au moins une adresse. */
-const inspirOpen = ref(false);
-const inspirTheme = ref(null);
+   L'etat vit dans le store : quand on ouvre le detail d'une card depuis la
+   selection puis qu'on revient, la modale reapparait a l'etape d'avant.
+   Ambiances = uniquement les vraies sorties (resto, bar, bar a vin) —
+   on ne va pas chez le caviste pour un tete-a-tete. */
+const AMBIANCES = ["Resto", "Bar", "Bar à vin"];
+const inspirOpen = computed(() => store.inspir.open);
+const inspirTheme = computed(() => store.inspir.theme);
 const themesDispos = computed(() => {
   const n = {};
   for (const f of fiches.value) {
     if (f.type !== "adresse") continue;
     for (const t of String(f.cat || "").split(",").map((x) => x.trim()).filter(Boolean)) {
-      n[t] = (n[t] || 0) + 1;
+      if (AMBIANCES.includes(t)) n[t] = (n[t] || 0) + 1;
     }
   }
-  return Object.entries(n).sort((a, b) => b[1] - a[1]).map(([t, c]) => ({ t, c }));
+  return AMBIANCES.filter((t) => n[t]).map((t) => ({ t, c: n[t] }));
 });
 const inspirSelection = computed(() => {
   if (!inspirTheme.value) return [];
@@ -101,8 +105,7 @@ async function partagerSelection() {
   partagerWhatsapp(texte);
 }
 function inspirFermer() {
-  inspirOpen.value = false;
-  inspirTheme.value = null;
+  store.inspir = { open: false, theme: null };
 }
 
 /* Bienvenue : modale de premiere connexion, posee par JoinView juste apres
@@ -247,15 +250,15 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
         </button>
       </div>
 
-      <!-- Bandeau inspiration : piocher une idée de sortie dans le carnet -->
-      <button v-if="fiches.length" @click="inspirOpen = true"
-        class="w-full rounded-2xl p-3.5 mb-6 flex items-center gap-3 text-left active:scale-[.99] transition"
+      <!-- Bandeau inspiration : compact, deux lignes, réglable depuis le profil -->
+      <button v-if="store.inspirOn && themesDispos.length" @click="store.inspir.open = true"
+        class="w-full rounded-2xl p-3 mb-6 flex items-center gap-3 text-left active:scale-[.99] transition"
         style="background: var(--c-soft); border: 1px solid var(--c-hairline)">
-        <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 text-accent"
+        <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 text-accent"
           style="background: var(--c-surface)"><Ic name="sparkle" class="w-4 h-4" /></span>
         <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-accent">Envie d'inspiration ?</span>
-          <span class="block text-[11px] text-muted leading-snug">Un after-work, un tête à tête… pioche une idée dans le carnet.</span>
+          <span class="block text-sm font-semibold text-accent leading-tight">Envie d'inspiration ?</span>
+          <span class="block text-[11px] text-muted leading-tight">Un after-work, un tête à tête… Laisse-toi guider</span>
         </span>
         <Ic name="chevron" class="w-4 h-4 text-muted rotate-90 shrink-0" :sw="2" />
       </button>
@@ -312,14 +315,14 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
       </div>
 
       <!-- Modale inspiration : choix du thème puis sélection des mieux notées -->
-      <div v-if="inspirOpen" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
+      <div v-if="store.inspir.open" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
         style="background: rgba(20, 14, 12, .55)" @click.self="inspirFermer">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline max-h-[82vh] overflow-y-auto">
           <template v-if="!inspirTheme">
             <p class="text-base font-serif mb-1">Ce soir, l'ambiance est plutôt…</p>
             <p class="text-[11px] text-muted mb-3.5 leading-relaxed">Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.</p>
             <div class="flex flex-wrap gap-1.5 mb-1">
-              <button v-for="t in themesDispos" :key="t.t" @click="inspirTheme = t.t"
+              <button v-for="t in themesDispos" :key="t.t" @click="store.inspir.theme = t.t"
                 class="rounded-full px-3 py-2 text-xs font-medium"
                 :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)', border: '1px solid var(--c-accent)' }">
                 {{ t.t }} <span class="text-[10px] opacity-70">{{ t.c }}</span>
@@ -328,7 +331,7 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
           </template>
           <template v-else>
             <div class="flex items-center justify-between mb-3.5">
-              <button @click="inspirTheme = null" class="rounded-full p-2 bg-surface border border-hairline">
+              <button @click="store.inspir.theme = null" class="rounded-full p-2 bg-surface border border-hairline">
                 <Ic name="back" class="w-4 h-4" />
               </button>
               <p class="text-sm font-serif flex-1 text-center">Envie de {{ inspirTheme.toLowerCase() }} ?</p>
@@ -337,15 +340,16 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
               </button>
             </div>
             <div class="space-y-2 mb-3">
-              <FicheRow v-for="f in inspirSelection" :key="f.id" :fiche="f" @click="inspirOpen = false" />
+              <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection -->
+              <FicheRow v-for="f in inspirSelection" :key="f.id" :fiche="f" />
               <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">Pas encore d'adresse ici — note la première.</p>
             </div>
             <button v-if="inspirSelection.length" @click="partagerSelection"
               class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-white mb-2"
               style="background: var(--c-accent)">
-              <Ic name="shareUp" class="w-4 h-4" /> Ça vous tente, je réserve ?
+              <Ic name="share" class="w-4 h-4" /> Ça vous tente, je réserve ?
             </button>
-            <button @click="inspirTheme = null"
+            <button @click="store.inspir.theme = null"
               class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted bg-surface border border-hairline">
               Changer de thème
             </button>

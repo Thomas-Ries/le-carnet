@@ -1,5 +1,13 @@
 # Changelog
 
+## V0.4.46 — Inspiration : retours d'usage
+
+- **Bandeau compact** : deux lignes seulement — « Envie d'inspiration ? / Un after-work, un tête à tête… Laisse-toi guider ».
+- **Ambiances limitées aux vraies sorties** : Resto, Bar, Bar à vin uniquement — pas de caviste pour un tête à tête.
+- **Retour dans le fil** : tap sur une card de la sélection → détail ; en revenant, la modale rouvre à l'étape d'avant (l'état vit dans le store, il survit à la navigation).
+- **Icône de partage unifiée** : les trois points connectés (icône universelle Android/WhatsApp) partout où l'on partage — fiche, export JSON, sélection d'inspiration. Plus de flèche ambiguë.
+- **Réglage profil** : toggle « Idées de sorties » pour masquer le bandeau d'inspiration (persistant par appareil).
+
 ## V0.4.45 — Modale Bienvenue à la première connexion
 
 - Après le tout premier join (prénom + mot-clé du carnet), une modale « Bienvenue dans Le Carnet » présente les quatre gestes de l'app : noter une adresse, flasher (7 jours), aimer et commenter, piocher une inspiration.
