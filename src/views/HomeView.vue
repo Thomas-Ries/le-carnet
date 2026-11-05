@@ -112,13 +112,15 @@ const passeFiltre = (f) => {
   if (filtreVille.value && (z.ville || "") !== (filtreVille.value === "?" ? "" : filtreVille.value)) return false;
   return true;
 };
-function choisirPays(p) {
-  filtrePays.value = filtrePays.value === p ? "" : p;
-  filtreVille.value = "";
-}
-function choisirVille(v) {
-  filtreVille.value = filtreVille.value === v ? "" : v;
-}
+/* V0.4.80 : le filtre pays/ville devient un menu façon tri — plus de chips. */
+const lieuOpen = ref(false);
+const labelLieu = computed(() => {
+  if (!filtrePays.value) return "Lieu";
+  if (filtreVille.value) return filtreVille.value === "?" ? "Non précisé" : filtreVille.value;
+  const p = paysChips.value.find((x) => x.pays === filtrePays.value);
+  return p ? p.drapeau + " " + p.label : "Lieu";
+});
+const totalPays = computed(() => villesChips.value.reduce((a, v) => a + v.n, 0));
 
 /* Inspiration : piocher une idee de sortie dans les adresses deja notees.
    L'etat vit dans le store : quand on ouvre le detail d'une card depuis la
@@ -551,8 +553,61 @@ async function confirmerPartage() {
             :style="{ background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }">
             <Ic name="share" class="w-4 h-4" :sw="2" />
           </button>
+          <!-- V0.4.80 — Filtre pays / ville : menu déroulant discret, visible dès 2 pays distincts -->
+          <div v-if="paysChips.length > 1" class="relative">
+            <button @click="lieuOpen = !lieuOpen; triOpen = false" title="Filtrer par lieu"
+              class="h-8 rounded-full border bg-surface flex items-center gap-1.5 px-3 text-xs font-medium active:scale-95 transition"
+              :style="{
+                borderColor: filtrePays ? 'var(--c-accent)' : 'var(--c-hairline)',
+                color: filtrePays ? 'var(--c-accent)' : 'var(--c-muted)',
+              }">
+              <Ic name="pin" class="w-3.5 h-3.5" :sw="2" /> {{ labelLieu }}
+            </button>
+            <div v-if="lieuOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-60 bg-surface border border-hairline"
+              style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
+              <!-- Niveau 1 : les pays -->
+              <template v-if="!filtrePays">
+                <button @click="lieuOpen = false"
+                  class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+                  :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
+                  <span>Tous les pays</span>
+                  <span class="flex items-center gap-1.5 text-[10px] text-muted">{{ fiches.length }} <Ic name="check" class="w-3.5 h-3.5" /></span>
+                </button>
+                <button v-for="p in paysChips" :key="p.pays" @click="filtrePays = p.pays; filtreVille = ''"
+                  class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+                  :style="{ color: 'var(--c-ink)' }">
+                  <span>{{ p.drapeau }} {{ p.label }}</span>
+                  <span class="text-[10px] text-muted">{{ p.n }}</span>
+                </button>
+              </template>
+              <!-- Niveau 2 : les villes du pays choisi -->
+              <template v-else>
+                <button @click="filtrePays = ''; filtreVille = ''"
+                  class="w-full text-left px-3 py-2 text-xs font-semibold text-muted"
+                  style="border-bottom: 1px solid var(--c-hairline)">
+                  ← Tous les pays
+                </button>
+                <p class="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted">Villes</p>
+                <button @click="filtreVille = ''; lieuOpen = false"
+                  class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+                  :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
+                  <span>Toutes</span>
+                  <span class="flex items-center gap-1.5 text-[10px] text-muted">{{ totalPays }} <Ic v-if="!filtreVille" name="check" class="w-3.5 h-3.5" /></span>
+                </button>
+                <button v-for="v in villesChips" :key="v.ville" @click="filtreVille = v.ville; lieuOpen = false"
+                  class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
+                  :style="{
+                    color: filtreVille === v.ville ? 'var(--c-accent)' : 'var(--c-ink)',
+                    background: filtreVille === v.ville ? 'var(--c-soft)' : 'transparent',
+                  }">
+                  <span>{{ v.ville === "?" ? "Non précisé" : v.ville }}</span>
+                  <span class="flex items-center gap-1.5 text-[10px] text-muted">{{ v.n }} <Ic v-if="filtreVille === v.ville" name="check" class="w-3.5 h-3.5" /></span>
+                </button>
+              </template>
+            </div>
+          </div>
           <div class="relative">
-            <button @click="triOpen = !triOpen" title="Choisir le tri"
+            <button @click="triOpen = !triOpen; lieuOpen = false" title="Choisir le tri"
               class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
               :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
               <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
@@ -570,41 +625,6 @@ async function confirmerPartage() {
           </div>
         </div>
       </div>
-      <!-- V0.4.76 — Filtre pays : visible dès que le carnet touche 2 pays distincts -->
-      <div v-if="paysChips.length > 1 && fiches.length" class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar pb-0.5">
-        <button @click="choisirPays('')"
-          class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition"
-          :style="{
-            background: filtrePays ? 'var(--c-surface)' : 'var(--c-soft)',
-            color: filtrePays ? 'var(--c-muted)' : 'var(--c-accent)',
-            border: '1px solid ' + (filtrePays ? 'var(--c-hairline)' : 'var(--c-accent)'),
-          }">Tous · {{ fiches.length }}</button>
-        <button v-for="p in paysChips" :key="p.pays" @click="choisirPays(p.pays)"
-          class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition"
-          :style="{
-            background: filtrePays === p.pays ? 'var(--c-soft)' : 'var(--c-surface)',
-            color: filtrePays === p.pays ? 'var(--c-accent)' : 'var(--c-ink)',
-            border: '1px solid ' + (filtrePays === p.pays ? 'var(--c-accent)' : 'var(--c-hairline)'),
-          }">{{ p.drapeau }} {{ p.label }} · {{ p.n }}</button>
-      </div>
-      <!-- Sous-filtre ville, révélé quand un pays est choisi -->
-      <div v-if="filtrePays && villesChips.length > 1" class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar pb-0.5">
-        <button @click="choisirVille('')"
-          class="shrink-0 rounded-full px-3 py-1.5 text-[11px] transition"
-          :style="{
-            background: filtreVille ? 'var(--c-surface)' : 'var(--c-soft)',
-            color: filtreVille ? 'var(--c-muted)' : 'var(--c-accent)',
-            border: '1px solid ' + (filtreVille ? 'var(--c-hairline)' : 'var(--c-accent)'),
-          }">Toutes les villes</button>
-        <button v-for="v in villesChips" :key="v.ville" @click="choisirVille(v.ville)"
-          class="shrink-0 rounded-full px-3 py-1.5 text-[11px] transition"
-          :style="{
-            background: filtreVille === v.ville ? 'var(--c-soft)' : 'var(--c-surface)',
-            color: filtreVille === v.ville ? 'var(--c-accent)' : 'var(--c-ink)',
-            border: '1px solid ' + (filtreVille === v.ville ? 'var(--c-accent)' : 'var(--c-hairline)'),
-          }">{{ v.ville === "?" ? "Non précisé" : v.ville }} · {{ v.n }}</button>
-      </div>
-
       <div class="space-y-2">
         <!-- Appui long sur une card = entrer en sélection ; en sélection, le tap coche/décoche -->
         <div v-for="f in affiches" :key="f.id" class="relative rounded-xl"

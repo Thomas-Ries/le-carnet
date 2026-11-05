@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.80 — Filtre lieu façon menu de tri
+
+- Le filtre pays/ville troque ses chips e-commerce contre un bouton pilule discret « Lieu » à côté du bouton de tri, qui ouvre un menu en deux niveaux : pays (drapeaux + comptes), puis villes du pays choisi. Même langage visuel que le menu de tri.
+
 ## V0.4.79 — Finitions d'après test réel (PWA + desktop)
 
 - CTA d'import : « Importer mes fichiers Google Maps ».
