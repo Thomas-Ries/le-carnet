@@ -168,6 +168,18 @@ export const useCarnetStore = defineStore("carnet", {
       return r.carnet;
     },
 
+    async recupererSuperAdmin(pass) {
+      // Créateur de l'app : phrase de passe globale -> sessions admin sur tous les carnets.
+      const r = await api.superAdmin(pass);
+      if (!r || !r.ok) return r || { error: "Phrase de passe refusée." };
+      for (const c of r.carnets || []) {
+        if (!this.carnets.some((x) => x.id === c.id)) this.carnets.push(c);
+        this.roles[c.id] = "admin";
+      }
+      if (r.carnets && r.carnets.length) this.switchCarnet(r.carnets[0].id);
+      return r;
+    },
+
     async recupererAdmin(codeInvite, codeAdmin, prenom) {
       // Admin sur un nouvel appareil (réinstallation) : le code d'invitation + le code
       // admin restaurent la session admin. Le serveur renvoie le carnet complet.

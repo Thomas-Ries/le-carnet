@@ -558,6 +558,29 @@ export default {
             return json({ carnet: { id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) } });
           }
 
+          case "superAdmin": {
+            // Créateur de l'app : une phrase de passe LONGUE, dont seul le SHA-256
+            // existe côté serveur (variable d'environnement SUPER_ADMIN_HASH).
+            // Restaure des sessions admin sur TOUS les carnets, tout appareil.
+            const attendu = String(env.SUPER_ADMIN_HASH || "");
+            if (!attendu) return json({ error: "super admin non configuré" }, 404);
+            const pass = String(p.pass || "");
+            if (pass.length < 8 || (await sha256hex(pass)) !== attendu)
+              return json({ ok: false }, 200);
+            const { results: tous } = await db.prepare(`SELECT * FROM Carnets`).all();
+            const roles = {};
+            const carnets = [];
+            for (const c of tous) {
+              await db.prepare(
+                `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+              ).bind(device, c.id, c.admin, "admin", now).run();
+              roles[c.id] = "admin";
+              const { results: membres } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(c.id).all();
+              carnets.push({ id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membres.map((m) => m.prenom) });
+            }
+            return json({ ok: true, carnets, roles });
+          }
+
           default:
             return json({ error: "unknown action" }, 400);
         }

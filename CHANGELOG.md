@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.29 — Super admin : reprise globale par phrase de passe
+
+- Écran d'accueil : lien discret « C'est ton appli à toi ? Reprends tous tes carnets » → la phrase de passe du créateur restaure des sessions admin sur TOUS les carnets, sur n'importe quel appareil (même après un drop de base ou un téléphone neuf).
+- Sécurité : seul le SHA-256 de la phrase vit côté serveur, dans la variable d'environnement Pages SUPER_ADMIN_HASH (à définir dans le dashboard, jamais en clair). Phrase obligatoirement longue (≥ 8, recommandé 12+). Le mot de passe ne transite jamais en clair dans l'app au-delà de la requête.
+- Vérification refusée silencieusement (ok:false) sans distinction d'origine.
+
 ## 0.4.28 — UI codes : masquage, placeholders discrets, badge de confirmation pastel
 
 - Le code admin est masqué à la saisie (champ mot de passe) avec une icône œil pour l'afficher — création, confirmation, déverrouillage admin, changement de code et reprise sur nouvel appareil.

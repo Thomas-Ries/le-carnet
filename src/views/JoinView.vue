@@ -23,6 +23,9 @@ const codeAdmin = ref("");
 const showRecup = ref(false);
 const recupErr = ref("");
 const recupOK = ref(false);
+const superOpen = ref(false);
+const superPass = ref("");
+const superErr = ref("");
 const connu = computed(() => store.carnets.find((c) => c.code === normMot(code.value)));
 
 function goStep2() {
@@ -53,6 +56,18 @@ async function rejoindre() {
 
 // C'est moi sur un nouvel appareil (réinstallation) : le prénom est refusé en doublon
 // mais le mot-clé d'invitation + le code admin restaurent la session admin.
+async function superReprendre() {
+  if (superPass.value.length < 8) return;
+  superErr.value = "";
+  const r = await store.recupererSuperAdmin(superPass.value);
+  if (r && r.ok) {
+    toast("Tous tes carnets sont repris — tu es admin");
+    router.push("/");
+  } else {
+    superErr.value = (r && r.error) || "Phrase de passe refusée.";
+  }
+}
+
 async function reprendre() {
   if (![4, 6].includes(codeAdmin.value.length)) return;
   recupErr.value = "";
@@ -129,6 +144,28 @@ async function reprendre() {
       <button @click="router.push('/carnet')" class="w-full mt-2 text-xs font-semibold text-accent underline underline-offset-4">
         Créer mon carnet
       </button>
+    </div>
+
+    <!-- Créateur de l'app : reprise globale par phrase de passe -->
+    <div class="w-full max-w-sm mx-auto mt-6 text-center">
+      <button v-if="!superOpen" @click="superOpen = true"
+        class="text-[11px] text-muted underline underline-offset-2">
+        C'est ton appli à toi ? Reprends tous tes carnets
+      </button>
+      <div v-else class="rounded-2xl p-4 bg-surface border border-hairline text-left">
+        <p class="text-[11px] text-muted leading-relaxed mb-2.5">
+          Phrase de passe du créateur — elle restaure tes droits d'admin sur tous les carnets,
+          sur n'importe quel appareil. Elle ne quitte jamais ton téléphone en clair.
+        </p>
+        <input v-model="superPass" type="password" placeholder="Ta phrase de passe" autocomplete="off"
+          @keyup.enter="superReprendre"
+          class="w-full rounded-xl px-4 py-3 mb-2 text-sm bg-bg border border-hairline outline-none" />
+        <p v-if="superErr" class="text-xs text-accent mb-2">{{ superErr }}</p>
+        <button @click="superReprendre" :disabled="superPass.length < 8"
+          class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40">
+          Reprendre mes carnets
+        </button>
+      </div>
     </div>
   </div>
 </template>

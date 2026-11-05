@@ -192,6 +192,7 @@ function demoMutate(db, action, p) {
 export const createCarnet = (payload) => mutate("createCarnet", payload);
 export const join = (payload) => mutate("join", payload);
 export const verifyAdmin = (payload) => mutate("verifyAdmin", payload);
+export const superAdmin = (pass) => mutate("superAdmin", { pass });
 export const regenerateInvite = (payload) => mutate("regenerateInvite", payload);
 export const changeAdminCode = (payload) => mutate("changeAdminCode", payload);
 export const addFiche = (fiche) => mutate("addFiche", { fiche });
