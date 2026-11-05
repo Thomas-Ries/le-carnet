@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject } from "vue";
+import { ref, computed, inject, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
@@ -39,12 +39,19 @@ function startEdit() {
   com.value = fiche.value.com || "";
   photoModif.value = undefined;
   edit.value = true;
+  store.ficheEnEdition = true;
 }
+function annulerEdit() {
+  edit.value = false;
+  store.ficheEnEdition = false;
+}
+onUnmounted(() => { store.ficheEnEdition = false; });
 async function saveEdit() {
   const patch = { titre: titre.value.trim(), com: com.value.trim() };
   if (photoModif.value !== undefined) patch.photo = photoModif.value;
   await store.majFiche(fiche.value.id, patch);
   edit.value = false;
+  store.ficheEnEdition = false;
   toast("Fiche mise à jour");
 }
 async function supprimer() {
@@ -98,7 +105,7 @@ async function supprimer() {
           class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Retirer</button>
       </div>
       <div class="flex gap-2">
-        <button @click="edit = false" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
+        <button @click="annulerEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
         <button @click="saveEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-accent">Enregistrer</button>
       </div>
     </div>

@@ -21,7 +21,7 @@ provide("toast", showToast);
 
 /* Nav masquée sur l'onboarding ; FAB sur accueil et fiche, jamais pendant le splash */
 const showNav = computed(() => route.name !== "join");
-const showFab = computed(() => (route.path === "/" || route.name === "fiche") && !store.splash);
+const showFab = computed(() => (route.path === "/" || route.name === "fiche") && !store.splash && !store.ficheEnEdition);
 
 const NAV = [
   { to: "/", icon: "pin", label: "Carnet" },

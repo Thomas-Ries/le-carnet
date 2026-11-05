@@ -16,7 +16,16 @@ const titre = ref("");
 const lieu = ref("");
 const com = ref("");
 const note = ref(80);
-const cat = ref("Resto");
+// Plusieurs themes possibles pour une meme adresse (ex. un caviste qui fait bar a vin).
+// Au moins un requis : retirer le dernier est refuse.
+const selCats = ref(["Resto"]);
+function toggleCat(c) {
+  if (selCats.value.includes(c)) {
+    if (selCats.value.length > 1) selCats.value = selCats.value.filter((x) => x !== c);
+  } else {
+    selCats.value = [...selCats.value, c];
+  }
+}
 const photo = ref(null);
 const sel = ref([store.carnetId]);
 const recette = ref("");
@@ -48,7 +57,7 @@ async function valider() {
   await store.noter({
     carnets: sel.value,
     type: type.value,
-    cat: type.value === "recette" ? "Recette" : cat.value,
+    cat: type.value === "recette" ? "Recette" : selCats.value.join(", "),
     titre: titre.value.trim(),
     lieu: type.value === "adresse" ? lieu.value.trim() : "",
     note: note.value,
@@ -103,12 +112,12 @@ async function valider() {
 
     <!-- Catégorie (adresses) -->
     <div v-if="type === 'adresse'" class="flex flex-wrap gap-1.5 mb-3">
-      <button v-for="c in cats" :key="c" @click="cat = c"
+      <button v-for="c in cats" :key="c" @click="toggleCat(c)"
         class="rounded-full px-3 py-1.5 text-xs font-medium"
         :style="{
-          background: cat === c ? 'var(--c-soft)' : 'var(--c-surface)',
-          color: cat === c ? 'var(--c-accent)' : 'var(--c-muted)',
-          border: '1px solid ' + (cat === c ? 'var(--c-accent)' : 'var(--c-hairline)'),
+          background: selCats.includes(c) ? 'var(--c-soft)' : 'var(--c-surface)',
+          color: selCats.includes(c) ? 'var(--c-accent)' : 'var(--c-muted)',
+          border: '1px solid ' + (selCats.includes(c) ? 'var(--c-accent)' : 'var(--c-hairline)'),
         }">{{ c }}</button>
     </div>
 

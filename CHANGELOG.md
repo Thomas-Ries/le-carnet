@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.41 — Retours d'usage : thèmes multiples, FAB discret
+
+- **Plusieurs thèmes par adresse** : un caviste qui fait bar à vin se note « Caviste + Bar à vin ». Sélection multiple à puces (au moins un requis, max 4 côté serveur), stockée en texte « Caviste, Bar à vin » — aucune migration D1.
+- **Nouveaux thèmes** : « Bar à vin » et « Soins du corps » (liste : Resto, Caviste, Bar à vin, Bar, Soins du corps, Fromagerie, Boulangerie, Autre).
+- **FAB flash masqué pendant l'édition d'une fiche** : si je modifie, je ne vais pas flasher. Flag `ficheEnEdition` dans le store, posé/levé par FicheView (annuler, enregistrer, sortie de page).
+
 ## V0.4.40 — Scroll infini sur l'accueil
 
 - Le fil des notes passe en **scroll infini façon feed** : rendu par tranches de 20, la tranche suivante charge quand on approche du bas (500 px de marge, listener passif).

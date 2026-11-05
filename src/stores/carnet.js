@@ -10,6 +10,7 @@ const LS = {
 export const useCarnetStore = defineStore("carnet", {
   state: () => ({
     splash: true,
+    ficheEnEdition: false, // masque le FAB flash pendant l'edition d'une fiche
     dark: false,
     demoMode: false,
     deviceId: null,

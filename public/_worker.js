@@ -385,10 +385,14 @@ export default {
             if (!s) return json({ error: "pas membre" }, 403);
             const id = crypto.randomUUID();
             const note = Math.min(100, Math.max(70, parseInt(f.note, 10) || 80));
+            // Plusieurs themes possibles (tableau client) -> texte unique, max 4, virgules.
+            const catVal = Array.isArray(f.cat)
+              ? f.cat.filter(Boolean).slice(0, 4).join(", ")
+              : f.cat;
             await db.prepare(
               `INSERT INTO Fiches (id, auteur, type, cat, titre, lieu, note, com, photo, recette, created_at)
                VALUES (?,?,?,?,?,?,?,?,?,?,?)`
-            ).bind(id, cleanPrenom(f.auteur), cleanText(f.type, 10), cleanText(f.cat, 20),
+            ).bind(id, cleanPrenom(f.auteur), cleanText(f.type, 10), cleanText(catVal, 60),
               cleanText(f.titre, 60), cleanText(f.lieu, 60), note, cleanText(f.com, 500),
               typeof f.photo === "string" ? f.photo.slice(0, 400000) : null,
               cleanText(f.recette, 4000), now).run();
@@ -408,7 +412,7 @@ export default {
               }).catch(() => {});
             })().catch(() => {});
             logEvent(db, "note", { device, prenom: s.prenom, carnet: f.carnets && f.carnets[0], meta: { titre: cleanText(f.titre, 60) } });
-            return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: f.cat, titre: f.titre, lieu: f.lieu,
+            return json({ fiche: { id, auteur: f.auteur, type: f.type, cat: catVal, titre: f.titre, lieu: f.lieu,
               note, com: f.com, photo: f.photo || null, recette: f.recette || null, date: now,
               carnets: f.carnets || [], reacts: [], demandeRecette: [] } });
           }
