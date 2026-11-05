@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.31 — Profil allégé
+
+- Suppression de la section « Inviter dans un carnet » du profil : redondante avec le partage intégré dans la vue Carnet (WhatsApp / SMS / Copier par carnet).
+- Nettoyage du script associé (select, lien, texte d'invitation, imports inutilisés).
+
 ## 0.4.30 — Lisibilité : toasts opaques, icônes de partage, photo plein cadre, profil réordonné
 
 - Toasts : fond opaque (surface) + liseré or — plus de transparence, « Carnet créé » se lit parfaitement sur tout fond.
