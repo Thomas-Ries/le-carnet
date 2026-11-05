@@ -21,6 +21,8 @@ const code = ref(normMot(route.params.code));
 const err = ref("");
 const dupErr = ref("");
 const codeAdmin = ref("");
+const codeRecup = ref("");
+const showRecupCode = ref(false);
 const showRecup = ref(false);
 const recupErr = ref("");
 const recupOK = ref(false);
@@ -37,14 +39,25 @@ function goStep2() {
 }
 async function rejoindre() {
   if (normMot(code.value).length < 4) return;
-  const r = await store.rejoindre(normMot(code.value));
+  const cr = codeRecup.value.replace(/\D/g, "");
+  const r = await store.rejoindre(normMot(code.value), cr);
   if (r && r.error === "prenom_pris") {
     // Le prénom est déjà pris dans ce carnet : on repart du champ prénom,
     // l'inscription ne passe pas tant que le doublon n'est pas résolu.
+    // (La reprise par code de récupération est gérée ci-dessus dans le même écran,
+    //  via le bloc « C'est toi ? » — il apparaît au retour à l'étape prénom.)
     dupErr.value =
       "« " + prenom.value.trim() + " » est déjà dans ce carnet — ajoute une initiale pour te distinguer, ex. " +
       prenom.value.trim() + " M.";
     step.value = 1;
+    return;
+  }
+  if (r && r.error === "code_refuse") {
+    err.value = "Code de récupération refusé — vérifie les 4 ou 6 chiffres.";
+    return;
+  }
+  if (r && r.error === "code_manquant") {
+    err.value = "Choisis ton code de récupération — 4 ou 6 chiffres, il relie le prénom à toi.";
     return;
   }
   if (r && r.error) {
@@ -159,8 +172,23 @@ async function reprendre() {
       <input v-model="code" type="text" autocapitalize="none" autocomplete="off" maxlength="15" autofocus
         placeholder="famille-A ou spice-girls"
         class="w-full rounded-xl px-4 py-4 text-2xl text-center tracking-[.5em] bg-surface border border-hairline outline-none mb-2" />
+      <label class="block text-[10px] uppercase tracking-widest text-muted mt-2 mb-1.5">Ton code de récupération — 4 ou 6 chiffres</label>
+      <div class="relative mb-1">
+        <input v-model="codeRecup" :type="showRecupCode ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+          placeholder="●●●●●●"
+          @input="codeRecup = codeRecup.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-4 py-3 pr-11 text-lg text-center tracking-[.3em] bg-surface border border-hairline outline-none" />
+        <button type="button" @click="showRecupCode = !showRecupCode" aria-label="Afficher le code"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+          <Ic :name="showRecupCode ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+        </button>
+      </div>
+      <p class="text-[11px] text-muted leading-relaxed mb-3">
+        À toi seul. Il prouve que ce prénom est le tien et te permet de le reprendre sur un nouvel appareil —
+        garde-le précieusement, comme ton code admin.
+      </p>
       <p v-if="err" class="text-xs text-accent text-center mb-2">{{ err }}</p>
-      <button @click="rejoindre" :disabled="code.trim().length < 4"
+      <button @click="rejoindre" :disabled="code.trim().length < 4 || ![4, 6].includes(codeRecup.replace(/\D/g, '').length)"
         class="w-full rounded-xl py-4 text-sm font-semibold text-white bg-accent disabled:opacity-40">
         {{ connu ? "Revenir dans « " + connu.nom + " »" : "Rejoindre le carnet" }}
       </button>

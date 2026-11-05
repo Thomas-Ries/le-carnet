@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.67 — code de récupération personnel + reprise d'identité
+
+- Nouveau : chaque membre choisit un code de récupération (4 ou 6 chiffres, hashé SHA-256+sel) au moment de rejoindre — obligatoire, il relie le prénom à son propriétaire.
+- Réinstaller ou changer de téléphone ne bloque plus : rejoindre avec le même prénom + son code de récupération transfère l'identité (les sessions de l'ancien appareil sont révoquées, le rôle est conservé).
+- Un homonyme sans le code reste refusé. Les membres d'avant cette version (sans code) : reprise via le code admin (bloc « C'est toi ? » dans Mes carnets et dans l'onboarding), ou retrait par un admin puis rejoin.
+
 ## V0.4.66 — Rejoindre un carnet depuis « Mes carnets »
 
 - La vue n'offrait que la création : impossible de rejoindre avec un mot-clé une fois l'onboarding passé. Nouveau panneau « Rejoindre un carnet » (icône users, même style que Créer) — c'est aussi la porte de secours d'un nouvel appareil pour retrouver un carnet.

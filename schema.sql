@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS Carnets (
 CREATE TABLE IF NOT EXISTS Membres (
   carnet_id TEXT NOT NULL REFERENCES Carnets(id),
   prenom TEXT NOT NULL,
+  code_recup TEXT,
   PRIMARY KEY (carnet_id, prenom)
 );
 

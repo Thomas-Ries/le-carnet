@@ -100,6 +100,10 @@ const ensureEvents = (db) =>
     id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, device_id TEXT,
     prenom TEXT, carnet_id TEXT, meta TEXT, created_at TEXT NOT NULL)`)
     .run().catch(() => {});
+// V0.4.67 : code de récupération personnel hashé, relié au prénom dans chaque carnet.
+// ALTER silencieux : no-op si la colonne existe déjà.
+const ensureRecup = (db) =>
+  db.prepare(`ALTER TABLE Membres ADD COLUMN code_recup TEXT`).run().catch(() => {});
 const ensureComments = (db) =>
   db.prepare(`CREATE TABLE IF NOT EXISTS FicheComments (
     id TEXT PRIMARY KEY, fiche_id TEXT NOT NULL, prenom TEXT NOT NULL,
@@ -367,19 +371,47 @@ export default {
             if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil." }, 400);
             const invite = cleanInvite(p.code);
             if (!invite) return json({ error: "Le mot-clé du carnet doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets)." }, 400);
+            await ensureRecup(db);
             const c = await db.prepare(`SELECT * FROM Carnets WHERE code=?`).bind(invite).first();
             if (!c) return json({ error: "carnet introuvable" }, 404);
-            // Doublon de prénom dans le carnet (insensible à la casse) : refus, sauf retour
-            // d'un appareil qui porte déjà ce prénom là (changement d'appareil du même membre).
+            const codeRecup = String(p.codeRecup || "").replace(/\D/g, "");
+            // Doublon de prénom dans le carnet (insensible à la casse) : refus, SAUF
+            // - retour d'un appareil qui porte déjà ce prénom là (rejoin du même membre), ou
+            // - reprise d'identité par le code de récupération (nouvel appareil) :
+            //   les sessions de l'ancien appareil sont révoquées, le rôle est conservé.
             const maSession = await sessionOf(c.id);
             const homonyme = await db.prepare(
-              `SELECT prenom FROM Membres WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`
+              `SELECT prenom, code_recup FROM Membres WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`
             ).bind(c.id, prenom).first();
             if (homonyme && (!maSession || maSession.prenom.toLowerCase() !== prenom.toLowerCase())) {
-              return json({ error: "prenom_pris", prenom: homonyme.prenom }, 409);
+              if (!isCode(codeRecup)) return json({ error: "prenom_pris", prenom: homonyme.prenom }, 409);
+              if (!homonyme.code_recup) return json({
+                error: "Ce prénom n'a pas encore de code de récupération (membre d'avant la V0.4.67). Un admin doit le retirer du carnet pour te laisser la place — ou choisis un autre prénom."
+              }, 409);
+              if (!(await verifyCode(codeRecup, homonyme.code_recup))) return json({ error: "code_refuse", prenom: homonyme.prenom }, 401);
+              const roleRecup = prenom === c.admin ? "admin" : "member";
+              await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, prenom).run();
+              await db.prepare(
+                `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
+              ).bind(device, c.id, prenom, roleRecup, now).run();
+              const { results: membresRecup } = await db.prepare(`SELECT prenom FROM Membres WHERE carnet_id=?`).bind(c.id).all();
+              logEvent(db, "join_recup", { device, prenom, carnet: c.id });
+              return json({ carnet: { id: c.id, nom: c.nom, code: c.code, admin: c.admin, membres: membresRecup.map((m) => m.prenom) }, role: roleRecup });
             }
-            const deja = await db.prepare(`SELECT 1 FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, prenom).first();
-            if (!deja) await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(c.id, prenom).run();
+            // Nouveau prénom : le code de récupération est obligatoire — il relie
+            // le prénom à son propriétaire et permet de le reprendre plus tard.
+            if (!isCode(codeRecup)) return json({ error: "code_manquant" }, 400);
+            const deja = await db.prepare(
+              `SELECT prenom, code_recup FROM Membres WHERE carnet_id=? AND prenom=?`
+            ).bind(c.id, prenom).first();
+            if (!deja) {
+              await db.prepare(`INSERT INTO Membres (carnet_id, prenom, code_recup) VALUES (?,?,?)`)
+                .bind(c.id, prenom, await hashCode(codeRecup)).run();
+            } else if (!deja.code_recup) {
+              // membre d'avant la feature, reconnu par son propre appareil : on pose son code
+              await db.prepare(`UPDATE Membres SET code_recup=? WHERE carnet_id=? AND prenom=?`)
+                .bind(await hashCode(codeRecup), c.id, prenom).run();
+            }
             await db.prepare(
               `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at)
                VALUES (?,?,?, COALESCE((SELECT role FROM Sessions WHERE device_id=? AND carnet_id=?), 'member'), ?)`

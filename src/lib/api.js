@@ -93,10 +93,20 @@ function demoMutate(db, action, p) {
     case "join": {
       const c = db.carnets.find((x) => x.code === String(p.code));
       if (!c) return { error: "carnet introuvable" };
-      // Pas de doublon de prénom dans un carnet (même règle que le serveur)
+      // Mêmes règles que le serveur : doublon de prénom = code de récupération,
+      // et le code est obligatoire pour tout nouveau prénom (il relie le prénom à son propriétaire).
       const homonyme = (c.membres || []).find((m) => m.toLowerCase() === String(p.prenom || "").toLowerCase());
-      if (homonyme && homonyme !== p.prenom) return { error: "prenom_pris", prenom: homonyme };
+      const codeRecup = String(p.codeRecup || "").replace(/\D/g, "");
+      db.codes = db.codes || {};
+      if (homonyme && homonyme !== p.prenom) {
+        const attendu = db.codes[c.id + "|" + homonyme];
+        if (!attendu) return { error: "prenom_pris", prenom: homonyme };
+        if (codeRecup !== attendu) return { error: "code_refuse", prenom: homonyme };
+        p.prenom = homonyme; // reprise d'identité : le prénom est conservé
+      }
+      if (!/^[0-9]{4}$|^[0-9]{6}$/.test(codeRecup)) return { error: "code_manquant" };
       if (!c.membres.includes(p.prenom)) c.membres.push(p.prenom);
+      db.codes[c.id + "|" + p.prenom] = codeRecup;
       demo.save(db);
       return { carnet: c, role: p.prenom === c.admin ? "admin" : "member" };
     }

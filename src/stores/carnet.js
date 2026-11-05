@@ -173,9 +173,9 @@ export const useCarnetStore = defineStore("carnet", {
       return r.carnet;
     },
 
-    async rejoindre(code) {
+    async rejoindre(code, codeRecup) {
       const prenom = this.profil.prenom;
-      const r = await api.join({ code, prenom, deviceId: this.deviceId });
+      const r = await api.join({ code, prenom, deviceId: this.deviceId, codeRecup });
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
       if (!r.carnet) return r; // { error: "prenom_pris", ... } remonte jusqu'à JoinView

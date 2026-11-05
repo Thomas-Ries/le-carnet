@@ -25,22 +25,49 @@ const err = ref("");
    secours pour retrouver un carnet quand on change d'appareil. */
 const modeRejoindre = ref(false);
 const codeRejoindre = ref("");
+const codeRecupJoin = ref("");
+const codeAdminReprise = ref("");
 const errRejoindre = ref("");
+const prisDans = ref(false); // prenom_pris : le bloc reprise apparaît
+const errReprise = ref("");
 async function rejoindre() {
   const code = normMot(codeRejoindre.value);
-  if (code.length < 4) return;
+  const cr = codeRecupJoin.value.replace(/\D/g, "");
+  if (code.length < 4 || ![4, 6].includes(cr.length)) return;
   errRejoindre.value = "";
-  const r = await store.rejoindre(code);
+  prisDans.value = false;
+  const r = await store.rejoindre(code, cr);
   if (r && r.error) {
-    errRejoindre.value = r.error === "prenom_pris"
-      ? "« " + store.profil.prenom + " » est déjà pris dans ce carnet — change ton prénom dans Profil d'abord."
-      : r.error === "carnet introuvable" ? "Carnet introuvable — vérifie le mot-clé."
+    if (r.error === "prenom_pris") {
+      prisDans.value = true;
+      errRejoindre.value = "« " + store.profil.prenom + " » est déjà pris dans ce carnet — entre ton code de récupération ci-dessus, ou ton code admin ci-dessous si tu l'administres.";
+      return;
+    }
+    if (r.error === "code_refuse") { errRejoindre.value = "Code de récupération refusé — vérifie les chiffres."; return; }
+    errRejoindre.value = r.error === "carnet introuvable" ? "Carnet introuvable — vérifie le mot-clé."
       : "Impossible de rejoindre : " + r.error;
     return;
   }
   modeRejoindre.value = false;
   codeRejoindre.value = "";
+  codeRecupJoin.value = "";
   toast("Bienvenue dans « " + (store.carnet?.nom || "ton carnet") + " »");
+}
+// Reprise admin (nouvel appareil) : le mot-clé d'invitation + le code admin recréent la session.
+async function reprendreAdmin() {
+  if (![4, 6].includes(codeAdminReprise.value.length)) return;
+  errReprise.value = "";
+  const r = await store.recupererAdmin(normMot(codeRejoindre.value), codeAdminReprise.value, store.profil.prenom);
+  if (r && r.ok) {
+    modeRejoindre.value = false;
+    codeRejoindre.value = "";
+    codeAdminReprise.value = "";
+    errRejoindre.value = "";
+    prisDans.value = false;
+    toast("Carnet repris — tu es de retour");
+  } else {
+    errReprise.value = (r && r.error) || "Code admin refusé — vérifie les 4 ou 6 chiffres.";
+  }
 }
 
 const lien = computed(() => {
@@ -157,12 +184,34 @@ async function exporterJSON() {
       <label for="lc-rejoindre" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Mot-clé d'invitation</label>
       <input id="lc-rejoindre" v-model="codeRejoindre" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
         placeholder="ex. les-copains" @input="codeRejoindre = codeRejoindre.slice(0, 15)"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
-      <p class="text-[11px] text-muted mb-3">Celui affiché dans le carnet des membres, ou dans le lien d'invitation.</p>
-      <p v-if="errRejoindre" class="text-xs text-accent mb-2">{{ errRejoindre }}</p>
+        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-3 tracking-[.3em]" />
+      <label for="lc-recup" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code de récupération — 4 ou 6 chiffres</label>
+      <input id="lc-recup" v-model="codeRecupJoin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+        placeholder="●●●●●●"
+        @input="codeRecupJoin = codeRecupJoin.replace(/\D/g, '').slice(0, 6)"
+        class="w-full rounded-xl px-3 py-3 text-sm text-center tracking-[.3em] bg-bg border border-hairline outline-none mb-1" />
+      <p class="text-[11px] text-muted mb-3 leading-relaxed">
+        Obligatoire pour un nouveau prénom — et si tu reprends le tien sur un nouvel appareil, c'est lui qui le prouve.
+      </p>
+      <p v-if="errRejoindre" class="text-xs text-accent mb-2 leading-relaxed">{{ errRejoindre }}</p>
+      <!-- Prénom déjà pris : c'est peut-être toi sur un nouvel appareil → code admin -->
+      <div v-if="prisDans" class="rounded-xl p-3 bg-soft mb-2">
+        <p class="text-[11px] text-muted leading-relaxed mb-2">
+          C'est toi, sur un nouvel appareil ? Entre ton code admin — celui choisi à la création du carnet — pour reprendre ta place.
+        </p>
+        <input v-model="codeAdminReprise" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+          placeholder="Code admin"
+          @input="codeAdminReprise = codeAdminReprise.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-3 py-3 mb-2 text-sm text-center tracking-[.3em] bg-surface border border-hairline outline-none" />
+        <p v-if="errReprise" class="text-xs text-accent mb-2">{{ errReprise }}</p>
+        <button @click="reprendreAdmin" :disabled="![4, 6].includes(codeAdminReprise.length)"
+          class="w-full rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">
+          Reprendre ma place
+        </button>
+      </div>
       <div class="grid grid-cols-2 gap-2">
         <button @click="modeRejoindre = false" class="rounded-xl py-2.5 text-sm font-semibold border border-hairline">Annuler</button>
-        <button @click="rejoindre" :disabled="normMot(codeRejoindre).length < 4"
+        <button @click="rejoindre" :disabled="normMot(codeRejoindre).length < 4 || ![4, 6].includes(codeRecupJoin.replace(/\D/g, '').length)"
           class="rounded-xl py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Rejoindre</button>
       </div>
     </div>
