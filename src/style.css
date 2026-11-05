@@ -80,13 +80,14 @@ body { margin: 0; }
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--c-hairline);
-  padding-bottom: var(--lc-safe-b);
 }
 .lc-nav-in {
   max-width: 720px;
   margin: 0 auto;
   display: flex;
-  height: var(--lc-nav-h); /* hauteur fixe : le contenu se centre, padding égal haut/bas */
+  /* PWA iPhone : la safe-area (barre d accueil, ~34px) fait partie de la hauteur,
+     sinon le contenu se retrouve colle en haut d une barre visuellement trop grande. */
+  height: calc(var(--lc-nav-h) + var(--lc-safe-b));
   align-items: center;
 }
 
