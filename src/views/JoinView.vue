@@ -20,6 +20,7 @@ const code = ref(normMot(route.params.code));
 const err = ref("");
 const dupErr = ref("");
 const codeAdmin = ref("");
+const showRecup = ref(false);
 const recupErr = ref("");
 const recupOK = ref(false);
 const connu = computed(() => store.carnets.find((c) => c.code === normMot(code.value)));
@@ -53,7 +54,7 @@ async function rejoindre() {
 // C'est moi sur un nouvel appareil (réinstallation) : le prénom est refusé en doublon
 // mais le mot-clé d'invitation + le code admin restaurent la session admin.
 async function reprendre() {
-  if (codeAdmin.value.length !== 6) return;
+  if (![4, 6].includes(codeAdmin.value.length)) return;
   recupErr.value = "";
   const r = await store.recupererAdmin(code.value, codeAdmin.value, prenom.value.trim());
   if (r && r.ok) {
@@ -89,11 +90,17 @@ async function reprendre() {
           C'est toi, sur un nouvel appareil ? Entre ton code admin — celui choisi à la création du carnet —
           pour reprendre ta place.
         </p>
-        <input v-model="codeAdmin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code admin"
-          @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
-          class="w-full rounded-xl px-4 py-3 text-lg text-center tracking-[.3em] bg-bg border border-hairline outline-none mb-2" />
+        <div class="relative mb-2">
+          <input v-model="codeAdmin" :type="showRecup ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code admin" autocomplete="off"
+            @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
+            class="w-full rounded-xl px-4 py-3 pr-11 text-lg text-center tracking-[.3em] bg-bg border border-hairline outline-none" />
+          <button type="button" @click="showRecup = !showRecup" aria-label="Afficher le code"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+            <Ic :name="showRecup ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+          </button>
+        </div>
         <p v-if="recupErr" class="text-xs text-accent text-center mb-2">{{ recupErr }}</p>
-        <button @click="reprendre" :disabled="codeAdmin.length !== 6"
+        <button @click="reprendre" :disabled="![4, 6].includes(codeAdmin.length)"
           class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40">
           Reprendre mon carnet
         </button>
@@ -109,7 +116,7 @@ async function reprendre() {
     <div v-else class="w-full max-w-sm mx-auto">
       <p class="text-sm text-muted text-center mb-4">Entre le mot-clé du carnet qu'on t'a donné — 4 à 15 caractères.</p>
       <input v-model="code" type="text" autocapitalize="none" autocomplete="off" maxlength="15" autofocus
-        placeholder="famille-ries"
+        placeholder="famille-A ou spice-girls"
         class="w-full rounded-xl px-4 py-4 text-2xl text-center tracking-[.5em] bg-surface border border-hairline outline-none mb-2" />
       <p v-if="err" class="text-xs text-accent text-center mb-2">{{ err }}</p>
       <button @click="rejoindre" :disabled="code.trim().length < 4"

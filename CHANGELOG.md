@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.28 — UI codes : masquage, placeholders discrets, badge de confirmation pastel
+
+- Le code admin est masqué à la saisie (champ mot de passe) avec une icône œil pour l'afficher — création, confirmation, déverrouillage admin, changement de code et reprise sur nouvel appareil.
+- Placeholders plus petits et plus discrets partout (capés à 15 px, sans tracking large). Exemples d'invitation : « famille-A ou spice-girls ».
+- Les toasts deviennent un badge de confirmation pastel : coche SVG, fond doux charte, animation d'entrée (carnet créé, code changé, note créée, changements sauvegardés…).
+- Corrections de cohérence 4/6 chiffres : boutons « Reprendre mon carnet », « Déverrouiller » et « Changer le code » acceptent désormais les codes de 4 chiffres.
+
 ## 0.4.27 — Invitation par mot-clé + code admin 4 ou 6 chiffres
 
 - L'invitation devient un MOT-CLÉ de 4 à 15 caractères (minuscules, sans accents, chiffres et tirets ; « Pâques 2027 » → « paques-2027 »), plus mémorisable et partageable à l'oral qu'un numéro. Auto-généré en syllabes prononçables si vide ; unique entre carnets.

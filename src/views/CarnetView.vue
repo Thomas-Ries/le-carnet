@@ -17,6 +17,8 @@ const normMot = (v) =>
     .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 15);
 const codeAdmin = ref("");
 const codeAdmin2 = ref("");
+const showAdmin = ref(false);
+const showAdmin2 = ref(false);
 const err = ref("");
 
 const lien = computed(() => {
@@ -131,20 +133,32 @@ async function exporterJSON() {
 
       <label for="lc-code" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Mot-clé d'invitation — 4 à 15 caractères</label>
       <input id="lc-code" v-model="codeInvite" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
-        placeholder="ex. famille-ries (auto si vide)"
+        placeholder="ex. famille-A ou spice-girls (auto si vide)"
         @input="codeInvite = codeInvite.slice(0, 15)"
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
       <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites — plus facile à retenir qu'un numéro. Généré automatiquement si tu laisses vide.</p>
 
       <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code admin — 4 ou 6 chiffres</label>
-      <input id="lc-code-admin" v-model="codeAdmin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
-        placeholder="4 chiffres ou 6, à toi de choisir"
-        @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
-      <input v-model="codeAdmin2" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
-        placeholder="Encore une fois pour vérifier"
-        @input="codeAdmin2 = codeAdmin2.replace(/\D/g, '').slice(0, 6)"
-        class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+      <div class="relative mb-1">
+        <input id="lc-code-admin" v-model="codeAdmin" :type="showAdmin ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+          placeholder="4 chiffres ou 6, à toi de choisir"
+          @input="codeAdmin = codeAdmin.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-3 py-3 pr-11 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+        <button type="button" @click="showAdmin = !showAdmin" aria-label="Afficher le code"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+          <Ic :name="showAdmin ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+        </button>
+      </div>
+      <div class="relative mb-1">
+        <input v-model="codeAdmin2" :type="showAdmin2 ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+          placeholder="Encore une fois pour vérifier"
+          @input="codeAdmin2 = codeAdmin2.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-3 py-3 pr-11 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+        <button type="button" @click="showAdmin2 = !showAdmin2" aria-label="Afficher le code"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+          <Ic :name="showAdmin2 ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+        </button>
+      </div>
       <p class="text-[11px] text-muted mb-3">Il prouve que c'est toi sur un autre appareil. Ne le donne à personne — garde-le précieusement.</p>
 
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>

@@ -118,10 +118,8 @@ onMounted(async () => {
     <!-- Toasts maison -->
     <div class="fixed left-1/2 -translate-x-1/2 z-[60] space-y-2 w-max max-w-[90vw] pointer-events-none"
       style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 76px)">
-      <p v-for="t in toasts" :key="t.id"
-        class="rounded-full px-4 py-2.5 text-sm text-white text-center"
-        style="background: rgba(43,35,32,.92); box-shadow: 0 6px 18px rgba(43,35,32,.3)">
-        {{ t.msg }}
+      <p v-for="t in toasts" :key="t.id" class="lc-toast">
+        <Ic name="check" class="w-4 h-4 shrink-0" /> {{ t.msg }}
       </p>
     </div>
   </template>

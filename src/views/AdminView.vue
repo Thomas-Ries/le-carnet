@@ -12,6 +12,9 @@ const store = useCarnetStore();
 const toast = inject("toast");
 
 const code = ref("");
+const showCode = ref(false);
+const showNew = ref(false);
+const showNew2 = ref(false);
 const err = ref("");
 const retirerDe = ref(null);
 const popinRegen = ref(false);
@@ -41,8 +44,8 @@ async function regenerer() {
   else toast("Action réservée à l'admin");
 }
 async function changerCode() {
-  if (nouveauCode.value.length !== 6 || nouveauCode.value !== nouveauCode2.value) {
-    errCode.value = "Les deux codes ne sont pas identiques.";
+  if (![4, 6].includes(nouveauCode.value.length) || nouveauCode.value !== nouveauCode2.value) {
+    errCode.value = "Les deux codes ne sont pas identiques (4 ou 6 chiffres).";
     return;
   }
   const ok = await store.changerCodeAdmin(store.carnetId, nouveauCode.value);
@@ -67,11 +70,17 @@ async function changerCode() {
     <!-- Pavé code (autre appareil) -->
     <div v-else class="rounded-2xl p-5 bg-surface border border-hairline max-w-sm mx-auto">
       <p class="text-xs text-muted mb-3 leading-relaxed">Entre ton code admin — celui choisi à la création du carnet. Il est stocké chiffré : personne ne peut te le redonner.</p>
-      <input v-model="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code admin"
-        @input="code = code.replace(/\D/g, '').slice(0, 6)"
-        class="w-full rounded-xl px-4 py-4 text-xl text-center tracking-[.4em] bg-bg border border-hairline outline-none mb-2" />
+      <div class="relative mb-2">
+        <input v-model="code" :type="showCode ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code admin" autocomplete="off"
+          @input="code = code.replace(/\D/g, '').slice(0, 6)"
+          class="w-full rounded-xl px-4 py-4 pr-11 text-xl text-center tracking-[.4em] bg-bg border border-hairline outline-none" />
+        <button type="button" @click="showCode = !showCode" aria-label="Afficher le code"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+          <Ic :name="showCode ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+        </button>
+      </div>
       <p v-if="err" class="text-xs text-accent mb-2 text-center">{{ err }}</p>
-      <button @click="verifier" :disabled="code.length !== 6"
+      <button @click="verifier" :disabled="![4, 6].includes(code.length)"
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white bg-accent disabled:opacity-40">Déverrouiller</button>
       <p class="text-[11px] text-muted mt-3 text-center leading-relaxed">
         Code perdu ? Il peut être changé depuis un appareil<br />où la session admin est encore active.
@@ -104,14 +113,26 @@ async function changerCode() {
 
       <div class="rounded-2xl p-4 bg-surface border border-hairline mb-4">
         <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Changer mon code admin — 4 ou 6 chiffres</p>
-        <input v-model="nouveauCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Nouveau code"
-          @input="nouveauCode = nouveauCode.replace(/\D/g, '').slice(0, 6)"
-          class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-2 tracking-[.3em]" />
-        <input v-model="nouveauCode2" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Confirme le nouveau code"
-          @input="nouveauCode2 = nouveauCode2.replace(/\D/g, '').slice(0, 6)"
-          class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-2 tracking-[.3em]" />
+        <div class="relative mb-2">
+          <input v-model="nouveauCode" :type="showNew ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Nouveau code" autocomplete="off"
+            @input="nouveauCode = nouveauCode.replace(/\D/g, '').slice(0, 6)"
+            class="w-full rounded-xl px-3 py-3 pr-11 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+          <button type="button" @click="showNew = !showNew" aria-label="Afficher le code"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+            <Ic :name="showNew ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="relative mb-2">
+          <input v-model="nouveauCode2" :type="showNew2 ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Confirme le nouveau code" autocomplete="off"
+            @input="nouveauCode2 = nouveauCode2.replace(/\D/g, '').slice(0, 6)"
+            class="w-full rounded-xl px-3 py-3 pr-11 text-sm bg-bg border border-hairline outline-none tracking-[.3em]" />
+          <button type="button" @click="showNew2 = !showNew2" aria-label="Afficher le code"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+            <Ic :name="showNew2 ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
+          </button>
+        </div>
         <p v-if="errCode" class="text-xs text-accent mb-2">{{ errCode }}</p>
-        <button @click="changerCode" :disabled="nouveauCode.length !== 6 || nouveauCode !== nouveauCode2"
+        <button @click="changerCode" :disabled="![4, 6].includes(nouveauCode.length) || nouveauCode !== nouveauCode2"
           class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40">
           Changer le code admin
         </button>
