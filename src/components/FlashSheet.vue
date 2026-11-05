@@ -58,7 +58,7 @@ async function envoyer() {
             <Ic name="camera" class="w-5 h-5" />
           </span>
           <span class="text-sm font-semibold text-accent">Tape ici pour photographier</span>
-          <span class="text-[11px] text-muted">Assiette, verre, salle — c'est parti en 5 secondes</span>
+          <span class="text-[11px] text-muted">Une bouteille, un plat, une ambiance — ça part en 5 secondes</span>
         </template>
         <template v-else>
           <img :src="photo" class="w-full h-[150px] object-cover rounded-2xl" alt="Aperçu" />

@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.37 — Flash : texte de l'appât photo
+
+- « Assiette, verre, salle — c'est parti en 5 secondes » -> « Une bouteille, un plat, une ambiance — ça part en 5 secondes » (préférence de Thomas).
+
 ## V0.4.36 — Notif note : nouvelle tournure
 
 - Thomas n'aimait pas « va voir, aime-la si tu la fréquentes » -> corps de la notif d'une nouvelle note : « X » — une nouvelle adresse à découvrir dans ton carnet ♥.
