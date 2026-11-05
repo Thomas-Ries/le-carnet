@@ -64,13 +64,10 @@ async function envoyer() {
           <img :src="photo" class="w-full h-[150px] object-cover rounded-2xl" alt="Aperçu" />
         </template>
       </label>
-      <p class="text-center text-[10px] text-muted mt-1.5 mb-3">1. la photo · 2. le(s) carnet(s) · 3. envoyé</p>
-
-      <textarea v-model="com" rows="2" maxlength="500" placeholder="Un mot ? (optionnel — il garde le flash et en fait une note après 7 jours)"
-        class="w-full rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none mb-3"></textarea>
+      <p class="text-center text-[10px] text-muted mt-1.5 mb-3">1. la photo · 2. pour qui · 3. envoyé</p>
 
       <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">Pour qui ?</p>
-      <div class="flex flex-wrap gap-1.5 mb-4">
+      <div class="flex flex-wrap gap-1.5 mb-3">
         <button v-for="c in store.carnets" :key="c.id" @click="toggle(c.id)"
           class="rounded-full px-3 py-1.5 text-xs font-medium flex items-center gap-1"
           :style="{
@@ -81,17 +78,16 @@ async function envoyer() {
           <Ic v-if="sel.includes(c.id)" name="check" class="w-3 h-3" :sw="2.4" /> {{ c.nom }}
         </button>
       </div>
+      <textarea v-model="com" rows="2" maxlength="500" placeholder="Un mot ? (optionnel — il garde le flash et en fait une note après 7 jours)"
+        class="w-full rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none mb-4"></textarea>
+
 
       <button @click="envoyer" :disabled="!photo"
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
         :style="{ background: photo ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
         Envoyer le flash<template v-if="sel.length > 1"> à {{ sel.length }} carnets</template>
       </button>
-      <p class="text-center text-[10px] text-muted mt-2 leading-relaxed">
-        Tu pourras le compléter en fiche notée — badge éclair en attendant.<br />
-        <span class="font-semibold text-accent">Sans retouche sous 7 jours, ce flash disparaît.</span>
-        Un commentaire le garde et en fait une note.
-      </p>
+      <p class="text-center text-[10px] text-muted mt-2">Tu pourras le compléter en fiche notée — badge éclair en attendant.</p>
     </div>
   </div>
 </template>

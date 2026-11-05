@@ -1,12 +1,5 @@
 # Changelog
 
-## V0.4.33 — Rétention : avertissement flash + adoption des notifications
-
-- **FlashSheet** : avertissement visible AVANT l'envoi — « Sans retouche sous 7 jours, ce flash disparaît. Un commentaire le garde et en fait une note. » (avant : seulement un toast après coup).
-- **Notifs au join** : la demande de permission est présentée juste après avoir rejoint un carnet (pic d'envie), silencieuse en cas de refus ; toast de confirmation si acceptée.
-- **Carte « Sois prévenu des nouvelles notes »** sur l'accueil tant que l'appareil n'a pas souscrit ; cachée si la permission iOS a été refusée (denied, plus redemandable) ou en mode démo.
-- Déduplication : `activerNotifs()` / `notifsSouscrites()` dans api.js, utilisées par le profil, le join et l'accueil (le profil ne porte plus sa copie maison).
-
 ## V0.4.32 — Fix photo : chargement robuste + aperçu réel
 
 - Diagnostic prod (carnet de test) : le serveur stocke et renvoie parfaitement les photos (testé de 1 Ko à 400 Ko). L'échec était côté iPhone : décodage d'une photo via dataURL en entrée d'Image, fragile sur WebKit — et **100 % silencieux** (aucun aperçu dans la vue d'ajout, aucune erreur affichée).
