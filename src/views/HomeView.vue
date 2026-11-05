@@ -418,30 +418,24 @@ async function partagerSel() {
                   color: store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-muted)',
                   border: '1px solid ' + (store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-hairline)'),
                 }">{{ fl.label }}</button>
-              <!-- Basculer en sélection : coche une ou plusieurs cards à partager -->
-              <button @click="inspirMode = !inspirMode; inspirSel = []"
-                class="ml-auto rounded-full px-2.5 py-1.5 text-xs font-medium flex items-center gap-1.5 transition"
+              <!-- Icône seule pour basculer en sélection : cocher des cards à partager -->
+              <button @click="inspirMode = !inspirMode; inspirSel = []" title="Partager une sélection"
+                class="ml-auto w-7 h-7 rounded-full flex items-center justify-center transition"
                 :style="{
                   background: inspirMode ? 'var(--c-accent)' : 'var(--c-surface)',
                   color: inspirMode ? '#fff' : 'var(--c-muted)',
                   border: '1px solid ' + (inspirMode ? 'var(--c-accent)' : 'var(--c-hairline)'),
                 }">
-                <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" /> Sélectionner
+                <Ic name="share" class="w-3.5 h-3.5" :sw="2" />
               </button>
             </div>
             <div class="space-y-2 mb-3">
               <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection.
-                   En mode sélection, le tap coche la card au lieu de naviguer. -->
+                   En mode sélection, le tap coche la card au lieu de naviguer (ring bordeaux, pas de checkbox). -->
               <div v-for="f in inspirSelection" :key="f.id" class="relative rounded-xl"
                 :class="estSelInspir(f.id) ? 'ring-2 ring-[#7A2E3E]' : ''"
                 @click.capture="tapInspir($event, f)">
                 <FicheRow :fiche="f" />
-                <span v-if="inspirMode" class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center border"
-                  :style="estSelInspir(f.id)
-                    ? { background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }
-                    : { background: 'var(--c-surface)', borderColor: 'var(--c-hairline)', color: 'transparent' }">
-                  <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" />
-                </span>
               </div>
               <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">Pas encore d'adresse ici — note la première.</p>
             </div>
@@ -504,12 +498,6 @@ async function partagerSel() {
           @pointerup="pressEnd" @pointercancel="pressEnd"
           @click.capture="tapCard($event, f)">
           <FicheRow :fiche="f" />
-          <span v-if="selMode" class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center border z-10"
-            :style="estSel(f.id)
-              ? { background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }
-              : { background: 'var(--c-surface)', borderColor: 'var(--c-hairline)', color: 'transparent' }">
-            <Ic name="check" class="w-3.5 h-3.5" :sw="2.5" />
-          </span>
         </div>
       </div>
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## V0.4.61 — allègement sélection + nav
+
+- La coche des cards sélectionnées disparaît (accueil et modale) : seul le liseré bordeaux s'active — plus d'empètement sur la note.
+- Modale inspiration : le bouton « Sélectionner » devient une simple icône de partage à droite des puces de tri.
+- Splash : le tag « Pour le boulot » devient « Entre collègues ».
+- Nav : encore un cran de hauteur en moins.
+
 ## V0.4.60 — sélection & partage + nav compacte
 
 - **Sélection longue-press sur l'accueil** : appui long sur une card entre en mode sélection (vibration, coche en haut à droite), tap pour en ajouter/retirer ; une icône de partage apparaît à gauche du tri dès qu'une card est cochée. 1 card = sa carte PNG ; plusieurs = un PDF regroupé (une page par fiche, écrit à la main, zéro dépendance) pour ne pas noyer le destinataire.
