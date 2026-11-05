@@ -199,3 +199,17 @@ summary.lc-sum {
   -webkit-tap-highlight-color: transparent;
 }
 summary.lc-sum:active { background: var(--c-soft); }
+
+/* ---------- Desktop (Mac / PC) : le survol doit montrer qu'on peut cliquer ---------- */
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled),
+  a,
+  label,
+  summary,
+  [role="button"],
+  input[type="file"] + span,
+  .cursor-pointer { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  button:not(:disabled):hover { filter: brightness(.94); }
+  button:not(:disabled):active { filter: brightness(.88); }
+}

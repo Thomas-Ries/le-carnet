@@ -141,9 +141,15 @@ async function validerImport() {
     importBusy.value = false;
   }
 }
-function ouvrirMesAdresses() {
-  const cp = store.mesAdresses;
-  if (!cp) return;
+async function ouvrirMesAdresses() {
+  let cp = store.mesAdresses;
+  if (!cp) {
+    // Filet de sécurité : si l'espace privé n'est pas encore dans la liste locale (ex. cache),
+    // on rafraîchit depuis le serveur avant d'abandonner — jamais de clic silencieux.
+    await store.refresh();
+    cp = store.mesAdresses;
+  }
+  if (!cp) { toast("Espace privé introuvable — recharge l'app et réessaie"); return; }
   store.switchCarnet(cp.id);
   router.push("/");
 }
@@ -315,10 +321,16 @@ async function exporterJSON() {
     
     <!-- V0.4.72 : Mes adresses — import Google (lieux + avis optionnel), espace privé créé au premier import -->
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes adresses — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }}</p>
-      <p class="text-[11px] text-muted leading-relaxed mb-3">
-        Ton réservoir privé : visible de toi seul. Rien n'est partagé sans ton geste explicite.
-      </p>
+      <div class="flex items-start gap-2.5 mb-2.5">
+        <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 mt-0.5"
+          :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
+        <div>
+          <p class="font-serif text-base leading-tight">Importer mes lieux, notes et commentaires Google&nbsp;Maps</p>
+          <p class="text-[11px] text-muted leading-relaxed mt-1">
+            Ton réservoir privé « Mes adresses » — {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }} · visible de toi seul, rien n'est partagé sans ton geste explicite.
+          </p>
+        </div>
+      </div>
 
       <!-- Astuce : l'import est plus simple au clavier — Le Carnet est aussi un site web -->
       <div class="rounded-xl px-3 py-2.5 mb-3 flex items-start gap-2 bg-soft">

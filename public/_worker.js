@@ -313,6 +313,7 @@ export default {
 
         const carnetsOut = carnets.map((c) => ({
           id: c.id, nom: c.nom, code: c.code, admin: c.admin,
+          prive: c.prive || "0",
           membres: membresByCarnet[c.id] || [],
         }));
 

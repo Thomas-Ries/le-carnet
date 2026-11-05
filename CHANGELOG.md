@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.75 — Fix « Voir mes adresses » silencieux + section import visible + curseurs desktop
+
+- **Bug** : après import, « Voir mes adresses » ne faisait RIEN (sans erreur console). Cause : le bootstrap du worker ne renvoyait pas la colonne `prive` des carnets → `store.mesAdresses` restait null → le clic retournait silencieusement. Fix : `carnetsOut` inclut désormais `prive`. Filet de sécurité : `ouvrirMesAdresses` rafraîchit depuis le serveur si l'espace manque, et affiche un toast explicite plutôt que rien.
+- **Section import plus visible** : titre « Importer mes lieux, notes et commentaires Google Maps » en serif avec pastille icône, sous-titre « Ton réservoir privé "Mes adresses" — N lieux · visible de toi seul… ».
+- **Desktop (Mac/PC)** : `style.css` — curseur pointeur au survol des boutons/liens/labels/summary (media `hover: hover`), `not-allowed` sur les boutons désactivés, léger assombrissement au survol des boutons.
+
 ## V0.4.74 — Un seul import : bouton multi-fichiers avec détection automatique
 
 - Simplification demandée par Thomas : plus de deux slots. **Un seul bouton « Choisir mes fichiers d'export »** (sélection multiple possible, on peut balancer tout le contenu du dossier Takeout).
