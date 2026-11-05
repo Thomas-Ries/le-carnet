@@ -113,7 +113,7 @@ async function valider() {
     <!-- Catégorie (adresses) -->
     <div v-if="type === 'adresse'" class="flex flex-wrap gap-1.5 mb-3">
       <button v-for="c in cats" :key="c" @click="toggleCat(c)"
-        class="rounded-full px-3 py-1.5 text-xs font-medium"
+        class="rounded-full px-2.5 py-1.5 text-xs font-medium"
         :style="{
           background: selCats.includes(c) ? 'var(--c-soft)' : 'var(--c-surface)',
           color: selCats.includes(c) ? 'var(--c-accent)' : 'var(--c-muted)',

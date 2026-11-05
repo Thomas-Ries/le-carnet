@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, inject, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import InstallCard from "../components/InstallCard.vue";
@@ -58,6 +59,15 @@ async function toggleNotif() {
 }
 
 const store = useCarnetStore();
+const router = useRouter();
+const supprCompte = ref(false);
+const supprPurge = ref(true);
+async function confirmerSupprCompte() {
+  supprCompte.value = false;
+  await store.supprimerCompte(supprPurge.value);
+  toast("Compte supprimé de cet appareil — à bientôt");
+  router.push("/join");
+}
 // PWA déjà installée ? Alors la carte d'installation descend en bas des réglages.
 const appInstallee = (typeof window !== "undefined") &&
   ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
@@ -236,7 +246,7 @@ async function exporterJSON() {
 
       <details class="group border-t border-hairline">
         <summary class="lc-sum">
-          <Ic name="share" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
+          <Ic name="shareUp" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
           <span class="flex-1 text-left leading-tight">
             <span class="block text-sm font-semibold">Exporter mes données</span>
             <span class="block text-[10px] text-muted">fichier JSON du carnet, à tout moment</span>
@@ -257,7 +267,7 @@ async function exporterJSON() {
           <button @click="exporterJSON"
             class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
             :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-            <Ic name="share" class="w-4 h-4" /> Exporter en JSON
+            <Ic name="shareUp" class="w-4 h-4" /> Exporter en JSON
           </button>
         </div>
       </details>
@@ -299,5 +309,45 @@ async function exporterJSON() {
       Tes données t'appartiennent — export disponible à tout moment.<br />
       Le Carnet · V{{ pkg.version }}
     </p>
+
+    <!-- Zone sensible : tout en bas du profil, bien séparée -->
+    <div class="mt-4 pt-4 border-t border-hairline">
+      <button @click="supprCompte = true"
+        class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-accent bg-soft">
+        <Ic name="trash" class="w-4 h-4" /> Supprimer mon compte
+      </button>
+    </div>
+
+    <!-- Modale : choix des contributions + mode d'emploi de la désinstallation -->
+    <div v-if="supprCompte" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
+      style="background: rgba(20, 14, 12, .55)" @click.self="supprCompte = false">
+      <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
+        <p class="text-base font-serif mb-2">Supprimer mon compte ?</p>
+        <p class="text-xs leading-relaxed text-muted mb-3">
+          Cet appareil quitte tous ses carnets. C'est définitif : pour revenir, il faudra refaire une
+          demande d'invitation — et tout ce qui aura été supprimé sera perdu.
+        </p>
+        <p class="text-xs leading-relaxed text-muted mb-4">
+          Pour désinstaller l'app : iPhone — maintiens l'icône Le Carnet, puis « Retirer l'app » ·
+          Android — appui long sur l'icône, puis « Désinstaller ».
+        </p>
+        <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes contributions</p>
+        <button @click="supprPurge = true" class="w-full rounded-xl p-3 mb-2 text-left"
+          :style="{ background: supprPurge ? 'var(--c-soft)' : 'transparent', border: '1px solid ' + (supprPurge ? 'var(--c-accent)' : 'var(--c-hairline)') }">
+          <span class="block text-sm font-semibold">Tout supprimer</span>
+          <span class="block text-[10px] text-muted">mes notes, likes, commentaires et flashes disparaissent des carnets</span>
+        </button>
+        <button @click="supprPurge = false" class="w-full rounded-xl p-3 mb-4 text-left"
+          :style="{ background: !supprPurge ? 'var(--c-soft)' : 'transparent', border: '1px solid ' + (!supprPurge ? 'var(--c-accent)' : 'var(--c-hairline)') }">
+          <span class="block text-sm font-semibold">Les garder dans les carnets</span>
+          <span class="block text-[10px] text-muted">elles restent visibles, signées de mon prénom</span>
+        </button>
+        <div class="flex gap-2">
+          <button @click="supprCompte = false" class="flex-1 rounded-xl py-3 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
+          <button @click="confirmerSupprCompte" class="flex-1 rounded-xl py-3 text-sm font-semibold text-white"
+            style="background: #7A2E3E">Supprimer</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

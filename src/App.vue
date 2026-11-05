@@ -19,9 +19,9 @@ function showToast(msg) {
 }
 provide("toast", showToast);
 
-/* Nav masquée sur l'onboarding ; FAB sur accueil et fiche, jamais pendant le splash */
+/* Nav masquée sur l'onboarding ; FAB flash sur l'accueil uniquement (pas sur le détail d'une fiche : il gênait le bouton d'envoi des commentaires) */
 const showNav = computed(() => route.name !== "join");
-const showFab = computed(() => (route.path === "/" || route.name === "fiche") && !store.splash && !store.ficheEnEdition);
+const showFab = computed(() => route.path === "/" && !store.splash);
 
 const NAV = [
   { to: "/", icon: "pin", label: "Carnet" },

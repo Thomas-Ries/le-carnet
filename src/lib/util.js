@@ -1,7 +1,7 @@
 export const noteLabel = (n) =>
   n >= 93 ? "Inoubliable" : n >= 86 ? "Très bon" : n >= 80 ? "Bon" : n >= 74 ? "Correct" : "Décevant";
 
-export const CATS = ["Resto", "Caviste", "Bar à vin", "Bar", "Soins du corps", "Fromagerie", "Boulangerie", "Autre"];
+export const CATS = ["Resto", "Caviste", "Bar à vin", "Bar", "Autre", "Soins du corps", "Fromagerie", "Boulangerie"];
 
 export const fmtDate = (iso) => {
   try {

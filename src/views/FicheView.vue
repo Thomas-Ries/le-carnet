@@ -101,7 +101,7 @@ async function supprimer() {
         <Ic name="back" class="w-4 h-4" />
       </button>
       <div class="flex gap-1.5">
-        <button class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="share" class="w-4 h-4 text-accent" /></button>
+        <button v-if="!edit" class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="shareUp" class="w-4 h-4 text-accent" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
       </div>
@@ -202,7 +202,7 @@ async function supprimer() {
         </div>
       </div>
       <div class="flex gap-2">
-        <input v-model="newCom" placeholder="Un mot sur cette adresse…" @keyup.enter="envoyerCom"
+        <input v-model="newCom" placeholder="Commentaire" @keyup.enter="envoyerCom"
           class="flex-1 rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none" />
         <button @click="envoyerCom" class="rounded-xl px-3.5 bg-soft border border-hairline">
           <Ic name="chevron" class="w-4 h-4 text-accent" />

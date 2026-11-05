@@ -1,5 +1,14 @@
 # Changelog
 
+## V0.4.43 — Suppression de compte + ergonomie
+
+- **Supprimer mon compte** : bouton tout en bas du profil → modale qui explique comment désinstaller la PWA et propose le choix : supprimer aussi ses notes, likes, commentaires et flashes, ou les garder dans les carnets. Définitif : pour revenir il faut refaire une demande d'invitation. Worker `deleteAccount` (purge ou conservation), l'admin du carnet reste membre — le carnet survit à son départ.
+- **FAB flash uniquement sur l'accueil** : il ne gênait plus le bouton d'envoi d'un commentaire sur le détail d'une fiche.
+- **Icône de partage explicite** : flèche qui sort d'un carré (code iOS), plus l'« undo » ambigu — sur le partage d'une note et l'export JSON.
+- **Partage masqué pendant l'édition d'une fiche** : on modifie ou on supprime, pas de partage à ce moment-là.
+- Placeholder du champ commentaire : simplement « Commentaire ».
+- **Thèmes réordonnés** pour tenir sur deux lignes à la création (Resto, Caviste, Bar à vin, Bar, Autre puis les trois longs : Soins du corps, Fromagerie, Boulangerie).
+
 ## V0.4.42 — Commentaires + partage d'une note en jolie carte
 
 - **Commentaires sur les notes** : chacun peut commenter une adresse dans le carnet. L'auteur d'un commentaire peut le modifier ou le supprimer ; l'admin du carnet peut supprimer n'importe quel commentaire. Table `FicheComments` créée paresseusement au bootstrap (aucune console D1 à lancer), purgée avec la fiche.

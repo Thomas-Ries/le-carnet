@@ -324,6 +324,23 @@ export const useCarnetStore = defineStore("carnet", {
       return r;
     },
 
+    async supprimerCompte(purge) {
+      const r = await api.deleteAccount(purge);
+      if (r && r.error) return r;
+      // Retour à l'état d'origine : plus de prénom, plus de carnets, plus de données.
+      this.profil = { prenom: "", avatar: null };
+      this.carnets = [];
+      this.fiches = [];
+      this.flashes = [];
+      this.roles = {};
+      this.carnetId = null;
+      try {
+        localStorage.removeItem("lc-profil");
+        localStorage.removeItem("lc-carnet");
+      } catch (e) { /* ok */ }
+      return { ok: true };
+    },
+
     async demanderRecette(id) {
       const r = await api.demandeRecette(id, this.profil.prenom);
       const i = this.fiches.findIndex((f) => f.id === id);

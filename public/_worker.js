@@ -669,6 +669,56 @@ export default {
             return json({ ok: true });
           }
 
+          case "deleteAccount": {
+            // RGPD : l'appareil quitte tous ses carnets. Deux modes :
+            // - purge : ses notes, likes, commentaires et flashes sont supprimés
+            // - keep : ils restent dans les carnets (l'auteur garde son prénom)
+            // Définitif : pour revenir il faut refaire une demande d'invitation.
+            const { results: sess } = await db.prepare(
+              `SELECT carnet_id, prenom, role FROM Sessions WHERE device_id=?`
+            ).bind(device).all();
+            const purger = p.purge !== false;
+            for (const se of sess) {
+              if (purger) {
+                const { results: mesFiches } = await db.prepare(
+                  `SELECT f.id FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id WHERE l.carnet_id=? AND f.auteur=?`
+                ).bind(se.carnet_id, se.prenom).all();
+                for (const f of mesFiches) {
+                  await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=?`).bind(f.id).run();
+                  await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=?`).bind(f.id).run();
+                  await db.prepare(`DELETE FROM DemandesRecette WHERE fiche_id=?`).bind(f.id).run();
+                  await db.prepare(`DELETE FROM FicheComments WHERE fiche_id=?`).bind(f.id).run();
+                  await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(f.id).run();
+                }
+                await db.prepare(
+                  `DELETE FROM FicheLikes WHERE prenom=? AND fiche_id IN (SELECT fiche_id FROM FichesCarnets WHERE carnet_id=?)`
+                ).bind(se.prenom, se.carnet_id).run();
+                await db.prepare(
+                  `DELETE FROM FicheComments WHERE prenom=? AND fiche_id IN (SELECT fiche_id FROM FichesCarnets WHERE carnet_id=?)`
+                ).bind(se.prenom, se.carnet_id).run();
+                await db.prepare(
+                  `DELETE FROM FlashReactions WHERE prenom=? AND flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`
+                ).bind(se.prenom, se.carnet_id).run();
+                await db.prepare(`DELETE FROM Flashes WHERE carnet_id=? AND auteur=?`).bind(se.carnet_id, se.prenom).run();
+              }
+              // Membre sans plus aucune session -> retiré de la liste (comme leaveCarnet).
+              // L'admin du carnet reste membre : le carnet doit survivre à son départ.
+              const c = await db.prepare(`SELECT admin FROM Carnets WHERE id=?`).bind(se.carnet_id).first();
+              if (!c || se.prenom !== c.admin) {
+                const autre = await db.prepare(
+                  `SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=? AND device_id<>?`
+                ).bind(se.carnet_id, se.prenom, device).first();
+                if (!autre) await db.prepare(
+                  `DELETE FROM Membres WHERE carnet_id=? AND prenom=?`
+                ).bind(se.carnet_id, se.prenom).run();
+              }
+            }
+            await db.prepare(`DELETE FROM Sessions WHERE device_id=?`).bind(device).run();
+            await db.prepare(`DELETE FROM PushSubscriptions WHERE device_id=?`).bind(device).run();
+            logEvent(db, "delete_account", { device, meta: { purge: purger } });
+            return json({ ok: true });
+          }
+
           case "leaveCarnet": {
             const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
             if (!c) return json({ ok: true });
