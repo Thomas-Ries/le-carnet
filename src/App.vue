@@ -51,7 +51,7 @@ onMounted(async () => {
       <div class="flex items-center gap-0.5">
         <Ic name="fork" class="w-[23px] h-[23px]" :sw="1.8" />
         <Ic name="glass" class="w-9 h-9" :sw="1.7" />
-        <Ic name="heart" class="w-[23px] h-[23px]" :sw="1.8" filled />
+        <Ic name="heart" class="w-[23px] h-[23px] text-[#D9C589]" :sw="1.8" filled />
       </div>
       <span class="sp-bub b1"></span><span class="sp-bub b2"></span><span class="sp-bub b3"></span>
       <Ic name="heart" class="sp-heart" :sw="2" filled />

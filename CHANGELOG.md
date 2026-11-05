@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.25 — Splash aligné sur l'icône : cœur riesling dans le badge
+
+- Le cœur du trio du splash passe en riesling (#D9C589), identique à l'icône PWA ; la fourchette et le verre restent blancs.
+- (0.4.24b) PNG 192/512 régénérés : cœur entier, motif ×1,10 centré — le bug de rognage est corrigé.
+
 ## 0.4.24 — Trio final : fourchette · verre · petit cœur
 - Décision de Thomas : l'icône et le splash remplacent le couteau par un cœur plein (riesling dans l'icône, blanc dans le splash) — fourchette · verre · petit cœur.
 - logo.svg + PNG 192/512 régénérés dans ce motif (carré plein opaque, motif recentré, zone de sécurité maskable) — PNG livrés dans le canvas.
