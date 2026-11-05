@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.72b — Astuce import : Le Carnet est aussi un site web (Mac / PC)
+
+- Carte d'import « Mes adresses » (Profil) : encart « Plus simple sur ordi » avant les slots — l'adresse du site s'affiche (`location.origin`), l'utilisateur est invité à rejoindre ses carnets avec ses codes et à faire l'import Takeout au clavier. Les adresses partagées se retrouvent sur tous les écrans.
+
 ## V0.4.72 — Mes adresses : import Google complet (lieux + avis), partage-transfert par sélection
 
 - **Import Google Maps à 2 fichiers** (Profil) : lieux enregistrés Takeout (.kml / .csv / .json selon le compte) + avis Google en JSON optionnel. Parsing 100 % local, espace privé « Mes adresses » créé à la volée au premier import (plus d'auto-création au boot).
