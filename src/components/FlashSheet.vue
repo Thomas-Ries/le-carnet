@@ -87,7 +87,11 @@ async function envoyer() {
         :style="{ background: photo ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
         Envoyer le flash<template v-if="sel.length > 1"> à {{ sel.length }} carnets</template>
       </button>
-      <p class="text-center text-[10px] text-muted mt-2">Tu pourras le compléter en fiche notée — badge éclair en attendant.</p>
+      <p class="text-center text-[10px] text-muted mt-2 leading-relaxed">
+        Tu pourras le compléter en fiche notée — badge éclair en attendant.<br />
+        <span class="font-semibold text-accent">Sans retouche sous 7 jours, ce flash disparaît.</span>
+        Un commentaire le garde et en fait une note.
+      </p>
     </div>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { ref, computed, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
+import * as api from "../lib/api.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -49,6 +50,13 @@ async function rejoindre() {
   if (r) {
     toast("Bienvenue dans « " + store.carnet.nom + " »");
     router.push("/");
+    // Pic d'envie : on propose les notifs juste après le join. Silencieux si refus.
+    if (typeof Notification !== "undefined" && "serviceWorker" in navigator &&
+        "PushManager" in window && Notification.permission === "default" && !store.demoMode) {
+      api.activerNotifs().then((res) => {
+        if (res && res.ok) toast("Tu seras prévenu quand quelqu'un note une adresse");
+      }).catch(() => {});
+    }
   } else {
     err.value = "Carnet introuvable — vérifie le mot-clé qui t'a été donné.";
   }

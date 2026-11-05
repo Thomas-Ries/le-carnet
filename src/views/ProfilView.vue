@@ -8,11 +8,6 @@ import { exporterFichierJSON } from "../lib/util.js";
 import pkg from "../../package.json";
 import * as api from "../lib/api.js";
 
-const b64uToUint8 = (b64) => {
-  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
-};
 const notifSupported = computed(() =>
   typeof Notification !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
 );
@@ -48,15 +43,11 @@ async function toggleNotif() {
       toast("Notifications désactivées");
       return;
     }
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") { toast("Autorisation refusée dans les réglages du navigateur"); return; }
-    const r = await fetch("/api/vapid-pub").then((x) => x.json()).catch(() => null);
-    if (!r || !r.publicKey) { toast("Notifications indisponibles côté serveur"); return; }
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: b64uToUint8(r.publicKey),
-    });
-    await api.subscribePush(sub.toJSON());
+    const res = await api.activerNotifs();
+    if (!res.ok) {
+      toast(res.raison === "serveur" ? "Notifications indisponibles côté serveur" : "Autorisation refusée dans les réglages du navigateur");
+      return;
+    }
     notifOn.value = true;
     toast("Notifications activées sur cet appareil");
   } catch (e) {

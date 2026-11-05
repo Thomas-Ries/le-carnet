@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, inject } from "vue";
+import { ref, computed, inject, onMounted } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
+import * as api from "../lib/api.js";
 
 const store = useCarnetStore();
 const toast = inject("toast");
@@ -29,6 +30,27 @@ const results = computed(() =>
 );
 const flashes = computed(() => store.flashesDuCarnet);
 const miens = (f) => f.auteur === store.profil.prenom;
+
+/* Notifications : carte discrete tant que l'appareil n'a pas souscrit.
+   Si la permission a ete refusee (denied), iOS ne permet plus de la redemander -> pas de carte. */
+const notifsDispo =
+  typeof Notification !== "undefined" && "serviceWorker" in navigator &&
+  "PushManager" in window && Notification.permission !== "denied";
+const notifOn = ref(false);
+onMounted(async () => {
+  if (!notifsDispo || store.demoMode) return;
+  notifOn.value = await api.notifsSouscrites();
+});
+async function activerNotifsAccueil() {
+  try {
+    const r = await api.activerNotifs();
+    if (r.ok) { notifOn.value = true; toast("Notifications activées"); }
+    else if (r.raison === "refuse") toast("Autorisation refusée — reglages iOS de l'app, Notifications");
+    else toast("Notifications indisponibles côté serveur");
+  } catch (e) {
+    toast("Impossible d'activer les notifications");
+  }
+}
 
 /* Tri : plus récent (défaut, ordre du carnet) / plus aimé (cœurs décroissants) / A à Z (titre) */
 const fichesTri = computed(() => {
@@ -77,6 +99,19 @@ const fichesTri = computed(() => {
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Ic name="search" class="w-4 h-4" /></span>
       <input v-model="q" placeholder="On cherche quoi ? Un resto, un vin, une recette…"
         class="w-full rounded-xl pl-9 pr-3 py-3 text-sm bg-surface border border-hairline outline-none" />
+    </div>
+
+    <!-- Notifications : rappel discret tant que pas activées -->
+    <div v-if="notifsDispo && !notifOn && !store.demoMode" class="rounded-2xl p-3.5 mb-4 bg-surface border border-hairline flex items-center gap-3">
+      <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-soft text-accent">
+        <Ic name="bolt" class="w-4 h-4" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-semibold">Sois prévenu des nouvelles notes</span>
+        <span class="block text-[11px] text-muted leading-snug">Une alerte quand quelqu'un partage une adresse aimée ou un flash.</span>
+      </span>
+      <button @click="activerNotifsAccueil" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-white shrink-0"
+        style="background: var(--c-accent)">Activer</button>
     </div>
 
     <!-- Résultats -->

@@ -207,3 +207,27 @@ export const removeMember = (carnetId, membre) => mutate("removeMember", { carne
 export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });
 export const subscribePush = (sub) => mutate("subscribePush", { sub });
 export const unsubscribePush = (endpoint) => mutate("unsubscribePush", { endpoint });
+
+// --- Notifications push : activation partagée (profil, join, accueil) ---
+export async function activerNotifs() {
+  const reg = await navigator.serviceWorker.ready;
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") return { ok: false, raison: "refuse" };
+  const r = await fetch("/api/vapid-pub").then((x) => x.json()).catch(() => null);
+  if (!r || !r.publicKey) return { ok: false, raison: "serveur" };
+  const pad = "=".repeat((4 - (r.publicKey.length % 4)) % 4);
+  const raw = atob((r.publicKey + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  const key = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+  await subscribePush(sub.toJSON());
+  return { ok: true };
+}
+
+export async function notifsSouscrites() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    return !!(await reg.pushManager.getSubscription());
+  } catch (e) {
+    return false;
+  }
+}
