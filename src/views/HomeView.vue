@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject, onMounted } from "vue";
+import { ref, computed, inject, onMounted, onUnmounted, watch } from "vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
@@ -66,6 +66,22 @@ const fichesTri = computed(() => {
   }
   return fiches.value;
 });
+
+/* Scroll infini facon feed : rendu par tranches de 20, rechargees quand on approche du bas.
+   (Avant, seules les 8 premieres fiches etaient affichees : les suivantes etaient invisibles.) */
+const PARC = 20;
+const page = ref(1);
+const affiches = computed(() => fichesTri.value.slice(0, page.value * PARC));
+watch([tri, () => store.carnetId], () => { page.value = 1; });
+function surScroll() {
+  if (page.value * PARC >= fichesTri.value.length) return;
+  if (window.innerHeight + window.scrollY > document.body.offsetHeight - 500) page.value += 1;
+}
+onMounted(() => {
+  window.addEventListener("scroll", surScroll, { passive: true });
+  surScroll(); // liste courte écran grand : charger la 2e tranche tout de suite
+});
+onUnmounted(() => window.removeEventListener("scroll", surScroll));
 </script>
 
 <template>
@@ -189,8 +205,10 @@ const fichesTri = computed(() => {
         </div>
       </div>
       <div class="space-y-2">
-        <FicheRow v-for="f in fichesTri.slice(0, 8)" :key="f.id" :fiche="f" />
+        <FicheRow v-for="f in affiches" :key="f.id" :fiche="f" />
       </div>
+
+      <p v-if="affiches.length < fichesTri.length" class="text-center text-[10px] text-muted pt-2">Fais défiler pour découvrir les {{ fichesTri.length }} adresses du carnet…</p>
 
       <p v-if="!fiches.length" class="text-center text-sm text-muted py-8 leading-relaxed">
         Le carnet « {{ store.carnet?.nom }} » attend sa première adresse aimée.<br />

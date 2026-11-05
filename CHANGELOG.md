@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.40 — Scroll infini sur l'accueil
+
+- Le fil des notes passe en **scroll infini façon feed** : rendu par tranches de 20, la tranche suivante charge quand on approche du bas (500 px de marge, listener passif).
+- **Bug corrigé au passage** : l'accueil n'affichait que les 8 premières fiches — les notes suivantes étaient invisibles, sans aucun moyen de les voir.
+- Ligne discrète « Fais défiler pour découvrir les X adresses » quand il reste du contenu plus bas ; tri et changement de carnet réinitialisent au début de la liste.
+
 ## V0.4.39 — Boucle sociale + analytics minimal
 
 - **« X a aimé ton adresse »** : quand quelqu'un aime une fiche ou un flash, son auteur reçoit une notification push (sauf s'il s'agit de lui-même). Uniquement au like NOUVEAU (INSERT OR IGNORE + meta.changes) — pas de spam au re-like. La boucle noter -> réaction -> retour est fermée.
