@@ -568,12 +568,27 @@ export default {
             ).bind(c.id, prenom).first();
             if (homonyme && (!maSession || maSession.prenom.toLowerCase() !== prenom.toLowerCase())) {
               if (!isCode(codeRecup)) return json({ error: "prenom_pris", prenom: homonyme.prenom }, 409);
-              if (!homonyme.code_recup) return json({
-                error: "Ce prénom n'a pas encore de code de récupération (membre d'avant la V0.4.67). Un admin doit le retirer du carnet pour te laisser la place — ou choisis un autre prénom."
-              }, 409);
-              if (!(await verifyCode(codeRecup, homonyme.code_recup))) return json({ error: "code_refuse", prenom: homonyme.prenom }, 401);
               const roleRecup = prenom === c.admin ? "admin" : "member";
-              await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, prenom).run();
+              // V0.4.86 : un prénom vit maintenant sur plusieurs appareils (Mac + tel).
+              // Reprise d'identité = ajouter CET appareil, sans révoquer les autres.
+              if (homonyme.code_recup) {
+                if (!(await verifyCode(codeRecup, homonyme.code_recup))) return json({ error: "code_refuse", prenom: homonyme.prenom }, 401);
+              } else {
+                // Membre d'avant la V0.4.67, sans code : on le rattache à son
+                // propriétaire via son code personnel connu ailleurs ; s'il n'en a
+                // nulle part, celui tapé ici devient son code (premier posé).
+                const { results: refs } = await db.prepare(
+                  `SELECT code_recup FROM Membres WHERE LOWER(prenom)=LOWER(?) AND code_recup IS NOT NULL AND carnet_id<>?`
+                ).bind(prenom, c.id).all();
+                let ok = true;
+                if (refs.length) {
+                  ok = false;
+                  for (const rf of refs) { if (await verifyCode(codeRecup, rf.code_recup)) { ok = true; break; } }
+                }
+                if (!ok) return json({ error: "code_refuse", prenom: homonyme.prenom }, 401);
+                await db.prepare(`UPDATE Membres SET code_recup=? WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`)
+                  .bind(await hashCode(codeRecup), c.id, prenom).run();
+              }
               await db.prepare(
                 `INSERT OR REPLACE INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
               ).bind(device, c.id, prenom, roleRecup, now).run();
@@ -999,19 +1014,30 @@ export default {
             const { results: mbs } = await db.prepare(
               `SELECT carnet_id, code_recup FROM Membres WHERE LOWER(prenom)=LOWER(?)`
             ).bind(prenomR).all();
+            // V0.4.86 : la référence = un code qui vérifie. Les membres sans code
+            // (d'avant la V0.4.67, ex. famille-b) sont rattachés avec ce hash au
+            // lieu d'être ignorés — sinon le carnet restait invisible à la récup.
+            let refHash = null;
+            for (const m of mbs) {
+              if (m.code_recup && (await verifyCode(codeR, m.code_recup))) { refHash = m.code_recup; break; }
+            }
+            if (!refHash) return json({ error: "code_refuse" });
             let retrouves = 0;
             for (const m of mbs) {
-              if (!m.code_recup || !(await verifyCode(codeR, m.code_recup))) continue;
+              if (!m.code_recup)
+                await db.prepare(`UPDATE Membres SET code_recup=? WHERE carnet_id=? AND LOWER(prenom)=LOWER(?)`)
+                  .bind(refHash, m.carnet_id, prenomR).run();
+              const cn = await db.prepare(`SELECT admin FROM Carnets WHERE id=?`).bind(m.carnet_id).first();
+              const role = cn && cn.admin === prenomR ? "admin" : "member";
               const dej = await db.prepare(
                 `SELECT 1 FROM Sessions WHERE device_id=? AND carnet_id=?`
               ).bind(device, m.carnet_id).first();
               if (!dej)
                 await db.prepare(
                   `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
-                ).bind(device, m.carnet_id, prenomR, "member", now).run();
+                ).bind(device, m.carnet_id, prenomR, role, now).run();
               retrouves++;
             }
-            if (!retrouves) return json({ error: "code_refuse" });
             // G-Maps suit la personne : l'espace privé récupéré hérite du code
             // personnel (hash copié tel quel — le même code vérifie pareil).
             {
