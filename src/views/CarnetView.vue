@@ -40,10 +40,11 @@ async function rejoindre() {
   if (r && r.error) {
     if (r.error === "prenom_pris") {
       prisDans.value = true;
-      errRejoindre.value = "« " + store.profil.prenom + " » est déjà pris dans ce carnet — entre ton code de récupération ci-dessus, ou ton code admin ci-dessous si tu l'administres.";
+      errRejoindre.value = "« " + store.profil.prenom + " » est déjà pris dans ce carnet — entre ton code personnel ci-dessus, ou ton code admin ci-dessous si tu l'administres.";
       return;
     }
-    if (r.error === "code_refuse") { errRejoindre.value = "Code de récupération refusé — vérifie les chiffres."; return; }
+    if (r.error === "code_refuse") { errRejoindre.value = "Code personnel refusé — vérifie les chiffres."; return; }
+    if (r.error === "code_different") { errRejoindre.value = "Ce n'est pas ton code personnel — utilise le même que dans tes autres carnets."; return; }
     errRejoindre.value = r.error === "carnet introuvable" ? "Carnet introuvable — vérifie le mot-clé."
       : "Impossible de rejoindre : " + r.error;
     return;
@@ -99,6 +100,10 @@ async function creer() {
     toast("Carnet créé — tu es admin");
   } else {
     // Le serveur a refusé (ou code dupliqué) : message réel, rien n'est créé en local
+    if (r && r.error === "code_different") {
+      err.value = "Ce n'est pas ton code personnel — utilise le même que dans tes autres carnets.";
+      return;
+    }
     err.value = (r && r.error) || "Ce code existe déjà, choisis-en un autre.";
   }
 }
@@ -185,7 +190,7 @@ async function exporterJSON() {
       <input id="lc-rejoindre" v-model="codeRejoindre" type="text" autocapitalize="none" autocomplete="off" maxlength="15"
         placeholder="ex. les-copains" @input="codeRejoindre = codeRejoindre.slice(0, 15)"
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-3 tracking-[.3em]" />
-      <label for="lc-recup" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code de récupération — 4 ou 6 chiffres</label>
+      <label for="lc-recup" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>
       <input id="lc-recup" v-model="codeRecupJoin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
         placeholder="●●●●●●"
         @input="codeRecupJoin = codeRecupJoin.replace(/\D/g, '').slice(0, 6)"
@@ -233,7 +238,7 @@ async function exporterJSON() {
         class="w-full rounded-xl px-3 py-3 text-sm bg-bg border border-hairline outline-none mb-1 tracking-[.3em]" />
       <p class="text-[11px] text-muted mb-3">À donner aux personnes que tu invites — plus facile à retenir qu'un numéro. Généré automatiquement si tu laisses vide.</p>
 
-      <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code admin — 4 ou 6 chiffres</label>
+      <label for="lc-code-admin" class="block text-[10px] uppercase tracking-widest text-muted mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>
       <div class="relative mb-1">
         <input id="lc-code-admin" v-model="codeAdmin" :type="showAdmin ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
           placeholder="4 chiffres ou 6, à toi de choisir"
@@ -254,7 +259,7 @@ async function exporterJSON() {
           <Ic :name="showAdmin2 ? 'eyeSlash' : 'eye'" class="w-5 h-5" />
         </button>
       </div>
-      <p class="text-[11px] text-muted mb-3">Il prouve que c'est toi sur un autre appareil. Ne le donne à personne — garde-le précieusement.</p>
+      <p class="text-[11px] text-muted mb-3">Ton code personnel : il devient le code admin de ce carnet et te suit partout — pour créer tes prochains carnets et reprendre ta place sur un nouvel appareil. Ne le donne à personne.</p>
 
       <p v-if="err" class="text-xs text-accent mb-2">{{ err }}</p>
       <div class="grid grid-cols-2 gap-2">

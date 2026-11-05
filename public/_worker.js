@@ -334,6 +334,16 @@ export default {
         const s = await sessionOf(carnetId);
         return !!s && s.role === "admin";
       };
+      // Code personnel connu de cet appareil (n'importe lequel de ses carnets).
+      // V0.4.68 : un seul code partout — join et création doivent le respecter.
+      const knownCodeOf = async (device) => {
+        const r = await db.prepare(
+          `SELECT m.code_recup AS code FROM Sessions s
+           JOIN Membres m ON m.carnet_id=s.carnet_id AND m.prenom=s.prenom
+           WHERE s.device_id=? AND m.code_recup IS NOT NULL LIMIT 1`
+        ).bind(device).first();
+        return (r && r.code) || null;
+      };
 
       try {
         switch (action) {
@@ -343,6 +353,11 @@ export default {
             if (!nom) return json({ error: "Le nom du carnet est manquant." }, 400);
             if (!prenom) return json({ error: "Ton prénom est manquant — renseigne-le dans Profil, puis recrée ton carnet." }, 400);
             if (!isCode(p.codeAdmin)) return json({ error: "Le code admin doit contenir 4 ou 6 chiffres." }, 400);
+            // V0.4.68 : le code saisi à la création EST le code personnel — si l'appareil
+            // en connaît déjà un (autre carnet), il doit retaper le même.
+            const connuCreate = await knownCodeOf(device);
+            if (connuCreate && !(await verifyCode(p.codeAdmin, connuCreate)))
+              return json({ error: "code_different" }, 401);
             let code = cleanInvite(p.codeInvite);
             if (String(p.codeInvite || "").trim() && !code)
               return json({ error: "Le mot-clé d'invitation doit faire 4 à 15 caractères (lettres sans accents, chiffres, tirets)." }, 400);
@@ -358,7 +373,8 @@ export default {
             await db.prepare(
               `INSERT INTO Carnets (id, nom, code, admin, admin_code_hash, created_at) VALUES (?,?,?,?,?,?)`
             ).bind(id, nom, code, prenom, hash, now).run();
-            await db.prepare(`INSERT INTO Membres (carnet_id, prenom) VALUES (?,?)`).bind(id, prenom).run();
+            // V0.4.68 : le code du carnet créé est aussi le code personnel du créateur.
+            await db.prepare(`INSERT INTO Membres (carnet_id, prenom, code_recup) VALUES (?,?,?)`).bind(id, prenom, hash).run();
             await db.prepare(
               `INSERT INTO Sessions (device_id, carnet_id, prenom, role, created_at) VALUES (?,?,?,?,?)`
             ).bind(device, id, prenom, "admin", now).run();
@@ -401,6 +417,10 @@ export default {
             // Nouveau prénom : le code de récupération est obligatoire — il relie
             // le prénom à son propriétaire et permet de le reprendre plus tard.
             if (!isCode(codeRecup)) return json({ error: "code_manquant" }, 400);
+            // V0.4.68 : un seul code personnel — s'il en connaît déjà un, il doit retaper le même.
+            const connuJoin = await knownCodeOf(device);
+            if (connuJoin && !(await verifyCode(codeRecup, connuJoin)))
+              return json({ error: "code_different" }, 401);
             const deja = await db.prepare(
               `SELECT prenom, code_recup FROM Membres WHERE carnet_id=? AND prenom=?`
             ).bind(c.id, prenom).first();

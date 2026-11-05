@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.68 — un seul code personnel, partout
+
+- Le code de récupération devient le **code personnel** : un seul pour tous les carnets.
+- Créer un carnet = taper son code personnel (double saisie inchangée) : il devient le code admin du carnet créé ET reste le code personnel du créateur.
+- Si l'appareil connaît déjà un code (sessions en base), le même est imposé au join comme à la création (`code_different` sinon) — fini la confusion des deux codes.
+- Textes client alignés : « Ton code personnel » partout (onboarding, Mes carnets, création).
 ## V0.4.67 — code de récupération personnel + reprise d'identité
 
 - Nouveau : chaque membre choisit un code de récupération (4 ou 6 chiffres, hashé SHA-256+sel) au moment de rejoindre — obligatoire, il relie le prénom à son propriétaire.

@@ -53,11 +53,15 @@ async function rejoindre() {
     return;
   }
   if (r && r.error === "code_refuse") {
-    err.value = "Code de récupération refusé — vérifie les 4 ou 6 chiffres.";
+    err.value = "Code personnel refusé — vérifie les 4 ou 6 chiffres.";
+    return;
+  }
+  if (r && r.error === "code_different") {
+    err.value = "Ce n'est pas ton code personnel — utilise le même que dans tes autres carnets.";
     return;
   }
   if (r && r.error === "code_manquant") {
-    err.value = "Choisis ton code de récupération — 4 ou 6 chiffres, il relie le prénom à toi.";
+    err.value = "Choisis ton code personnel — 4 ou 6 chiffres, il relie le prénom à toi.";
     return;
   }
   if (r && r.error) {
@@ -172,7 +176,7 @@ async function reprendre() {
       <input v-model="code" type="text" autocapitalize="none" autocomplete="off" maxlength="15" autofocus
         placeholder="famille-A ou spice-girls"
         class="w-full rounded-xl px-4 py-4 text-2xl text-center tracking-[.5em] bg-surface border border-hairline outline-none mb-2" />
-      <label class="block text-[10px] uppercase tracking-widest text-muted mt-2 mb-1.5">Ton code de récupération — 4 ou 6 chiffres</label>
+      <label class="block text-[10px] uppercase tracking-widest text-muted mt-2 mb-1.5">Ton code personnel — 4 ou 6 chiffres</label>
       <div class="relative mb-1">
         <input v-model="codeRecup" :type="showRecupCode ? 'text' : 'password'" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
           placeholder="●●●●●●"
@@ -184,8 +188,8 @@ async function reprendre() {
         </button>
       </div>
       <p class="text-[11px] text-muted leading-relaxed mb-3">
-        À toi seul. Il prouve que ce prénom est le tien et te permet de le reprendre sur un nouvel appareil —
-        garde-le précieusement, comme ton code admin.
+        À toi seul, et un seul pour tous tes carnets. Il prouve que ce prénom est le tien, te permet de le
+        reprendre sur un nouvel appareil et servira à créer tes prochains carnets — garde-le précieusement.
       </p>
       <p v-if="err" class="text-xs text-accent text-center mb-2">{{ err }}</p>
       <button @click="rejoindre" :disabled="code.trim().length < 4 || ![4, 6].includes(codeRecup.replace(/\D/g, '').length)"

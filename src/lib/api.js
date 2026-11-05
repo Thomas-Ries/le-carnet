@@ -85,7 +85,12 @@ async function mutate(action, payload) {
 function demoMutate(db, action, p) {
   switch (action) {
     case "createCarnet": {
+      db.codes = db.codes || {};
+      // V0.4.68 : le code de création EST le code personnel — un seul partout.
+      if (db.persoCode && p.codeAdmin !== db.persoCode) return { error: "code_different" };
+      db.persoCode = p.codeAdmin;
       const c = { id: demo.uid("c"), nom: p.nom, code: p.codeInvite || "carnet-" + String(Math.floor(100 + Math.random() * 900)), adminCode: p.codeAdmin, admin: p.prenom, membres: [p.prenom] };
+      db.codes[c.id + "|" + p.prenom] = p.codeAdmin;
       db.carnets.push(c);
       demo.save(db);
       return { carnet: c, role: "admin" };
@@ -105,6 +110,8 @@ function demoMutate(db, action, p) {
         p.prenom = homonyme; // reprise d'identité : le prénom est conservé
       }
       if (!/^[0-9]{4}$|^[0-9]{6}$/.test(codeRecup)) return { error: "code_manquant" };
+      if (db.persoCode && codeRecup !== db.persoCode) return { error: "code_different" };
+      db.persoCode = codeRecup;
       if (!c.membres.includes(p.prenom)) c.membres.push(p.prenom);
       db.codes[c.id + "|" + p.prenom] = codeRecup;
       demo.save(db);
