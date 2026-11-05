@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 defineProps({ prenom: { type: String, required: true }, size: { type: Number, default: 32 }, src: { type: String, default: null } });
 </script>
 

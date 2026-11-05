@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "./lib/i18n.js";
 import { ref, computed, onMounted, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "./stores/carnet.js";
@@ -55,8 +56,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Splash 3,5 s — fun et animé : fourchette · verre · petit cœur qui pop, bulles riesling,
-       cœur or qui s'échappe, mots du titre en cascade, les trois cercles, phrase finale penchée -->
+  
   <div v-if="store.splash" class="lc-splash">
     <div class="sp-badge">
       <div class="flex items-center gap-0.5">
@@ -67,35 +67,34 @@ onMounted(async () => {
       <span class="sp-bub b1"></span><span class="sp-bub b2"></span><span class="sp-bub b3"></span>
       <Ic name="heart" class="sp-heart" :sw="2" filled />
     </div>
-    <h1 class="sp-title"><span class="sp-w">Le</span> <span class="sp-w sp-w2">Carnet</span></h1>
-    <div class="sp-sub">adresses aimées · moments partagés</div>
-    <div class="sp-tags"><span>En famille</span><span>Entre amis</span><span>Entre collègues</span></div>
+    <h1 class="sp-title"><span class="sp-w">{{ t("Le") }}</span> <span class="sp-w sp-w2">{{ t("Carnet") }}</span></h1>
+    <div class="sp-sub">{{ t("adresses aimées · moments partagés") }}</div>
+    <div class="sp-tags"><span>{{ t("En famille") }}</span><span>{{ t("Entre amis") }}</span><span>{{ t("Entre collègues") }}</span></div>
     <div class="sp-bar"><i></i></div>
-    <div class="sp-cheers">Punaise, c'était bon !</div>
+    <div class="sp-cheers">{{ t("Punaise, c'était bon !") }}</div>
   </div>
 
   <template v-else>
-    <!-- Bandeau mode démo -->
+    
     <div v-if="store.demoMode && store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30"
       :style="{ background: '#7A2E3E', color: '#fff' }">
-      Connexion au serveur perdue — tes dernières actions restent sur cet appareil uniquement.
-      Si ça persiste, préviens l'admin de ton carnet.
+      {{ t("Connexion au serveur perdue — tes dernières actions restent sur cet appareil uniquement.       Si ça persiste, préviens l'admin de ton carnet.") }}
     </div>
     <div v-else-if="store.demoMode" class="w-full py-1.5 text-center text-[10px] uppercase tracking-widest sticky top-0 z-30"
       :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)' }">
-      Mode démo — tout reste sur cet appareil
+      {{ t("Mode démo — tout reste sur cet appareil") }}
     </div>
 
-    <!-- Colonne app : téléphone sur mobile, colonne généreuse centrée sur iPad / ordi -->
+    
     <main class="lc-shell" :class="showNav ? 'pb-nav' : 'pb-8'">
       <router-view />
     </main>
 
-    <!-- Bottom nav : fixe, colonne centrée, safe-area iPhone -->
+    
     <nav v-if="showNav" class="fixed bottom-0 inset-x-0 z-50 lc-nav">
       <div class="lc-nav-in relative">
-        <!-- FAB Flash : caméra + éclair or, accroché à la nav (suit sa hauteur réelle) -->
-        <button v-if="showFab" @click="flashOpen = true" title="Flash — photo éclair"
+        
+        <button v-if="showFab" @click="flashOpen = true" :title="t('Flash — photo éclair')"
           class="absolute w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition"
           style="bottom: calc(100% + 14px); right: 16px;
                  background: linear-gradient(140deg, #7A2E3E, #5E2230);
@@ -119,7 +118,7 @@ onMounted(async () => {
 
     <FlashSheet v-if="flashOpen" @close="flashOpen = false" />
 
-    <!-- Toasts maison -->
+    
     <div class="fixed left-1/2 -translate-x-1/2 z-[60] space-y-2 w-max max-w-[90vw] pointer-events-none"
       style="bottom: calc(var(--lc-nav-h) + var(--lc-safe-b) + 76px)">
       <p v-for="t in toasts" :key="t.id" class="lc-toast">

@@ -1,3 +1,9 @@
+0.4.90 — Switch de langue FR / EN sur toute l'app
+- Nouveau `src/lib/i18n.js` : langue détectée automatiquement au premier lancement (navigator.language), mémorisée en localStorage (`lc-lang`), ~296 traductions FR→EN.
+- Toutes les chaînes d'interface passent par `t("…")` : textes des templates, attributs placeholder/title/aria-label, toasts et messages d'erreur. Re-rendu instantané au switch, sans recharger.
+- Toggle FR/EN dans le Profil (pastilles actives), à côté du bouton thème. Icône « globe » ajoutée (icons.js).
+- Jamais traduit : noms des carnets, prénoms, pays/villes, titres des fiches, commentaires, mots-clés.
+- Server-side (worker) et notifications restent en français pour l'instant.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

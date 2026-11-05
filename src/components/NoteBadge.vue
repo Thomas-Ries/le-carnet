@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 const props = defineProps({ note: { type: Number, required: true }, big: { type: Boolean, default: false } });
 const enAttente = () => !props.note || props.note < 70;
 </script>

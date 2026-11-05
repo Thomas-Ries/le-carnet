@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 import { computed } from "vue";
 import { ICONS } from "../lib/icons.js";
 const props = defineProps({

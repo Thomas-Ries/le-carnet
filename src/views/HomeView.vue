@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 import { ref, computed, inject, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
@@ -48,11 +49,11 @@ onMounted(async () => {
 async function activerNotifsAccueil() {
   try {
     const r = await api.activerNotifs();
-    if (r.ok) { notifOn.value = true; toast("Notifications activées"); }
-    else if (r.raison === "refuse") toast("Autorisation refusée — reglages iOS de l'app, Notifications");
-    else toast("Notifications indisponibles côté serveur");
+    if (r.ok) { notifOn.value = true; toast(t("Notifications activées")); }
+    else if (r.raison === "refuse") toast(t("Autorisation refusée — reglages iOS de l'app, Notifications"));
+    else toast(t("Notifications indisponibles côté serveur"));
   } catch (e) {
-    toast("Impossible d'activer les notifications");
+    toast(t("Impossible d'activer les notifications"));
   }
 }
 
@@ -227,17 +228,17 @@ function fermerBienvenue() {
   try { localStorage.setItem("lc-bienvenue", "vu"); } catch (e) { /* ok */ }
 }
 async function activerNotifsBienvenue() {
-  if (store.demoMode) { notifBienvenue.value = "indispo"; return; }
+  if (store.demoMode) { notifBienvenue.value = t("indispo"); return; }
   try {
     const r = await api.activerNotifs();
     if (r && r.ok) {
       notifBienvenue.value = "ok";
       notifOn.value = true;
-      toast("Tu seras prévenu quand quelqu'un note une adresse");
+      toast(t("Tu seras prévenu quand quelqu'un note une adresse"));
     } else {
       notifBienvenue.value = r && r.raison === "refuse" ? "refuse" : "indispo";
     }
-  } catch (e) { notifBienvenue.value = "indispo"; }
+  } catch (e) { notifBienvenue.value = t("indispo"); }
 }
 
 /* Scroll infini facon feed : rendu par tranches de 20, rechargees quand on approche du bas.
@@ -270,7 +271,7 @@ function pressStart(e, f) {
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) { /* ok */ } }
     selMode.value = true;
     if (!selIds.value.includes(f.id)) selIds.value.push(f.id);
-    toast("Sélection — tape les cards, partage en haut");
+    toast(t("Sélection — tape les cards, partage en haut"));
   }, 450);
 }
 function pressMove(e) {
@@ -316,7 +317,7 @@ async function partagerSel() {
   if (!sel.length) return;
   toast(sel.length > 1 ? "Préparation du PDF…" : "Préparation de la carte…");
   const r = await partagerSelectionFiches(sel);
-  if (r === "telecharge") toast("Fichier téléchargé — partage-le depuis ton téléphone");
+  if (r === "telecharge") toast(t("Fichier téléchargé — partage-le depuis ton téléphone"));
 }
 async function confirmerPartage() {
   confirmPartage.value = false;
@@ -331,7 +332,7 @@ async function confirmerPartage() {
 
 <template>
   <div>
-    <!-- En-tête : switcher carnet -->
+    
     <div class="flex items-center justify-between mb-4">
       <div class="relative">
         <button @click="menuCarnets = !menuCarnets" class="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1.5 bg-surface border border-hairline">
@@ -350,46 +351,46 @@ async function confirmerPartage() {
         </div>
       </div>
       <div class="text-right">
-        <p class="text-lg leading-none font-serif text-accent">Le Carnet</p>
-        <p class="text-[9px] uppercase tracking-[.25em] text-muted">adresses aimées</p>
+        <p class="text-lg leading-none font-serif text-accent">{{ t("Le Carnet") }}</p>
+        <p class="text-[9px] uppercase tracking-[.25em] text-muted">{{ t("adresses aimées") }}</p>
       </div>
     </div>
 
-    <!-- Recherche -->
+    
     <div class="relative mb-4">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted"><Ic name="search" class="w-4 h-4" /></span>
-      <input v-model="q" placeholder="On cherche quoi ? Un resto, un vin, une recette…"
+      <input v-model="q" :placeholder="t('On cherche quoi ? Un resto, un vin, une recette…')"
         class="w-full rounded-xl pl-9 pr-3 py-3 text-sm bg-surface border border-hairline outline-none" />
     </div>
 
-    <!-- Notifications : rappel discret tant que pas activées -->
+    
     <div v-if="notifsDispo && !notifOn && !store.demoMode" class="rounded-2xl p-3.5 mb-4 bg-surface border border-hairline flex items-center gap-3">
       <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-soft text-accent">
         <Ic name="bolt" class="w-4 h-4" />
       </span>
       <span class="min-w-0 flex-1">
-        <span class="block text-sm font-semibold">Sois prévenu des nouvelles notes</span>
-        <span class="block text-[11px] text-muted leading-snug">Une alerte quand quelqu'un partage une adresse aimée ou un flash.</span>
+        <span class="block text-sm font-semibold">{{ t("Sois prévenu des nouvelles notes") }}</span>
+        <span class="block text-[11px] text-muted leading-snug">{{ t("Une alerte quand quelqu'un partage une adresse aimée ou un flash.") }}</span>
       </span>
       <button @click="activerNotifsAccueil" class="rounded-xl px-3.5 py-2 text-xs font-semibold text-white shrink-0"
-        style="background: var(--c-accent)">Activer</button>
+        style="background: var(--c-accent)">{{ t("Activer") }}</button>
     </div>
 
-    <!-- Résultats -->
+    
     <template v-if="q.trim()">
       <p class="text-xs uppercase tracking-widest text-muted mb-2">
-        {{ results.length }} résultat(s) dans « {{ store.carnet?.nom }} »
+        {{ results.length }} {{ t("résultat(s) dans «") }} {{ store.carnet?.nom }} »
       </p>
       <div class="space-y-2">
         <FicheRow v-for="f in results" :key="f.id" :fiche="f" />
-        <p v-if="!results.length" class="text-sm text-muted text-center py-6">Rien pour ça — tu peux le noter en premier.</p>
+        <p v-if="!results.length" class="text-sm text-muted text-center py-6">{{ t("Rien pour ça — tu peux le noter en premier.") }}</p>
       </div>
     </template>
 
     <template v-else>
-      <!-- Flashes façon stories -->
+      
       <div v-if="flashes.length" class="mb-5">
-        <p class="text-xs uppercase tracking-widest text-muted mb-2">Moments — pas encore notés</p>
+        <p class="text-xs uppercase tracking-widest text-muted mb-2">{{ t("Moments — pas encore notés") }}</p>
         <div class="flex gap-3 overflow-x-auto pb-1">
           <button v-for="fl in flashes" :key="fl.id" class="flex flex-col items-center gap-1 shrink-0 transition active:scale-95"
             @click="miens(fl) ? (flashComplet = fl) : store.liker(fl.id, !fl.reacts.includes(store.profil.prenom))">
@@ -409,48 +410,48 @@ async function confirmerPartage() {
             <span v-if="fl.com" class="text-[9px] text-muted italic max-w-[64px] truncate leading-tight">« {{ fl.com }} »</span>
           </button>
         </div>
-        <p class="text-[10px] text-muted mt-1.5">Éclair = à noter (7 jours). Les autres likent ; toi seul complètes.</p>
+        <p class="text-[10px] text-muted mt-1.5">{{ t("Éclair = à noter (7 jours). Les autres likent ; toi seul complètes.") }}</p>
       </div>
 
-      <!-- Tuiles -->
-      <!-- Tuiles compactes : icône à gauche, titre à côté -->
+      
+      
       <div class="grid grid-cols-2 gap-3 mb-3">
         <button @click="$router.push('/add?type=adresse')"
           class="rounded-2xl px-3.5 py-3 flex items-center gap-2.5 text-left bg-surface border border-hairline active:scale-[.98] transition">
           <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-gold/15 text-gold"><Ic name="pin" class="w-4 h-4" /></span>
           <span class="min-w-0">
-            <span class="block text-[15px] font-serif leading-tight">Noter une adresse</span>
-            <span class="block text-[10px] leading-tight text-muted">resto, caviste, bar… un lieu que tu aimes</span>
+            <span class="block text-[15px] font-serif leading-tight">{{ t("Noter une adresse") }}</span>
+            <span class="block text-[10px] leading-tight text-muted">{{ t("resto, caviste, bar… un lieu que tu aimes") }}</span>
           </span>
         </button>
         <button @click="$router.push('/add?type=recette')"
           class="rounded-2xl px-3.5 py-3 flex items-center gap-2.5 text-left bg-surface border border-hairline active:scale-[.98] transition">
           <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-gold/15 text-gold"><Ic name="book" class="w-4 h-4" /></span>
           <span class="min-w-0">
-            <span class="block text-[15px] font-serif leading-tight">Partager une recette</span>
-            <span class="block text-[10px] leading-tight text-muted">le tiramisu de Chetto…</span>
+            <span class="block text-[15px] font-serif leading-tight">{{ t("Partager une recette") }}</span>
+            <span class="block text-[10px] leading-tight text-muted">{{ t("le tiramisu de Chetto…") }}</span>
           </span>
         </button>
       </div>
 
-      <!-- Bandeau inspiration : compact, deux lignes, réglable depuis le profil -->
+      
       <button v-if="store.inspirOn && themesDispos.length" @click="store.inspir.open = true"
         class="w-full rounded-2xl p-3 mb-6 flex items-center gap-3 text-left active:scale-[.99] transition"
         style="background: var(--c-soft); border: 1px solid var(--c-hairline)">
         <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 text-accent"
           style="background: var(--c-surface)"><Ic name="sparkle" class="w-4 h-4" /></span>
         <span class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-accent leading-tight">Envie d'inspiration ?</span>
-          <span class="block text-[11px] text-muted leading-tight">Un after-work, un tête à tête… Laisse-toi guider</span>
+          <span class="block text-sm font-semibold text-accent leading-tight">{{ t("Envie d'inspiration ?") }}</span>
+          <span class="block text-[11px] text-muted leading-tight">{{ t("Un after-work, un tête à tête… Laisse-toi guider") }}</span>
         </span>
         <Ic name="chevron" class="w-4 h-4 text-muted rotate-90 shrink-0" :sw="2" />
       </button>
 
-      <!-- V0.4.81 — Popin nouveauté : comptes existants, une seule fois -->
+      
       <div v-if="nouveaute" class="fixed inset-0 z-[94] flex items-end sm:items-center justify-center p-4"
         style="background: rgba(20, 14, 12, .55)" @click.self="fermerNouveaute">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
-          <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">Nouveauté</p>
+          <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">{{ t("Nouveauté") }}</p>
           <p class="text-lg font-serif leading-tight mb-3">{{ NOUVEAUTE.titre }}</p>
           <div class="flex items-start gap-3 mb-4">
             <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="pin" class="w-4 h-4" /></span>
@@ -459,74 +460,74 @@ async function confirmerPartage() {
           <button @click="voirNouveaute"
             class="w-full rounded-xl py-3 text-sm font-semibold text-white mb-2 flex items-center justify-center gap-1.5"
             style="background: var(--c-accent)">
-            <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps dans mon profil →
+            <Ic name="book" class="w-4 h-4" /> {{ t("Ouvrir Mon G-Maps dans mon profil →") }}
           </button>
-          <button @click="fermerNouveaute" class="w-full py-1 text-xs font-semibold text-muted">Plus tard</button>
+          <button @click="fermerNouveaute" class="w-full py-1 text-xs font-semibold text-muted">{{ t("Plus tard") }}</button>
         </div>
       </div>
 
-      <!-- Modale Bienvenue : premiere connexion -->
+      
       <div v-if="bienvenue" class="fixed inset-0 z-[95] flex items-end sm:items-center justify-center p-4"
         style="background: rgba(20, 14, 12, .6)">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
-          <p class="text-lg font-serif text-center mb-0.5">Bienvenue dans Le Carnet</p>
+          <p class="text-lg font-serif text-center mb-0.5">{{ t("Bienvenue dans Le Carnet") }}</p>
           <p class="text-[11px] text-muted text-center mb-4">Le carnet « {{ store.carnet?.nom }} » est à toi aussi, maintenant.</p>
 
           <div class="space-y-2.5 mb-4">
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="pin" class="w-4 h-4" /></span>
-              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Note les adresses que tu aimes</span> — resto, caviste, bar… avec une note sur 100 et une photo.</p>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">{{ t("Note les adresses que tu aimes") }}</span> {{ t("— resto, caviste, bar… avec une note sur 100 et une photo.") }}</p>
             </div>
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="bolt" class="w-4 h-4" /></span>
-              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Flash</span> — une photo éclair à faire aimer en 7 jours, avant de la noter en fiche.</p>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">{{ t("Flash") }}</span> {{ t("— une photo éclair à faire aimer en 7 jours, avant de la noter en fiche.") }}</p>
             </div>
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="heart" class="w-4 h-4" /></span>
-              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Aime les notes des autres</span> — son auteur reçoit un petit signe, et tu peux commenter.</p>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">{{ t("Aime les notes des autres") }}</span> {{ t("— son auteur reçoit un petit signe, et tu peux commenter.") }}</p>
             </div>
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="sparkle" class="w-4 h-4" /></span>
-              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Envie d'inspiration ?</span> — le carnet te propose une sortie par thème, à partager.</p>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">{{ t("Envie d'inspiration ?") }}</span> {{ t("— le carnet te propose une sortie par thème, à partager.") }}</p>
             </div>
             <div class="flex items-start gap-3">
               <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="book" class="w-4 h-4" /></span>
-              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">Tes adresses Google Maps</span> — importe-les depuis ton profil (« Mon G-Maps »), puis offre celles que tu veux au carnet.</p>
+              <p class="text-xs leading-relaxed flex-1"><span class="font-semibold">{{ t("Tes adresses Google Maps") }}</span> {{ t("— importe-les depuis ton profil (« Mon G-Maps »), puis offre celles que tu veux au carnet.") }}</p>
             </div>
           </div>
 
-          <!-- Notifs : proposees ici au lieu du prompt silencieux, premier passage -->
+          
           <div v-if="notifsDispo && !store.demoMode && !notifOn" class="rounded-xl p-3.5 mb-4 bg-soft border border-hairline">
             <p class="text-xs leading-relaxed mb-2.5">
-              <span class="font-semibold">Pour ne rien rater</span> — une alerte quand quelqu'un partage une adresse ou un flash.
+              <span class="font-semibold">{{ t("Pour ne rien rater") }}</span> {{ t("— une alerte quand quelqu'un partage une adresse ou un flash.") }}
             </p>
             <button v-if="notifBienvenue === 'attente'" @click="activerNotifsBienvenue"
               class="w-full rounded-lg py-2.5 text-xs font-semibold text-white" style="background: var(--c-accent)">
-              Activer les notifications
+              {{ t("Activer les notifications") }}
             </button>
-            <p v-else-if="notifBienvenue === 'ok'" class="text-[11px] text-accent font-semibold text-center">C'est noté — tu seras prévenu.</p>
+            <p v-else-if="notifBienvenue === 'ok'" class="text-[11px] text-accent font-semibold text-center">{{ t("C'est noté — tu seras prévenu.") }}</p>
             <p v-else-if="notifBienvenue === 'refuse'" class="text-[11px] text-muted text-center leading-relaxed">
-              Pas grave — tu pourras les activer plus tard dans Profil, Réglages.
+              {{ t("Pas grave — tu pourras les activer plus tard dans Profil, Réglages.") }}
             </p>
             <p v-else class="text-[11px] text-muted text-center leading-relaxed">
-              Notifications indisponibles pour l'instant — réessaie plus tard depuis ton Profil.
+              {{ t("Notifications indisponibles pour l'instant — réessaie plus tard depuis ton Profil.") }}
             </p>
           </div>
 
           <button @click="fermerBienvenue"
             class="w-full rounded-xl py-3 text-sm font-semibold text-white" style="background: var(--c-accent)">
-            C'est parti
+            {{ t("C'est parti") }}
           </button>
         </div>
       </div>
 
-      <!-- Modale inspiration : choix du thème puis sélection des mieux notées -->
+      
       <div v-if="store.inspir.open" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
         style="background: rgba(20, 14, 12, .55)" @click.self="inspirFermer">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline max-h-[82vh] overflow-y-auto">
           <template v-if="!inspirTheme">
-            <p class="text-base font-serif mb-1">Ce soir, l'ambiance est plutôt…</p>
-            <p class="text-[11px] text-muted mb-3.5 leading-relaxed">Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.</p>
+            <p class="text-base font-serif mb-1">{{ t("Ce soir, l'ambiance est plutôt…") }}</p>
+            <p class="text-[11px] text-muted mb-3.5 leading-relaxed">{{ t("Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.") }}</p>
             <div class="flex flex-wrap gap-1.5 mb-1">
               <button v-for="t in themesDispos" :key="t.t" @click="store.inspir.theme = t.t; store.inspir.tri = 'note'"
                 class="rounded-full px-3 py-2 text-xs font-medium"
@@ -554,8 +555,8 @@ async function confirmerPartage() {
                   color: store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-muted)',
                   border: '1px solid ' + (store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-hairline)'),
                 }">{{ fl.label }}</button>
-              <!-- Icône seule pour basculer en sélection : cocher des cards à partager -->
-              <button @click="inspirMode = !inspirMode; inspirSel = []" title="Partager une sélection"
+              
+              <button @click="inspirMode = !inspirMode; inspirSel = []" :title="t('Partager une sélection')"
                 class="ml-auto w-7 h-7 rounded-full flex items-center justify-center transition"
                 :style="{
                   background: inspirMode ? 'var(--c-accent)' : 'var(--c-surface)',
@@ -566,33 +567,31 @@ async function confirmerPartage() {
               </button>
             </div>
             <div class="space-y-2 mb-3">
-              <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection.
-                   En mode sélection, le tap coche la card au lieu de naviguer (ring bordeaux, pas de checkbox). -->
+              
               <div v-for="f in inspirSelection" :key="f.id" class="relative rounded-xl"
                 :class="estSelInspir(f.id) ? 'ring-2 ring-[#7A2E3E]' : ''"
                 @click.capture="tapInspir($event, f)">
                 <FicheRow :fiche="f" />
               </div>
-              <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">Pas encore d'adresse ici — note la première.</p>
+              <p v-if="!inspirSelection.length" class="text-sm text-muted text-center py-4">{{ t("Pas encore d'adresse ici — note la première.") }}</p>
             </div>
             <button v-if="inspirMode && inspirSel.length" @click="partagerSelInspir"
               class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-white mb-2"
               style="background: var(--c-accent)">
-              <Ic name="share" class="w-4 h-4" /> Partager la sélection
+              <Ic name="share" class="w-4 h-4" /> {{ t("Partager la sélection") }}
             </button>
             <p v-if="inspirMode && !inspirSel.length" class="text-[11px] text-muted text-center mb-2">
-              Coche une ou plusieurs adresses à partager.
+              {{ t("Coche une ou plusieurs adresses à partager.") }}
             </p>
             <button @click="store.inspir.theme = null"
               class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted bg-surface border border-hairline">
-              Changer de thème
+              {{ t("Changer de thème") }}
             </button>
           </template>
         </div>
       </div>
 
-      <!-- Tri : CTA façon e-commerce — un bouton qui ouvre le choix du tri.
-           En sélection : compteur + partage (icône à gauche du tri) + annulation. -->
+      
       <div v-if="fiches.length" class="flex items-center justify-between mb-2 gap-2 relative">
         <p class="text-xs uppercase tracking-widest shrink-0"
           :style="selMode ? { color: 'var(--c-accent)' } : { color: 'var(--c-muted)' }">
@@ -600,15 +599,15 @@ async function confirmerPartage() {
           <template v-else>{{ tri === "recent" ? "Dernièrement dans le carnet" : tri === "aime" ? "Les plus aimés du carnet" : "Le carnet de A à Z" }}</template>
         </p>
         <div class="flex items-center gap-2">
-          <button v-if="selMode" @click="annulerSel" class="text-[10px] font-semibold text-muted underline">Annuler</button>
-          <button v-if="selIds.length && !store.carnet?.prive" @click="partagerSel" title="Partager la sélection"
+          <button v-if="selMode" @click="annulerSel" class="text-[10px] font-semibold text-muted underline">{{ t("Annuler") }}</button>
+          <button v-if="selIds.length && !store.carnet?.prive" @click="partagerSel" :title="t('Partager la sélection')"
             class="w-8 h-8 rounded-full border flex items-center justify-center active:scale-95 transition"
             :style="{ background: 'var(--c-accent)', color: '#fff', borderColor: 'var(--c-accent)' }">
             <Ic name="share" class="w-4 h-4" :sw="2" />
           </button>
-          <!-- V0.4.80 — Filtre pays / ville : menu déroulant discret, visible dès 2 pays distincts -->
+          
           <div v-if="paysChips.length > 1" class="relative">
-            <button @click="lieuOpen = !lieuOpen; triOpen = false" title="Filtrer par lieu"
+            <button @click="lieuOpen = !lieuOpen; triOpen = false" :title="t('Filtrer par lieu')"
               class="h-8 rounded-full border bg-surface flex items-center gap-1.5 px-3 text-xs font-medium active:scale-95 transition"
               :style="{
                 borderColor: filtrePays ? 'var(--c-accent)' : 'var(--c-hairline)',
@@ -618,12 +617,12 @@ async function confirmerPartage() {
             </button>
             <div v-if="lieuOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-60 bg-surface border border-hairline"
               style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
-              <!-- Niveau 1 : les pays -->
+              
               <template v-if="!filtrePays">
                 <button @click="lieuOpen = false"
                   class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
                   :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
-                  <span>Tous les pays</span>
+                  <span>{{ t("Tous les pays") }}</span>
                   <span class="flex items-center gap-1.5 text-[10px] text-muted">{{ fiches.length }} <Ic name="check" class="w-3.5 h-3.5" /></span>
                 </button>
                 <button v-for="p in paysChips" :key="p.pays" @click="filtrePays = p.pays; filtreVille = ''"
@@ -633,18 +632,18 @@ async function confirmerPartage() {
                   <span class="text-[10px] text-muted">{{ p.n }}</span>
                 </button>
               </template>
-              <!-- Niveau 2 : les villes du pays choisi -->
+              
               <template v-else>
                 <button @click="filtrePays = ''; filtreVille = ''"
                   class="w-full text-left px-3 py-2 text-xs font-semibold text-muted"
                   style="border-bottom: 1px solid var(--c-hairline)">
-                  ← Tous les pays
+                  {{ t("← Tous les pays") }}
                 </button>
-                <p class="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted">Villes</p>
+                <p class="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted">{{ t("Villes") }}</p>
                 <button @click="filtreVille = ''; lieuOpen = false"
                   class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
                   :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
-                  <span>Toutes</span>
+                  <span>{{ t("Toutes") }}</span>
                   <span class="flex items-center gap-1.5 text-[10px] text-muted">{{ totalPays }} <Ic v-if="!filtreVille" name="check" class="w-3.5 h-3.5" /></span>
                 </button>
                 <button v-for="v in villesChips" :key="v.ville" @click="filtreVille = v.ville; lieuOpen = false"
@@ -660,26 +659,26 @@ async function confirmerPartage() {
             </div>
           </div>
           <div class="relative">
-            <button @click="triOpen = !triOpen; lieuOpen = false" title="Choisir le tri"
+            <button @click="triOpen = !triOpen; lieuOpen = false" :title="t('Choisir le tri')"
               class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
               :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
               <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
             </button>
             <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
               style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
-              <button v-for="t in TRIS" :key="t.id"
-                @click="tri = t.id; triOpen = false"
+              <button v-for="tr in TRIS" :key="tr.id"
+                @click="tri = tr.id; triOpen = false"
                 class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
-                :style="{ color: t.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: t.id === tri ? 'var(--c-soft)' : 'transparent' }">
-                <span>{{ t.label }}<span v-if="t.defaut" class="text-[10px] text-muted ml-1">défaut</span></span>
-                <Ic v-if="t.id === tri" name="check" class="w-3.5 h-3.5" />
+                :style="{ color: tr.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: tr.id === tri ? 'var(--c-soft)' : 'transparent' }">
+                <span>{{ tr.label }}<span v-if="tr.defaut" class="text-[10px] text-muted ml-1">{{ t("défaut") }}</span></span>
+                <Ic v-if="tr.id === tri" name="check" class="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </div>
       <div class="space-y-2">
-        <!-- Appui long sur une card = entrer en sélection ; en sélection, le tap coche/décoche -->
+        
         <div v-for="f in affiches" :key="f.id" class="relative rounded-xl"
           :class="estSel(f.id) ? 'ring-2 ring-[#7A2E3E]' : ''"
           style="-webkit-touch-callout: none; user-select: none"
@@ -694,45 +693,45 @@ async function confirmerPartage() {
 
       <p v-if="!fiches.length" class="text-center text-sm text-muted py-8 leading-relaxed">
         Le carnet « {{ store.carnet?.nom }} » attend sa première adresse aimée.<br />
-        Sois celui qui note le premier.
+        {{ t("Sois celui qui note le premier.") }}
       </p>
     </template>
 
     <CompleteFlashSheet v-if="flashComplet" :flash="flashComplet" @close="flashComplet = null" @done="flashComplet = null" />
 
-    <!-- V0.4.72 — bandeau d'action carnet privé : au-dessus de la zone basse, style charte -->
+    
     <div v-if="store.carnet?.prive && selMode"
       class="fixed left-0 right-0 z-[45] flex items-center justify-between gap-2 px-4 py-3"
       :style="{ bottom: 'calc(var(--lc-nav-h) + env(safe-area-inset-bottom, 0px) + 12px)', background: 'var(--c-surface)', borderTop: '1px solid var(--c-hairline)', boxShadow: '0 -8px 24px rgba(43,35,32,.18)' }">
       <p class="text-sm font-semibold text-accent shrink-0">{{ selIds.length }} sélectionnée{{ selIds.length > 1 ? "s" : "" }}</p>
-      <button class="text-[11px] font-semibold text-muted underline shrink-0" @click="annulerSel">Tout désélectionner</button>
+      <button class="text-[11px] font-semibold text-muted underline shrink-0" @click="annulerSel">{{ t("Tout désélectionner") }}</button>
       <button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-accent disabled:opacity-40"
-        :disabled="!selIds.length" @click="partagerSel">Partager</button>
+        :disabled="!selIds.length" @click="partagerSel">{{ t("Partager") }}</button>
     </div>
 
-    <!-- Sheet : choix des carnets destinataires (chips multi-sélection, bordure active) -->
+    
     <div v-if="partageOuvert" class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4"
       style="background: rgba(43,35,32,.45)" @click.self="partageOuvert = false">
       <div class="w-full max-w-[430px] rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl" style="border-top: 1px solid var(--c-hairline)">
-        <p class="font-serif text-lg mb-1">Partager dans quel carnet ?</p>
-        <p class="text-xs text-muted mb-4 leading-relaxed">Les fiches quittent ton espace privé pour rejoindre le ou les carnets choisis. Tes notes et commentaires suivent.</p>
+        <p class="font-serif text-lg mb-1">{{ t("Partager dans quel carnet ?") }}</p>
+        <p class="text-xs text-muted mb-4 leading-relaxed">{{ t("Les fiches quittent ton espace privé pour rejoindre le ou les carnets choisis. Tes notes et commentaires suivent.") }}</p>
         <div class="flex flex-wrap gap-2 mb-5">
           <button v-for="c in carnetsPartageables" :key="c.id" @click="toggleChoix(c.id)"
             class="rounded-full px-3.5 py-2 text-sm font-medium transition"
             :style="{ border: '1.5px solid ' + (estChoisi(c.id) ? 'var(--c-accent)' : 'var(--c-hairline)'), background: estChoisi(c.id) ? 'var(--c-soft)' : 'transparent', color: estChoisi(c.id) ? 'var(--c-accent)' : 'var(--c-ink)' }">
             {{ c.nom }} <span v-if="estChoisi(c.id)">✓</span>
           </button>
-          <p v-if="!carnetsPartageables.length" class="text-xs text-muted">Tu n'es membre d'aucun autre carnet pour l'instant.</p>
+          <p v-if="!carnetsPartageables.length" class="text-xs text-muted">{{ t("Tu n'es membre d'aucun autre carnet pour l'instant.") }}</p>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <button class="rounded-xl py-3 text-sm font-semibold border border-hairline" @click="partageOuvert = false">Annuler</button>
+          <button class="rounded-xl py-3 text-sm font-semibold border border-hairline" @click="partageOuvert = false">{{ t("Annuler") }}</button>
           <button class="rounded-xl py-3 text-sm font-semibold text-white bg-accent disabled:opacity-40"
-            :disabled="!carnetIdsChoisis.length" @click="confirmPartage = true">Continuer</button>
+            :disabled="!carnetIdsChoisis.length" @click="confirmPartage = true">{{ t("Continuer") }}</button>
         </div>
       </div>
     </div>
 
-    <ConfirmModal :open="confirmPartage" title="Partager tes fiches privées ?"
+    <ConfirmModal :open="confirmPartage" :title="t('Partager tes fiches privées ?')"
       :text="'Tu vas partager tes fiches privées avec : ' + carnetIdsChoisis.map((id) => store.carnets.find((c) => c.id === id)?.nom).filter(Boolean).join(' et ')"
       confirmLabel="Valider" @confirm="confirmerPartage" @cancel="confirmPartage = false" />
   </div>

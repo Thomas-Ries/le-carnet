@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 import { useRouter } from "vue-router";
 import Ic from "./Ic.vue";
 import Avatar from "./Avatar.vue";

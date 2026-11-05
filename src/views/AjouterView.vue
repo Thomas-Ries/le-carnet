@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 // Noter : 3 champs + note 70-100 + carnet(s) au choix. Sous 10 secondes.
 import { ref, computed, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -70,7 +71,7 @@ async function onFile(e) {
     photo.value = await chargerPhoto(file);
   } catch (err) {
     photoErr.value = true;
-    toast("Photo illisible — essaie une autre image");
+    toast(t("Photo illisible — essaie une autre image"));
   }
 }
 
@@ -108,13 +109,13 @@ async function valider() {
       <button class="rounded-full p-2 bg-surface border border-hairline" @click="router.push('/')">
         <Ic name="back" class="w-4 h-4" />
       </button>
-      <p class="text-sm text-muted">Hier soir ou ce matin — quand tu y penses</p>
+      <p class="text-sm text-muted">{{ t("Hier soir ou ce matin — quand tu y penses") }}</p>
       <div class="w-9" />
     </div>
 
-    <!-- Carnets destinataires -->
+    
     <div class="rounded-xl p-3.5 mb-3 bg-soft">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Pour quel(s) carnet(s) ? — plusieurs choix possibles</p>
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">{{ t("Pour quel(s) carnet(s) ? — plusieurs choix possibles") }}</p>
       <div class="flex flex-wrap gap-1.5">
         <button v-for="c in store.carnets" :key="c.id" @click="toggle(c.id)"
           class="rounded-full px-3 py-1.5 text-xs font-medium flex items-center gap-1"
@@ -128,7 +129,7 @@ async function valider() {
       </div>
     </div>
 
-    <!-- Type -->
+    
     <div class="grid grid-cols-2 gap-2 mb-4">
       <button v-for="t in [['adresse','Adresse','pin'],['recette','Recette','book']]" :key="t[0]"
         @click="type = t[0]"
@@ -142,7 +143,7 @@ async function valider() {
       </button>
     </div>
 
-    <!-- Catégorie (adresses) -->
+    
     <div v-if="type === 'adresse'" class="flex flex-wrap gap-1.5 mb-3">
       <button v-for="c in cats" :key="c" @click="toggleCat(c)"
         class="rounded-full px-2.5 py-1.5 text-xs font-medium"
@@ -156,30 +157,30 @@ async function valider() {
     <div class="space-y-2.5">
       <input v-model="titre" :placeholder="type === 'adresse' ? 'Nom du lieu…' : 'Nom du plat…'"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
-      <!-- Doublon probable : deja note par quelqu'un dans le(s) carnet(s) vise(s) -->
+      
       <button v-for="d in doublons" :key="d.id" @click="router.push('/fiche/' + d.id)"
         class="w-full rounded-xl px-3 py-2.5 text-left bg-soft border border-hairline">
-        <p class="text-xs font-semibold text-accent">Déjà noté par {{ d.auteur }}<template v-if="d.note"> — {{ d.note }}/100</template></p>
+        <p class="text-xs font-semibold text-accent">{{ t("Déjà noté par") }} {{ d.auteur }}<template v-if="d.note"> — {{ d.note }}/100</template></p>
         <p class="text-[10px] text-muted mt-0.5 leading-snug">« {{ d.titre }} » — tape pour le voir au lieu d'en recréer une fiche</p>
       </button>
-      <input v-if="type === 'adresse'" v-model="lieu" placeholder="Ville, quartier…"
+      <input v-if="type === 'adresse'" v-model="lieu" :placeholder="t('Ville, quartier…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="2" placeholder="« Punaise, c'était bon » — ton commentaire…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
-      <textarea v-if="type === 'recette'" v-model="recette" rows="3" placeholder="La recette, si tu veux la partager tout de suite (optionnel)…"
+      <textarea v-if="type === 'recette'" v-model="recette" rows="3" :placeholder="t('La recette, si tu veux la partager tout de suite (optionnel)…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
 
-      <!-- Note 70-100 -->
+      
       <div class="rounded-xl p-4 bg-surface border border-hairline">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs uppercase tracking-widest text-muted">Ta note</span>
+          <span class="text-xs uppercase tracking-widest text-muted">{{ t("Ta note") }}</span>
           <span class="text-sm font-semibold text-accent">{{ note }} · {{ noteLabel(note) }}</span>
         </div>
         <input type="range" min="70" max="100" v-model.number="note" class="w-full accent-[#7A2E3E]" />
         <div class="flex justify-between text-[10px] text-muted mt-1"><span>70</span><span>85</span><span>100</span></div>
       </div>
 
-      <!-- Photo optionnelle -->
+      
       <div v-if="photo" class="relative rounded-2xl overflow-hidden mb-2">
         <img :src="photo" alt="" class="w-full aspect-[4/3] object-cover" />
         <button @click="photo = null; photoErr = false"
@@ -201,6 +202,6 @@ async function valider() {
       :style="{ background: titre.trim() ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
       Noter « {{ titre.trim() || "…" }} » dans {{ sel.length > 1 ? sel.length + " carnets" : store.carnets.find((c) => c.id === sel[0])?.nom }}
     </button>
-    <p class="text-center text-[11px] text-muted mt-2">3 champs, une note, les carnets. Sous 10 secondes.</p>
+    <p class="text-center text-[11px] text-muted mt-2">{{ t("3 champs, une note, les carnets. Sous 10 secondes.") }}</p>
   </div>
 </template>

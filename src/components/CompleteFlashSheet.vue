@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 // Complétion d'un flash : nom, catégorie, note -> devient fiche permanente.
 import { ref, inject } from "vue";
 import Ic from "./Ic.vue";
@@ -23,7 +24,7 @@ async function valider() {
     com: com.value.trim(), recette: null, demandeRecette: [],
   });
   emit("done", fiche);
-  toast("Fiche créée — ceux qui ont aimé le flash sont notifiés");
+  toast(t("Fiche créée — ceux qui ont aimé le flash sont notifiés"));
 }
 
 async function justeCommentaire() {
@@ -31,7 +32,7 @@ async function justeCommentaire() {
   const r = await store.commenterFlash(props.flash.id, com.value.trim());
   if (r && r.error) { toast(r.error); return; }
   emit("close");
-  toast("Commentaire ajouté — le flash finira en fiche après ses 7 jours");
+  toast(t("Commentaire ajouté — le flash finira en fiche après ses 7 jours"));
 }
 </script>
 
@@ -41,7 +42,7 @@ async function justeCommentaire() {
       <div class="w-10 h-1 rounded-full bg-hairline mx-auto mb-4" />
       <div class="flex items-center gap-2 mb-4">
         <Ic name="bolt" class="w-4 h-4" />
-        <p class="text-lg flex-1 font-serif">Compléter ton flash</p>
+        <p class="text-lg flex-1 font-serif">{{ t("Compléter ton flash") }}</p>
         <button class="rounded-full p-2 bg-surface border border-hairline" @click="emit('close')">
           <Ic name="x" class="w-4 h-4" />
         </button>
@@ -50,7 +51,7 @@ async function justeCommentaire() {
 
       <input v-model="titre" placeholder="C'était où ? Le nom du lieu…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none mb-2.5" />
-      <textarea v-model="com" rows="2" maxlength="500" placeholder="Un mot sur le moment ? (optionnel)"
+      <textarea v-model="com" rows="2" maxlength="500" :placeholder="t('Un mot sur le moment ? (optionnel)')"
         class="w-full rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none mb-3"></textarea>
       <div class="flex flex-wrap gap-1.5 mb-3">
         <button v-for="c in cats" :key="c" @click="cat = c"
@@ -64,7 +65,7 @@ async function justeCommentaire() {
 
       <div class="rounded-xl p-4 bg-surface border border-hairline mb-4">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs uppercase tracking-widest text-muted">Ta note</span>
+          <span class="text-xs uppercase tracking-widest text-muted">{{ t("Ta note") }}</span>
           <span class="text-sm font-semibold text-accent">{{ note }} · {{ noteLabel(note) }}</span>
         </div>
         <input type="range" min="70" max="100" v-model.number="note" class="w-full accent-[#7A2E3E]" />
@@ -74,14 +75,14 @@ async function justeCommentaire() {
       <button @click="valider" :disabled="!titre.trim()"
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
         :style="{ background: titre.trim() ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
-        En faire une fiche notée
+        {{ t("En faire une fiche notée") }}
       </button>
       <button v-if="com.trim() && com.trim() !== (flash.com || '')" @click="justeCommentaire"
         class="w-full rounded-xl py-3 text-xs font-semibold text-accent bg-soft mt-2">
-        Enregistrer juste le commentaire — le flash reste 7 jours puis devient une fiche à compléter
+        {{ t("Enregistrer juste le commentaire — le flash reste 7 jours puis devient une fiche à compléter") }}
       </button>
       <p class="text-center text-[10px] text-muted mt-2 flex items-center justify-center gap-1">
-        <Ic name="heart" class="w-3 h-3" /> Ceux qui ont aimé ce flash seront notifiés — une seule fois.
+        <Ic name="heart" class="w-3 h-3" /> {{ t("Ceux qui ont aimé ce flash seront notifiés — une seule fois.") }}
       </p>
     </div>
   </div>

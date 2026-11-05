@@ -1,4 +1,5 @@
 <script setup>
+import { t, i18n, setLang } from "../lib/i18n.js";
 import { ref, computed, inject, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
@@ -29,7 +30,7 @@ onMounted(refreshNotif);
 async function toggleNotif() {
   if (notifBusy.value) return;
   if (store.demoMode) {
-    toast("Les notifications sont actives une fois l'app installée en ligne — pas en mode démo");
+    toast(t("Les notifications sont actives une fois l'app installée en ligne — pas en mode démo"));
     return;
   }
   notifBusy.value = true;
@@ -42,7 +43,7 @@ async function toggleNotif() {
         await sub.unsubscribe();
       }
       notifOn.value = false;
-      toast("Notifications désactivées");
+      toast(t("Notifications désactivées"));
       return;
     }
     const res = await api.activerNotifs();
@@ -51,9 +52,9 @@ async function toggleNotif() {
       return;
     }
     notifOn.value = true;
-    toast("Notifications activées sur cet appareil");
+    toast(t("Notifications activées sur cet appareil"));
   } catch (e) {
-    toast("Impossible d'activer les notifications");
+    toast(t("Impossible d'activer les notifications"));
   } finally {
     notifBusy.value = false;
   }
@@ -71,7 +72,7 @@ const supprPurge = ref(true);
 async function confirmerSupprCompte() {
   supprCompte.value = false;
   await store.supprimerCompte(supprPurge.value);
-  toast("Compte supprimé de cet appareil — à bientôt");
+  toast(t("Compte supprimé de cet appareil — à bientôt"));
   router.push("/join");
 }
 // PWA déjà installée ? Alors la carte d'installation descend en bas des réglages.
@@ -154,7 +155,7 @@ async function ouvrirMesAdresses() {
     await store.refresh();
     cp = store.mesAdresses;
   }
-  if (!cp) { toast("Espace privé introuvable — recharge l'app et réessaie"); return; }
+  if (!cp) { toast(t("Espace privé introuvable — recharge l'app et réessaie")); return; }
   store.switchCarnet(cp.id);
   router.push("/");
 }
@@ -221,7 +222,7 @@ function onAvatar(e) {
       const k = Math.max(size / img.width, size / img.height);
       canvas.getContext("2d").drawImage(img, (size - img.width * k) / 2, (size - img.height * k) / 2, img.width * k, img.height * k);
       store.setAvatar(canvas.toDataURL("image/jpeg", 0.8));
-      toast("Avatar mis à jour");
+      toast(t("Avatar mis à jour"));
     };
     img.src = reader.result;
   };
@@ -272,7 +273,7 @@ async function exporterJSON() {
 
 <template>
   <div>
-    <h1 class="text-lg font-serif mb-4">Mon profil</h1>
+    <h1 class="text-lg font-serif mb-4">{{ t("Mon profil") }}</h1>
 
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center gap-4">
       <label class="cursor-pointer relative">
@@ -283,13 +284,13 @@ async function exporterJSON() {
         <input type="file" accept="image/*" class="hidden" @change="onAvatar" />
       </label>
       <div class="flex-1">
-        <input v-model="prenom" placeholder="Ton prénom" maxlength="20"
+        <input v-model="prenom" :placeholder="t('Ton prénom')" maxlength="20"
           class="w-full rounded-xl px-3 py-2.5 text-sm bg-bg outline-none"
           :style="dupErr ? 'border-color: var(--c-accent); background: var(--c-soft)' : 'border: 1px solid var(--c-hairline)'" />
         <p v-if="dupErr" class="text-xs text-accent mt-1.5 leading-relaxed">{{ dupErr }}</p>
         <p v-if="saveOk" class="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
           :style="{ color: 'var(--c-green)', background: 'rgba(74,120,86,.12)' }">
-          <Ic name="check" class="w-3 h-3" :sw="2.5" /> Prénom mis à jour dans tous tes carnets
+          <Ic name="check" class="w-3 h-3" :sw="2.5" /> {{ t("Prénom mis à jour dans tous tes carnets") }}
         </p>
         <button v-if="prenom.trim() && prenom !== store.profil.prenom" @click="savePrenom" :disabled="enCours"
           class="mt-2 text-xs font-semibold text-accent">{{ enCours ? "Enregistrement…" : "Enregistrer" }}</button>
@@ -297,7 +298,7 @@ async function exporterJSON() {
     </div>
 
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2.5">Mon activité</p>
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2.5">{{ t("Mon activité") }}</p>
       <div class="grid grid-cols-2 gap-2">
         <div v-for="b in badges" :key="b.label" class="rounded-xl p-3 flex items-center gap-2.5 bg-soft">
           <span class="rounded-full w-8 h-8 flex items-center justify-center text-accent shrink-0" style="background: var(--c-surface);">
@@ -313,18 +314,18 @@ async function exporterJSON() {
 
 
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes carnets ({{ store.carnets.length }})</p>
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">{{ t("Mes carnets (") }}{{ store.carnets.length }})</p>
       <div class="flex flex-wrap gap-1.5">
         <span v-for="c in store.carnets" :key="c.id" class="rounded-full px-3 py-1.5 text-xs font-medium bg-soft text-accent">{{ c.nom }}</span>
       </div>
       <a href="#/carnet"
         class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-        <Ic name="book" class="w-4 h-4" /> Gérer et partager mes carnets
+        <Ic name="book" class="w-4 h-4" /> {{ t("Gérer et partager mes carnets") }}
       </a>
     </div>
 
     
-    <!-- V0.4.72 : Mes adresses — import Google (lieux + avis optionnel), espace privé créé au premier import -->
+    
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline" style="border-color: var(--c-accent)">
       <button class="w-full flex items-start gap-2.5 text-left"
         :class="importOuvert || resultatImport ? 'mb-2.5' : ''"
@@ -333,11 +334,11 @@ async function exporterJSON() {
           :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
         <span class="flex-1">
           <span class="flex items-center gap-1.5 font-serif text-lg font-semibold leading-tight">
-            Mon G-Maps
+            {{ t("Mon G-Maps") }}
             <Ic name="chevron" class="w-3.5 h-3.5 text-muted transition-transform" :class="importOuvert ? 'rotate-180' : ''" />
           </span>
           <span class="block text-[11px] text-muted leading-relaxed mt-1">
-            {{ nbMesAdresses }} lieu{{ nbMesAdresses > 1 ? "x" : "" }} importé{{ nbMesAdresses > 1 ? "s" : "" }} · {{ importOuvert || resultatImport ? "Importer mes lieux, notes et commentaires Google Maps — visible de toi seul." : "Importer mes lieux et avis Google Maps — touche pour ouvrir." }}
+            {{ nbMesAdresses }} {{ t(nbMesAdresses > 1 ? "lieux importés" : "lieu importé") }} · {{ t(importOuvert || resultatImport ? "Importer mes lieux, notes et commentaires Google Maps — visible de toi seul." : "Importer mes lieux et avis Google Maps — touche pour ouvrir.") }}
           </span>
         </span>
       </button>
@@ -348,8 +349,8 @@ async function exporterJSON() {
           :style="{ border: '1px dashed ' + (picks.length ? 'var(--c-accent)' : 'var(--c-hairline)') }">
           <span class="text-[11px] leading-tight">
             <span class="block font-semibold text-sm" :class="picks.length ? 'text-accent' : ''">
-              {{ picks.length ? picks.length + " fichier" + (picks.length > 1 ? "s" : "") + " choisi" + (picks.length > 1 ? "s" : "") : "Importer mes fichiers Google Maps" }}</span>
-            <span class="text-muted">Ton export takeout.google.com (« Maps (vos adresses) ») — tout seul ou tout le zip : on détecte ce qui est dedans. Les avis deviennent des fiches avec ta note ★ et ton commentaire ; les listes deviennent des fiches « à noter ».</span>
+              {{ picks.length ? picks.length + " fichier" + (picks.length > 1 ? "s" : "") + " choisi" + (picks.length > 1 ? "s" : "") : t("Importer mes fichiers Google Maps") }}</span>
+            <span class="text-muted">{{ t("Ton export takeout.google.com (« Maps (vos adresses) ») — tout seul ou tout le zip : on détecte ce qui est dedans. Les avis deviennent des fiches avec ta note ★ et ton commentaire ; les listes deviennent des fiches « à noter ».") }}</span>
             <input type="file" accept=".json,.kml,.xml,.csv,.txt" multiple class="hidden" @change="onPickExport" :disabled="importBusy" />
           </span>
           <Ic name="pin" class="w-4 h-4 text-muted shrink-0" />
@@ -372,7 +373,7 @@ async function exporterJSON() {
             {{ importBusy ? "Import en cours…" : "Importer" }}</button>
           <button v-if="picks.length" class="rounded-xl px-4 text-sm text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }"
-            @click="picks = []; errImport = ''">Plus tard</button>
+            @click="picks = []; errImport = ''">{{ t("Plus tard") }}</button>
         </div>
             </template>
 
@@ -387,44 +388,44 @@ async function exporterJSON() {
           <span v-if="resultatImport.sansLieu" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.sansLieu }} avis sans lieu identifié par Google, ignorés</span>
         </div>
-        <!-- V0.4.73b : sortie de flow — on ENVOIE vers l'espace privé, pas vers un nouvel import -->
+        
         <button class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5"
           @click="ouvrirMesAdresses">
           <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
         </button>
         <p class="text-[11px] text-muted text-center mt-2.5 mb-1">
-          Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».
+          {{ t("Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».") }}
         </p>
         <button class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted"
-          @click="resultatImport = null">Import d'autres fichiers</button>
+          @click="resultatImport = null">{{ t("Import d'autres fichiers") }}</button>
       </template>
 
       <button v-if="store.mesAdresses && !resultatImport" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
         @click="ouvrirMesAdresses">
         <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps ({{ nbMesAdresses }}) →
       </button>
-      <p class="text-[10px] text-muted mt-2">Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.</p>
+      <p class="text-[10px] text-muted mt-2">{{ t("Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.") }}</p>
       </template>
     </div>
 
     <InstallCard v-if="!appInstallee" />
 
-    <!-- Réglages & données : 3 accordéons natifs (details/summary), état visible même repliés -->
+    
     <div class="rounded-2xl bg-surface border border-hairline mb-3 overflow-hidden">
-      <p class="text-[10px] uppercase tracking-widest text-muted pt-4 px-4 mb-1.5">Réglages &amp; données</p>
+      <p class="text-[10px] uppercase tracking-widest text-muted pt-4 px-4 mb-1.5">{{ t("Réglages &amp; données") }}</p>
 
       <details v-if="notifSupported" class="group border-t border-hairline">
         <summary class="lc-sum">
           <Ic name="bolt" class="w-4 h-4 shrink-0" :class="notifOn ? 'text-accent' : 'text-muted'" />
           <span class="flex-1 text-left leading-tight">
-            <span class="block text-sm font-semibold">Notifications</span>
+            <span class="block text-sm font-semibold">{{ t("Notifications") }}</span>
             <span class="block text-[10px] text-muted">{{ notifEtat }} — propre à cet appareil</span>
           </span>
           <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
         </summary>
         <div class="px-4 pb-4">
           <p v-if="store.demoMode" class="text-[11px] mb-2.5 leading-relaxed rounded-xl px-3 py-2.5 bg-soft text-accent">
-            Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.
+            {{ t("Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.") }}
           </p>
           <button @click="toggleNotif" :disabled="notifBusy || store.demoMode"
             class="w-full rounded-xl p-3.5 flex items-center justify-between disabled:opacity-50"
@@ -433,7 +434,7 @@ async function exporterJSON() {
               <Ic name="bolt" class="w-4 h-4" :class="notifOn ? 'text-accent' : 'text-muted'" />
               <span class="text-left leading-tight">
                 <span class="block font-semibold">{{ store.demoMode ? "En attente de mise en ligne" : notifOn ? "Activées" : "Désactivées" }}</span>
-                <span class="block text-[10px] text-muted">Flashes, adresses notées, rappel J-6</span>
+                <span class="block text-[10px] text-muted">{{ t("Flashes, adresses notées, rappel J-6") }}</span>
               </span>
             </span>
             <span class="relative rounded-full w-11 h-6 transition shrink-0" :style="{ background: notifOn ? '#7A2E3E' : 'var(--c-hairline)' }">
@@ -448,8 +449,8 @@ async function exporterJSON() {
         <summary class="lc-sum">
           <Ic name="share" class="w-4 h-4 shrink-0" style="color: var(--c-green)" />
           <span class="flex-1 text-left leading-tight">
-            <span class="block text-sm font-semibold">Exporter mes données</span>
-            <span class="block text-[10px] text-muted">fichier JSON du carnet, à tout moment</span>
+            <span class="block text-sm font-semibold">{{ t("Exporter mes données") }}</span>
+            <span class="block text-[10px] text-muted">{{ t("fichier JSON du carnet, à tout moment") }}</span>
           </span>
           <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
         </summary>
@@ -467,7 +468,7 @@ async function exporterJSON() {
           <button @click="exporterJSON"
             class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
             :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-            <Ic name="share" class="w-4 h-4" /> Exporter en JSON
+            <Ic name="share" class="w-4 h-4" /> {{ t("Exporter en JSON") }}
           </button>
         </div>
       </details>
@@ -476,8 +477,8 @@ async function exporterJSON() {
         <summary class="lc-sum">
           <Ic name="user" class="w-4 h-4 shrink-0 text-accent" />
           <span class="flex-1 text-left leading-tight">
-            <span class="block text-sm font-semibold">Un souci avec l'app ?</span>
-            <span class="block text-[10px] text-muted">bug, question, suggestion — le support répond vite</span>
+            <span class="block text-sm font-semibold">{{ t("Un souci avec l'app ?") }}</span>
+            <span class="block text-[10px] text-muted">{{ t("bug, question, suggestion — le support répond vite") }}</span>
           </span>
           <Ic name="chevron" class="w-4 h-4 text-muted shrink-0 transition group-open:rotate-180" />
         </summary>
@@ -485,7 +486,7 @@ async function exporterJSON() {
           <button @click="contacterSupport"
             class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"
             :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
-            <Ic name="user" class="w-4 h-4" /> Contacter le support
+            <Ic name="user" class="w-4 h-4" /> {{ t("Contacter le support") }}
           </button>
         </div>
       </details>
@@ -497,10 +498,21 @@ async function exporterJSON() {
 
     <button @click="toggleTheme"
       class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
-      <span class="flex items-center gap-2.5 text-sm"><Ic name="moon" class="w-4 h-4 text-muted" /> Mode sombre</span>
+      <span class="flex items-center gap-2.5 text-sm"><Ic name="moon" class="w-4 h-4 text-muted" /> {{ t("Mode sombre") }}</span>
       <span class="relative rounded-full w-11 h-6 transition" :style="{ background: store.dark ? '#7A2E3E' : 'var(--c-hairline)' }">
         <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
           :style="{ left: store.dark ? '22px' : '2px' }" />
+      </span>
+    </button>
+
+    <button @click="setLang(i18n.lang === 'fr' ? 'en' : 'fr')"
+      class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
+      <span class="flex items-center gap-2.5 text-sm"><Ic name="globe" class="w-4 h-4 text-muted" /> {{ t("Langue") }}</span>
+      <span class="flex gap-1">
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold transition"
+          :class="i18n.lang === 'fr' ? 'bg-accent text-white' : 'text-muted'">FR</span>
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold transition"
+          :class="i18n.lang === 'en' ? 'bg-accent text-white' : 'text-muted'">EN</span>
       </span>
     </button>
 
@@ -509,8 +521,8 @@ async function exporterJSON() {
       <span class="flex items-center gap-2.5 text-sm">
         <Ic name="sparkle" class="w-4 h-4 text-muted" />
         <span class="min-w-0">
-          <span class="block">Idées de sorties</span>
-          <span class="block text-[10px] text-muted leading-tight">le bandeau d'inspiration sur l'accueil</span>
+          <span class="block">{{ t("Idées de sorties") }}</span>
+          <span class="block text-[10px] text-muted leading-tight">{{ t("le bandeau d'inspiration sur l'accueil") }}</span>
         </span>
       </span>
       <span class="relative rounded-full w-11 h-6 transition" :style="{ background: store.inspirOn ? '#7A2E3E' : 'var(--c-hairline)' }">
@@ -523,64 +535,62 @@ async function exporterJSON() {
     <p class="text-[11px] text-muted text-center leading-relaxed select-none"
       @touchstart="demoStart" @touchmove="demoMove" @touchend="demoEnd"
       @mousedown="demoStart" @mousemove="demoMove" @mouseup="demoEnd">
-      Tes données t'appartiennent — export disponible à tout moment.<br />
+      {{ t("Tes données t'appartiennent — export disponible à tout moment.") }}<br />
       Le Carnet · V{{ pkg.version }}
     </p>
 
-    <!-- Popin super-admin : crée l'espace privé de démo (pass vérifié serveur) -->
+    
     <div v-if="demoPopin" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" :style="{ background: 'rgba(0,0,0,.35)' }"
       @click.self="demoPopin = false">
       <div class="w-full rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl" style="max-width: 480px; margin: 0 auto;">
-        <p class="text-sm font-semibold mb-1">Espace privé de démo</p>
-        <p class="text-[11px] text-muted mb-3">Super-admin : entre ton pass pour créer « Mes adresses » avec des fiches de démonstration.</p>
-        <input v-model="demoPass" type="password" inputmode="numeric" placeholder="Pass super-admin"
+        <p class="text-sm font-semibold mb-1">{{ t("Espace privé de démo") }}</p>
+        <p class="text-[11px] text-muted mb-3">{{ t("Super-admin : entre ton pass pour créer « Mes adresses » avec des fiches de démonstration.") }}</p>
+        <input v-model="demoPass" type="password" inputmode="numeric" :placeholder="t('Pass super-admin')"
           class="w-full rounded-xl px-3 py-2.5 text-sm mb-3 bg-soft"
           style="border: 1px solid var(--c-hairline)" />
         <div class="flex gap-2">
           <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted"
-            :style="{ border: '1px solid var(--c-hairline)' }" @click="demoPopin = false">Annuler</button>
+            :style="{ border: '1px solid var(--c-hairline)' }" @click="demoPopin = false">{{ t("Annuler") }}</button>
           <button class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-accent text-white disabled:opacity-40"
-            :disabled="!demoPass" @click="demoValider">Valider</button>
+            :disabled="!demoPass" @click="demoValider">{{ t("Valider") }}</button>
         </div>
       </div>
     </div>
 
-    <!-- Zone sensible : tout en bas du profil, bien séparée -->
+    
     <div class="mt-4 pt-4 border-t border-hairline">
       <button @click="supprCompte = true"
         class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 text-accent bg-soft">
-        <Ic name="trash" class="w-4 h-4" /> Supprimer mon compte
+        <Ic name="trash" class="w-4 h-4" /> {{ t("Supprimer mon compte") }}
       </button>
     </div>
 
-    <!-- Modale : choix des contributions + mode d'emploi de la désinstallation -->
+    
     <div v-if="supprCompte" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4"
       style="background: rgba(20, 14, 12, .55)" @click.self="supprCompte = false">
       <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
-        <p class="text-base font-serif mb-2">Supprimer mon compte ?</p>
+        <p class="text-base font-serif mb-2">{{ t("Supprimer mon compte ?") }}</p>
         <p class="text-xs leading-relaxed text-muted mb-3">
-          Cet appareil quitte tous ses carnets. C'est définitif : pour revenir, il faudra refaire une
-          demande d'invitation — et tout ce qui aura été supprimé sera perdu.
+          {{ t("Cet appareil quitte tous ses carnets. C'est définitif : pour revenir, il faudra refaire une           demande d'invitation — et tout ce qui aura été supprimé sera perdu.") }}
         </p>
         <p class="text-xs leading-relaxed text-muted mb-4">
-          Pour désinstaller l'app : iPhone — maintiens l'icône Le Carnet, puis « Retirer l'app » ·
-          Android — appui long sur l'icône, puis « Désinstaller ».
+          {{ t("Pour désinstaller l'app : iPhone — maintiens l'icône Le Carnet, puis « Retirer l'app » ·           Android — appui long sur l'icône, puis « Désinstaller ».") }}
         </p>
-        <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes contributions</p>
+        <p class="text-[10px] uppercase tracking-widest text-muted mb-2">{{ t("Mes contributions") }}</p>
         <button @click="supprPurge = true" class="w-full rounded-xl p-3 mb-2 text-left"
           :style="{ background: supprPurge ? 'var(--c-soft)' : 'transparent', border: '1px solid ' + (supprPurge ? 'var(--c-accent)' : 'var(--c-hairline)') }">
-          <span class="block text-sm font-semibold">Tout supprimer</span>
-          <span class="block text-[10px] text-muted">mes notes, likes, commentaires et flashes disparaissent des carnets</span>
+          <span class="block text-sm font-semibold">{{ t("Tout supprimer") }}</span>
+          <span class="block text-[10px] text-muted">{{ t("mes notes, likes, commentaires et flashes disparaissent des carnets") }}</span>
         </button>
         <button @click="supprPurge = false" class="w-full rounded-xl p-3 mb-4 text-left"
           :style="{ background: !supprPurge ? 'var(--c-soft)' : 'transparent', border: '1px solid ' + (!supprPurge ? 'var(--c-accent)' : 'var(--c-hairline)') }">
-          <span class="block text-sm font-semibold">Les garder dans les carnets</span>
-          <span class="block text-[10px] text-muted">elles restent visibles, signées de mon prénom</span>
+          <span class="block text-sm font-semibold">{{ t("Les garder dans les carnets") }}</span>
+          <span class="block text-[10px] text-muted">{{ t("elles restent visibles, signées de mon prénom") }}</span>
         </button>
         <div class="flex gap-2">
-          <button @click="supprCompte = false" class="flex-1 rounded-xl py-3 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
+          <button @click="supprCompte = false" class="flex-1 rounded-xl py-3 text-sm font-semibold bg-surface border border-hairline">{{ t("Annuler") }}</button>
           <button @click="confirmerSupprCompte" class="flex-1 rounded-xl py-3 text-sm font-semibold text-white"
-            style="background: #7A2E3E">Supprimer</button>
+            style="background: #7A2E3E">{{ t("Supprimer") }}</button>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 // Popin maison de confirmation — utilisée pour toute suppression/retrait de l'app.
 // Jamais confirm()/alert() natifs (règle charte).
 defineProps({
@@ -19,7 +20,7 @@ const emit = defineEmits(["confirm", "cancel"]);
       <p class="text-xs text-muted mb-4 leading-relaxed">{{ text }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button @click="emit('cancel')"
-          class="rounded-xl py-3 text-sm font-semibold border border-hairline">Annuler</button>
+          class="rounded-xl py-3 text-sm font-semibold border border-hairline">{{ t("Annuler") }}</button>
         <button @click="emit('confirm')"
           class="rounded-xl py-3 text-sm font-semibold text-white bg-accent">{{ confirmLabel }}</button>
       </div>

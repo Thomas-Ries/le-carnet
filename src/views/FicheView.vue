@@ -1,4 +1,5 @@
 <script setup>
+import { t } from "../lib/i18n.js";
 import { ref, computed, inject, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
@@ -29,7 +30,7 @@ async function onFile(e) {
   try {
     photoModif.value = await chargerPhoto(file);
   } catch (err) {
-    toast("Photo illisible — essaie une autre image");
+    toast(t("Photo illisible — essaie une autre image"));
   }
 }
 const confirmSuppr = ref(false);
@@ -76,16 +77,16 @@ async function saveEditCom(c) {
   const r = await store.modifierCommentaire(fiche.value.id, c.id, t);
   if (r && r.error) { toast(r.error); return; }
   editComId.value = null;
-  toast("Commentaire modifié");
+  toast(t("Commentaire modifié"));
 }
 async function supprCom(c) {
   const r = await store.supprimerCommentaire(fiche.value.id, c.id);
   if (r && r.error) { toast(r.error); return; }
 }
 async function partager() {
-  toast("Préparation de la carte…");
+  toast(t("Préparation de la carte…"));
   const r = await partagerFiche(fiche.value);
-  if (r === "telecharge") toast("Image enregistrée — partage-la comme une photo");
+  if (r === "telecharge") toast(t("Image enregistrée — partage-la comme une photo"));
 }
 
 function startEdit() {
@@ -108,11 +109,11 @@ async function saveEdit() {
   await store.majFiche(fiche.value.id, patch);
   edit.value = false;
   store.ficheEnEdition = false;
-  toast("Fiche mise à jour");
+  toast(t("Fiche mise à jour"));
 }
 async function supprimer() {
   await store.supprimerFiche(fiche.value.id);
-  toast("Fiche supprimée");
+  toast(t("Fiche supprimée"));
   router.push("/");
 }
 </script>
@@ -133,7 +134,7 @@ async function supprimer() {
     <button v-if="fiche.photo" @click="zoom = true" class="block w-full rounded-2xl mb-3 overflow-hidden relative group">
       <img :src="fiche.photo" alt="" class="w-full aspect-[4/3] object-cover" />
       <span class="absolute bottom-2 right-2 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white"
-        style="background: rgba(30, 23, 20, .55)">Agrandir</span>
+        style="background: rgba(30, 23, 20, .55)">{{ t("Agrandir") }}</span>
     </button>
 
     <div class="flex items-start justify-between gap-3 mb-1">
@@ -147,12 +148,12 @@ async function supprimer() {
 
     <div v-if="edit" class="space-y-2 mb-4">
       <input v-model="titre" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
-      <input v-model="lieu" placeholder="Lieu — adresse, ville, quartier"
+      <input v-model="lieu" :placeholder="t('Lieu — adresse, ville, quartier')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="3" class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
       <div>
         <div class="flex justify-between items-center mb-1">
-          <span class="text-[10px] uppercase tracking-widest text-muted">Ta note</span>
+          <span class="text-[10px] uppercase tracking-widest text-muted">{{ t("Ta note") }}</span>
           <span class="text-sm font-semibold text-accent">{{ note }} · {{ noteLabel(note) }}</span>
         </div>
         <input type="range" min="70" max="100" v-model.number="note" class="w-full accent-[#7A2E3E]" />
@@ -167,13 +168,13 @@ async function supprimer() {
           <input type="file" accept="image/*" class="hidden" @change="onFile" />
         </label>
         <button v-if="photoModif" @click="photoModif = undefined"
-          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Annuler</button>
+          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">{{ t("Annuler") }}</button>
         <button v-else-if="fiche.photo" @click="photoModif = ''"
-          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">Retirer</button>
+          class="rounded-xl px-3 text-xs font-semibold text-muted border border-hairline">{{ t("Retirer") }}</button>
       </div>
       <div class="flex gap-2">
-        <button @click="annulerEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">Annuler</button>
-        <button @click="saveEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-accent">Enregistrer</button>
+        <button @click="annulerEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold bg-surface border border-hairline">{{ t("Annuler") }}</button>
+        <button @click="saveEdit" class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-accent">{{ t("Enregistrer") }}</button>
       </div>
     </div>
 
@@ -182,22 +183,22 @@ async function supprimer() {
       <p class="text-[11px] text-muted mt-1.5">— {{ fiche.auteur }}{{ fiche.date ? ", " + fmtDate(fiche.date) : "" }}</p>
     </blockquote>
 
-    <!-- Recette -->
+    
     <div v-if="fiche.type === 'recette'">
       <div v-if="fiche.recette" class="rounded-xl p-3.5 bg-surface border border-hairline mb-4">
-        <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">La recette de {{ fiche.auteur }}</p>
+        <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">{{ t("La recette de") }} {{ fiche.auteur }}</p>
         <p class="text-sm leading-relaxed whitespace-pre-line">{{ fiche.recette }}</p>
       </div>
       <button v-else-if="fiche.auteur !== store.profil.prenom && !demandeEnvoyee"
-        @click="store.demanderRecette(fiche.id); toast('Demande envoyée à ' + fiche.auteur)"
+        @click="store.demanderRecette(fiche.id); toast(t("Demande envoyée à") + " " + fiche.auteur)"
         class="w-full rounded-xl py-3 text-sm font-semibold text-accent bg-soft mb-4 flex items-center justify-center gap-1.5">
-        <Ic name="book" class="w-4 h-4" /> Demander la recette à {{ fiche.auteur }}
+        <Ic name="book" class="w-4 h-4" /> {{ t("Demander la recette à") }} {{ fiche.auteur }}
       </button>
-      <p v-else-if="demandeEnvoyee" class="text-center text-xs text-muted mb-4">Demande envoyée — {{ fiche.auteur }} la partagera bientôt.</p>
-      <p v-else class="text-center text-xs text-muted mb-4">Tu n'as pas encore écrit la recette — tu peux l'ajouter en éditant la fiche.</p>
+      <p v-else-if="demandeEnvoyee" class="text-center text-xs text-muted mb-4">{{ t("Demande envoyée —") }} {{ fiche.auteur }} {{ t("la partagera bientôt.") }}</p>
+      <p v-else class="text-center text-xs text-muted mb-4">{{ t("Tu n'as pas encore écrit la recette — tu peux l'ajouter en éditant la fiche.") }}</p>
     </div>
 
-    <!-- Likes + On y va : deux CTA discrets alignés à gauche façon Instagram -->
+    
     <div v-if="!edit" class="flex gap-2">
       <button @click="store.liker(fiche.id, !liked)"
         class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
@@ -211,19 +212,19 @@ async function supprimer() {
         @click="noterGo"
         class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
         :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
-        <Ic name="pin" class="w-4 h-4" /> On y va
+        <Ic name="pin" class="w-4 h-4" /> {{ t("On y va") }}
       </a>
     </div>
 
-    <!-- Commentaires -->
+    
     <div v-if="!edit" class="mt-5">
-      <p v-if="comments.length" class="text-[10px] uppercase tracking-widest text-muted mb-2">Commentaires</p>
+      <p v-if="comments.length" class="text-[10px] uppercase tracking-widest text-muted mb-2">{{ t("Commentaires") }}</p>
       <div v-for="c in comments" :key="c.id" class="rounded-xl p-3 bg-soft mb-2">
         <div v-if="editComId === c.id">
           <textarea v-model="editComText" rows="2" class="w-full rounded-xl px-3 py-2 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
           <div class="flex gap-2 mt-2">
-            <button @click="editComId = null" class="flex-1 rounded-lg py-2 text-xs font-semibold bg-surface border border-hairline">Annuler</button>
-            <button @click="saveEditCom(c)" class="flex-1 rounded-lg py-2 text-xs font-semibold text-white bg-accent">Enregistrer</button>
+            <button @click="editComId = null" class="flex-1 rounded-lg py-2 text-xs font-semibold bg-surface border border-hairline">{{ t("Annuler") }}</button>
+            <button @click="saveEditCom(c)" class="flex-1 rounded-lg py-2 text-xs font-semibold text-white bg-accent">{{ t("Enregistrer") }}</button>
           </div>
         </div>
         <div v-else>
@@ -243,7 +244,7 @@ async function supprimer() {
         </div>
       </div>
       <div class="flex items-end gap-2">
-        <textarea ref="comInput" v-model="newCom" placeholder="Commentaire" rows="1" @input="autoGrow"
+        <textarea ref="comInput" v-model="newCom" :placeholder="t('Commentaire')" rows="1" @input="autoGrow"
           class="flex-1 rounded-xl px-3 py-2.5 text-sm bg-surface border border-hairline outline-none resize-none max-h-36"></textarea>
         <button @click="envoyerCom" class="rounded-xl px-3.5 py-2.5 bg-soft border border-hairline">
           <Ic name="chevron" class="w-4 h-4 text-accent" />
@@ -251,7 +252,7 @@ async function supprimer() {
       </div>
     </div>
 
-    <!-- Visionneuse plein écran : tap sur la photo -->
+    
     <div v-if="zoom" @click="zoom = false"
       class="fixed inset-0 z-[80] flex items-center justify-center p-4"
       style="background: rgba(20, 14, 12, .94)">
@@ -263,5 +264,5 @@ async function supprimer() {
       text="Ça l'enlève de tous les carnets. Pas de retour arrière."
       @confirm="supprimer" @cancel="confirmSuppr = false" />
   </div>
-  <div v-else class="text-center text-sm text-muted py-10">Fiche introuvable.</div>
+  <div v-else class="text-center text-sm text-muted py-10">{{ t("Fiche introuvable.") }}</div>
 </template>
