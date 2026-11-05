@@ -41,7 +41,6 @@ function noterGo() {
   store.noterGo(fiche.value.id);
 }
 const zoom = ref(false);
-const pop = ref(false);
 const newCom = ref("");
 const editComId = ref(null);
 const editComText = ref("");
@@ -175,7 +174,7 @@ async function supprimer() {
 
     <!-- Likes + On y va : deux CTA discrets alignés à gauche façon Instagram -->
     <div v-if="!edit" class="flex gap-2">
-      <button @click="store.liker(fiche.id, !liked); pop = true"
+      <button @click="store.liker(fiche.id, !liked)"
         class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
         :style="liked
           ? { background: 'var(--c-gold)', color: '#fff', border: '1px solid var(--c-gold)' }
@@ -190,9 +189,6 @@ async function supprimer() {
         <Ic name="pin" class="w-4 h-4" /> On y va
       </a>
     </div>
-    <p v-if="!edit && pop && likers.length" class="text-center text-[11px] text-muted mt-2">
-      {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
-    </p>
 
     <!-- Commentaires -->
     <div v-if="!edit" class="mt-5">

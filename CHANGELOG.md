@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.54 — Like sans la ligne des prénoms
+
+- Plus de « Thomas aime ça » sous le bouton après un like : le geste du cœur suffit, le compteur reste dans la pilule (« J'aime · 2 »). La ligne des prénoms disparaît de la fiche.
+
 ## V0.4.53 — CTA discrets alignés à gauche
 
 - « J'aime » adopte le style discret de « On y va » (fond soft, liseré hairline, texte bordeaux) et ne passe en or plein que lorsqu'il est aimé ; les deux pilules sont alignées à gauche façon Instagram au lieu d'occuper toute la largeur.
