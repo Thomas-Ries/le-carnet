@@ -376,7 +376,15 @@ async function exporterJSON() {
           <span v-if="resultatImport.sansLieu" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.sansLieu }} avis sans lieu identifié par Google, ignorés</span>
         </div>
-        <button class="w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft"
+        <!-- V0.4.73b : sortie de flow — on ENVOIE vers l'espace privé, pas vers un nouvel import -->
+        <button class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5"
+          @click="ouvrirMesAdresses">
+          <Ic name="book" class="w-4 h-4" /> Voir mes adresses{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
+        </button>
+        <p class="text-[11px] text-muted text-center mt-2.5 mb-1">
+          Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».
+        </p>
+        <button class="w-full rounded-xl py-2.5 text-xs font-semibold text-muted"
           @click="resultatImport = null">Import d'autres fichiers</button>
       </template>
 

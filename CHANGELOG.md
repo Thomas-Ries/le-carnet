@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.73b — Sortie de flow : l'import envoie vers l'espace privé
+
+- Après un import, le CTA principal devient **« Voir mes adresses (N) → »** (bascule sur le carnet privé et ouvre la liste) — plus de cul-de-sac « Import d'autres fichiers ». Rappel du partage sous le CTA (« appui long sur une fiche, puis Partager »), « Import d'autres fichiers » passe en lien discret.
+- Anti-doublons confirmé (retour de test réel de Thomas) : le serveur compare chaque titre (clé normNom) aux fiches déjà présentes de l'espace privé ET au sein du fichier — un réimport du même JSON n'importé rien (« N doublons ignorés »).
+
 ## V0.4.73 — Import avis-seuls : le JSON d'avis suffit pour créer les fiches
 
 - **Réel constaté** (export Takeout « Maps (vos adresses) » de Thomas) : parfois le zip ne contient AUCUN fichier de listes, seulement le JSON d'avis (GeoJSON FeatureCollection, `properties.location.name/address`, `five_star_rating_published`, `review_text_published`).
