@@ -22,7 +22,7 @@ export const useCarnetStore = defineStore("carnet", {
     roles: {}, // { carnetId: "admin" | "member" }
     installEvent: null, // événement beforeinstallprompt (Android/Chrome) — capturé par App.vue
     connexionPerdue: false, // true = une mutation n'a pas atteint le serveur (bascule démo en cours de session)
-    inspir: { open: false, theme: null }, // modale inspiration : survit à la navigation (retour du détail)
+    inspir: { open: false, theme: null, tri: "note" }, // modale inspiration : survit à la navigation (retour du détail)
     inspirOn: true, // réglage profil : bandeau idées de sorties visible ou non
   }),
 
@@ -137,7 +137,7 @@ export const useCarnetStore = defineStore("carnet", {
 
     setInspirOn(v) {
       this.inspirOn = !!v;
-      if (!v) this.inspir = { open: false, theme: null };
+      if (!v) this.inspir = { open: false, theme: null, tri: "note" };
       try { localStorage.setItem("lc-inspir", v ? "on" : "off"); } catch (e) { /* ok */ }
     },
 

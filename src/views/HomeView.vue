@@ -73,39 +73,46 @@ const fichesTri = computed(() => {
    selection puis qu'on revient, la modale reapparait a l'etape d'avant.
    Ambiances = uniquement les vraies sorties (resto, bar, bar a vin) —
    on ne va pas chez le caviste pour un tete-a-tete. */
-const AMBIANCES = ["Resto", "Bar", "Bar à vin"];
+const AMBIANCES = [
+  { t: "Resto", themes: ["Resto"] },
+  { t: "Bar à vin", themes: ["Bar à vin"] },
+  { t: "Bar", themes: ["Bar"] },
+  { t: "Dégustation", themes: ["Caviste", "Fromagerie"] },
+  { t: "Brunch", themes: ["Brunch", "Boulangerie", "Fromagerie"] },
+];
 const inspirOpen = computed(() => store.inspir.open);
 const inspirTheme = computed(() => store.inspir.theme);
-const themesDispos = computed(() => {
-  const n = {};
-  for (const f of fiches.value) {
-    if (f.type !== "adresse") continue;
-    for (const t of String(f.cat || "").split(",").map((x) => x.trim()).filter(Boolean)) {
-      if (AMBIANCES.includes(t)) n[t] = (n[t] || 0) + 1;
-    }
-  }
-  return AMBIANCES.filter((t) => n[t]).map((t) => ({ t, c: n[t] }));
-});
+const catsFiche = (f) => String(f.cat || "").split(",").map((x) => x.trim()).filter(Boolean);
+const dansAmbiance = (f, a) => f.type === "adresse" && catsFiche(f).some((t) => a.themes.includes(t));
+const themesDispos = computed(() =>
+  AMBIANCES
+    .map((a) => ({ ...a, c: fiches.value.filter((f) => dansAmbiance(f, a)).length }))
+    .filter((a) => a.c)
+);
+const ambianceChoisie = computed(() => AMBIANCES.find((a) => a.t === store.inspir.theme) || null);
 const inspirSelection = computed(() => {
-  if (!inspirTheme.value) return [];
-  return fiches.value
-    .filter((f) => f.type === "adresse" &&
-      String(f.cat || "").split(",").map((x) => x.trim()).includes(inspirTheme.value))
-    .sort((a, b) => b.note - a.note || (a.date < b.date ? 1 : -1))
-    .slice(0, 5);
+  const a = ambianceChoisie.value;
+  if (!a) return [];
+  const sel = fiches.value.filter((f) => dansAmbiance(f, a));
+  // Filtre deux options : mieux notés (défaut) ou plus aimés
+  return (store.inspir.tri === "aime"
+    ? [...sel].sort((x, y) => (y.reacts?.length || 0) - (x.reacts?.length || 0) || y.note - x.note)
+    : [...sel].sort((x, y) => y.note - x.note || (x.date < y.date ? 1 : -1))
+  ).slice(0, 5);
 });
 async function partagerSelection() {
   const sel = inspirSelection.value;
   if (!sel.length) return;
   const lignes = sel.map((f) => "— « " + f.titre + (f.lieu ? " (" + f.lieu + ")" : "") + " »");
-  const texte = "Envie " + (inspirTheme.value.toLowerCase().startsWith("bar") ? "d'un " : "de ") + inspirTheme.value.toLowerCase() + " ? Ça vous tente, je réserve ?\n" + lignes.join("\n");
+  const nom = (ambianceChoisie.value ? ambianceChoisie.value.t : "").toLowerCase();
+  const texte = "Envie " + (nom.startsWith("bar") ? "d'un " : "de ") + nom + " ? Ça vous tente, je réserve ?\n" + lignes.join("\n");
   if (navigator.share) {
     try { await navigator.share({ text: texte }); return; } catch (e) { /* annulé ou indisponible */ }
   }
   partagerWhatsapp(texte);
 }
 function inspirFermer() {
-  store.inspir = { open: false, theme: null };
+  store.inspir = { open: false, theme: null, tri: "note" };
 }
 
 /* Bienvenue : modale de premiere connexion, posee par JoinView juste apres
@@ -322,7 +329,7 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
             <p class="text-base font-serif mb-1">Ce soir, l'ambiance est plutôt…</p>
             <p class="text-[11px] text-muted mb-3.5 leading-relaxed">Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.</p>
             <div class="flex flex-wrap gap-1.5 mb-1">
-              <button v-for="t in themesDispos" :key="t.t" @click="store.inspir.theme = t.t"
+              <button v-for="t in themesDispos" :key="t.t" @click="store.inspir.theme = t.t; store.inspir.tri = 'note'"
                 class="rounded-full px-3 py-2 text-xs font-medium"
                 :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)', border: '1px solid var(--c-accent)' }">
                 {{ t.t }} <span class="text-[10px] opacity-70">{{ t.c }}</span>
@@ -334,10 +341,20 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
               <button @click="store.inspir.theme = null" class="rounded-full p-2 bg-surface border border-hairline">
                 <Ic name="back" class="w-4 h-4" />
               </button>
-              <p class="text-sm font-serif flex-1 text-center">Envie de {{ inspirTheme.toLowerCase() }} ?</p>
+              <p class="text-sm font-serif flex-1 text-center">Envie de {{ (ambianceChoisie ? ambianceChoisie.t : "").toLowerCase() }} ?</p>
               <button @click="inspirFermer" class="rounded-full p-2 bg-surface border border-hairline">
                 <Ic name="x" class="w-4 h-4" />
               </button>
+            </div>
+            <div class="flex gap-1.5 mb-3">
+              <button v-for="fl in [{ id: 'note', label: 'Les mieux notés' }, { id: 'aime', label: 'Les plus aimés' }]"
+                :key="fl.id" @click="store.inspir.tri = fl.id"
+                class="rounded-full px-3 py-1.5 text-xs font-medium"
+                :style="{
+                  background: store.inspir.tri === fl.id ? 'var(--c-soft)' : 'var(--c-surface)',
+                  color: store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-muted)',
+                  border: '1px solid ' + (store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-hairline)'),
+                }">{{ fl.label }}</button>
             </div>
             <div class="space-y-2 mb-3">
               <!-- Tap sur une card : on garde la modale en memoire (store), le retour du detail rouvre la selection -->

@@ -1,5 +1,11 @@
 # Changelog
 
+## V0.4.47 — Inspiration : vraies ambiances + filtre
+
+- **5 ambiances** dans la modale : Resto, Bar à vin, Bar, **Dégustation** (fiches Caviste, Fromagerie) et **Brunch** (thème Brunch, Boulangerie, Fromagerie). Une ambiance combine plusieurs thèmes de notation — une fiche « Caviste, Fromagerie » nourrit Dégustation et Brunch.
+- **Nouveau thème de notation : Brunch** (dans la liste à la création, ligne des longs thèmes).
+- **Filtre deux options** dans la sélection : « Les mieux notés » (défaut) / « Les plus aimés » — le choix survit à la navigation, comme le reste de la modale.
+
 ## V0.4.46 — Inspiration : retours d'usage
 
 - **Bandeau compact** : deux lignes seulement — « Envie d'inspiration ? / Un after-work, un tête à tête… Laisse-toi guider ».
