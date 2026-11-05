@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.50 — Tuiles d'action compactes
+
+- « Noter une adresse » et « Partager une recette » passent en rendu horizontal : icône à gauche, titre et micro-sous-titre à côté — moitié moins de hauteur sur l'accueil.
+
 ## V0.4.49 — Anti-doublon + relance douce J+8
 
 - **Anti-doublon à la note** : pendant la saisie du titre, les fiches du même type déjà notées dans le(s) carnet(s) visé(s) apparaissent sous le champ (« Déjà noté par Sophie — 92/100 ») ; un tap ouvre la fiche existante au lieu d'en recréer une. Comparaison normalisée (minuscules, sans accents ni ponctuation, inclusion dans un sens ou l'autre) à partir de 4 caractères.

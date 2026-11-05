@@ -244,16 +244,23 @@ onUnmounted(() => window.removeEventListener("scroll", surScroll));
       </div>
 
       <!-- Tuiles -->
+      <!-- Tuiles compactes : icône à gauche, titre à côté -->
       <div class="grid grid-cols-2 gap-3 mb-3">
-        <button @click="$router.push('/add?type=adresse')" class="rounded-2xl p-4 text-left bg-surface border border-hairline active:scale-[.98] transition">
-          <span class="inline-flex items-center justify-center rounded-full w-9 h-9 mb-2 bg-gold/15 text-gold"><Ic name="pin" /></span>
-          <p class="text-lg font-serif">Noter une adresse</p>
-          <p class="text-[11px] leading-tight text-muted mt-0.5">Resto, caviste, bar, fromagerie — un lieu que tu aimes</p>
+        <button @click="$router.push('/add?type=adresse')"
+          class="rounded-2xl px-3.5 py-3 flex items-center gap-2.5 text-left bg-surface border border-hairline active:scale-[.98] transition">
+          <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-gold/15 text-gold"><Ic name="pin" class="w-4 h-4" /></span>
+          <span class="min-w-0">
+            <span class="block text-[15px] font-serif leading-tight">Noter une adresse</span>
+            <span class="block text-[10px] leading-tight text-muted">resto, caviste, bar… un lieu que tu aimes</span>
+          </span>
         </button>
-        <button @click="$router.push('/add?type=recette')" class="rounded-2xl p-4 text-left bg-surface border border-hairline active:scale-[.98] transition">
-          <span class="inline-flex items-center justify-center rounded-full w-9 h-9 mb-2 bg-gold/15 text-gold"><Ic name="book" /></span>
-          <p class="text-lg font-serif">Partager une recette</p>
-          <p class="text-[11px] leading-tight text-muted mt-0.5">Le tiramisu de Chetto, la tarte de Mamie…</p>
+        <button @click="$router.push('/add?type=recette')"
+          class="rounded-2xl px-3.5 py-3 flex items-center gap-2.5 text-left bg-surface border border-hairline active:scale-[.98] transition">
+          <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-gold/15 text-gold"><Ic name="book" class="w-4 h-4" /></span>
+          <span class="min-w-0">
+            <span class="block text-[15px] font-serif leading-tight">Partager une recette</span>
+            <span class="block text-[10px] leading-tight text-muted">le tiramisu de Chetto…</span>
+          </span>
         </button>
       </div>
 
