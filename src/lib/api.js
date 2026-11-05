@@ -53,6 +53,12 @@ export async function bootstrap(deviceId) {
   try {
     const r = await api("/api/bootstrap?device=" + encodeURIComponent(deviceId));
     etaitDemo = false;
+    // Le serveur vient de répondre : plus ni bandeau « connexion perdue », ni
+    // mode démo résiduel. (V0.4.89 : avant, seul un MUTATE réussi effaçait le
+    // bandeau — une micro-coupure pendant un import le laissait collé à vie,
+    // même avec toutes les lectures suivantes en pleine santé.)
+    state.demoMode = false;
+    state.connexionPerdue = false;
     return r;
   } catch (e) {
     etaitDemo = true;
