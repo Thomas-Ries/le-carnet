@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.48 — Inspiration : « Brunch à la maison »
+
+- L'ambiance Brunch devient **« Brunch à la maison »** — plus honnête quand la sélection pioche dans les fiches Boulangerie et Fromagerie (les ingrédients du brunch maison), en plus du thème Brunch.
+- Rappel du comportement : une ambiance sans aucune fiche dans le carnet n'apparaît pas dans la modale.
+
 ## V0.4.47 — Inspiration : vraies ambiances + filtre
 
 - **5 ambiances** dans la modale : Resto, Bar à vin, Bar, **Dégustation** (fiches Caviste, Fromagerie) et **Brunch** (thème Brunch, Boulangerie, Fromagerie). Une ambiance combine plusieurs thèmes de notation — une fiche « Caviste, Fromagerie » nourrit Dégustation et Brunch.

@@ -78,7 +78,7 @@ const AMBIANCES = [
   { t: "Bar à vin", themes: ["Bar à vin"] },
   { t: "Bar", themes: ["Bar"] },
   { t: "Dégustation", themes: ["Caviste", "Fromagerie"] },
-  { t: "Brunch", themes: ["Brunch", "Boulangerie", "Fromagerie"] },
+  { t: "Brunch à la maison", themes: ["Brunch", "Boulangerie", "Fromagerie"] },
 ];
 const inspirOpen = computed(() => store.inspir.open);
 const inspirTheme = computed(() => store.inspir.theme);
