@@ -350,6 +350,11 @@ export const useCarnetStore = defineStore("carnet", {
       return { ok: true };
     },
 
+    async noterGo(id) {
+      // Fire-and-forget : la mesure ne doit jamais ralentir l'ouverture de Maps.
+      api.logGo(id).catch(() => {});
+    },
+
     async demanderRecette(id) {
       const r = await api.demandeRecette(id, this.profil.prenom);
       const i = this.fiches.findIndex((f) => f.id === id);

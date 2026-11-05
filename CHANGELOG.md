@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.51 — « On y va »
+
+- Sur le détail d'une fiche adresse, sous le bouton « J'aime » : **« On y va »** ouvre Google Maps directement sur le lieu (requête = titre + lieu) — itinéraire, numéro de téléphone, horaires. La fiche dit quoi et pourquoi, Maps dit comment y aller.
+- Chaque tap logge un événement `go` dans Events : la mesure qui dit combien de fiches se transforment en action.
+
 ## V0.4.50 — Tuiles d'action compactes
 
 - « Noter une adresse » et « Partager une recette » passent en rendu horizontal : icône à gauche, titre et micro-sous-titre à côté — moitié moins de hauteur sur l'accueil.

@@ -31,6 +31,15 @@ async function onFile(e) {
   }
 }
 const confirmSuppr = ref(false);
+/* On y va : pont vers Google Maps (titre + lieu) — la fiche dit quoi et
+   pourquoi, Maps dit comment y aller et comment contacter. */
+const lienMaps = computed(() =>
+  "https://www.google.com/maps/search/?api=1&query=" +
+  encodeURIComponent([fiche.value.titre, fiche.value.lieu].filter(Boolean).join(" "))
+);
+function noterGo() {
+  store.noterGo(fiche.value.id);
+}
 const zoom = ref(false);
 const pop = ref(false);
 const newCom = ref("");
@@ -178,6 +187,14 @@ async function supprimer() {
     <p v-if="!edit && pop && likers.length" class="text-center text-[11px] text-muted mt-2">
       {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
     </p>
+
+    <!-- On y va : itinéraire Maps, uniquement pour les adresses -->
+    <a v-if="!edit && fiche.type !== 'recette'" :href="lienMaps" target="_blank" rel="noopener"
+      @click="noterGo"
+      class="w-full rounded-xl py-3 mt-3 text-sm font-semibold flex items-center justify-center gap-2"
+      :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
+      <Ic name="pin" class="w-4 h-4" /> On y va
+    </a>
 
     <!-- Commentaires -->
     <div v-if="!edit" class="mt-5">

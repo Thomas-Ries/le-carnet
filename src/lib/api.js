@@ -202,6 +202,8 @@ function demoMutate(db, action, p) {
       }
       return { ok: true };
     }
+    case "go":
+      return { ok: true };
     case "deleteAccount":
       // Demo : tout est deja local, l'app se reinitialise cote client.
       return { ok: true };
@@ -233,6 +235,7 @@ export const react = (targetId, prenom, on) => mutate("react", { targetId, preno
 export const addComment = (id, prenom, texte) => mutate("addComment", { id, prenom, texte });
 export const editComment = (commentId, texte) => mutate("editComment", { commentId, texte });
 export const deleteComment = (commentId) => mutate("deleteComment", { commentId });
+export const logGo = (id) => mutate("go", { id });
 export const deleteAccount = (purge) => mutate("deleteAccount", { purge });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });

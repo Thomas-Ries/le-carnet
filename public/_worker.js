@@ -758,6 +758,12 @@ export default {
             return json({ ok: true });
           }
 
+          case "go": {
+            // Mesure H1-H4 : la fiche se transforme en action (bouton On y va -> Maps).
+            logEvent(db, "go", { device, meta: { fiche: cleanText(p.id, 64) } });
+            return json({ ok: true });
+          }
+
           case "leaveCarnet": {
             const c = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
             if (!c) return json({ ok: true });
