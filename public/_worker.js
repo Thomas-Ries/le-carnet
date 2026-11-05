@@ -171,7 +171,7 @@ export default {
           `SELECT carnet_id, prenom FROM Membres WHERE carnet_id IN ${inClause(carnetIds.length)}`
         ).bind(...bindIds()).all();
         const { results: fichesRaw } = await db.prepare(
-          `SELECT f.* FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
+          `SELECT DISTINCT f.* FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
            WHERE l.carnet_id IN ${inClause(carnetIds.length)} ORDER BY f.created_at DESC`
         ).bind(...bindIds()).all();
         const { results: liens } = await db.prepare(
@@ -184,7 +184,7 @@ export default {
           `SELECT fiche_id, prenom FROM DemandesRecette`
         ).all();
         const { results: coms } = await db.prepare(
-          `SELECT c.id, c.fiche_id, c.prenom, c.texte, c.created_at FROM FicheComments c
+          `SELECT DISTINCT c.id, c.fiche_id, c.prenom, c.texte, c.created_at FROM FicheComments c
            JOIN FichesCarnets l ON l.fiche_id = c.fiche_id
            WHERE l.carnet_id IN ${inClause(carnetIds.length)} ORDER BY c.created_at ASC`
         ).bind(...bindIds()).all();
@@ -270,7 +270,7 @@ export default {
             let meilleur = null;
             for (const se of ses) {
               const r = await db.prepare(
-                `SELECT COUNT(*) AS n FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
+                `SELECT COUNT(DISTINCT f.id) AS n FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
                  WHERE l.carnet_id=? AND f.created_at > ?`
               ).bind(se.carnet_id, ab.dernier).first();
               if (r.n && (!meilleur || r.n > meilleur.n)) {
@@ -720,7 +720,7 @@ export default {
             for (const se of sess) {
               if (purger) {
                 const { results: mesFiches } = await db.prepare(
-                  `SELECT f.id FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id WHERE l.carnet_id=? AND f.auteur=?`
+                  `SELECT DISTINCT f.id FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id WHERE l.carnet_id=? AND f.auteur=?`
                 ).bind(se.carnet_id, se.prenom).all();
                 for (const f of mesFiches) {
                   await db.prepare(`DELETE FROM FichesCarnets WHERE fiche_id=?`).bind(f.id).run();

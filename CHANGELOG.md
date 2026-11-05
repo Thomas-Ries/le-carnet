@@ -1,5 +1,9 @@
 # Changelog
 
+## V0.4.55 — fix doublons des fiches multi-carnets
+
+- Une fiche liée à plusieurs carnets (duplication Famille B → Les copains) apparaissait deux fois dans le fil : le bootstrap du worker renvoyait une ligne par lien fiche↔carnet. Toutes les jointures qui peuvent doubler passent en DISTINCT (fiches, commentaires, compteur relance J+8, purge de compte).
+
 ## V0.4.54 — Like sans la ligne des prénoms
 
 - Plus de « Thomas aime ça » sous le bouton après un like : le geste du cœur suffit, le compteur reste dans la pilule (« J'aime · 2 »). La ligne des prénoms disparaît de la fiche.
