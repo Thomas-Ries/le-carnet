@@ -194,7 +194,7 @@ async function exporterJSON() {
             <Ic name="chat" class="w-4 h-4" /> WhatsApp
           </button>
           <button @click="sms" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-            <Ic name="phone" class="w-4 h-4" /> SMS
+            <Ic name="sms" class="w-4 h-4" /> SMS
           </button>
           <button @click="copier" class="rounded-xl py-3 text-[13px] font-semibold text-accent border border-hairline flex items-center justify-center gap-1.5">
             <Ic name="share" class="w-4 h-4" /> Copier

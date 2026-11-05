@@ -67,6 +67,10 @@ async function toggleNotif() {
 }
 
 const store = useCarnetStore();
+// PWA déjà installée ? Alors la carte d'installation descend en bas des réglages.
+const appInstallee = (typeof window !== "undefined") &&
+  ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+   window.navigator.standalone === true);
 const toast = inject("toast");
 const prenom = ref(store.profil.prenom);
 
@@ -198,7 +202,17 @@ async function exporterJSON() {
       </div>
     </div>
 
-    <InstallCard />
+
+    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes carnets ({{ store.carnets.length }})</p>
+      <div class="flex flex-wrap gap-1.5">
+        <span v-for="c in store.carnets" :key="c.id" class="rounded-full px-3 py-1.5 text-xs font-medium bg-soft text-accent">{{ c.nom }}</span>
+      </div>
+      <a href="#/carnet"
+        class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+        <Ic name="book" class="w-4 h-4" /> Gérer et partager mes carnets
+      </a>
+    </div>
 
     <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
       <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Inviter dans un carnet</p>
@@ -217,7 +231,7 @@ async function exporterJSON() {
           <Ic name="chat" class="w-4 h-4" /> WhatsApp
         </button>
         <button @click="smsInvite" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
-          <Ic name="phone" class="w-4 h-4" /> SMS
+          <Ic name="sms" class="w-4 h-4" /> SMS
         </button>
         <button @click="navigator.clipboard?.writeText(lien); toast('Lien copié')"
           class="rounded-xl py-3 text-[13px] font-semibold text-accent border border-hairline flex items-center justify-center gap-1.5">
@@ -225,6 +239,8 @@ async function exporterJSON() {
         </button>
       </div>
     </div>
+
+    <InstallCard v-if="!appInstallee" />
 
     <!-- Réglages & données : 3 accordéons natifs (details/summary), état visible même repliés -->
     <div class="rounded-2xl bg-surface border border-hairline mb-3 overflow-hidden">
@@ -306,6 +322,10 @@ async function exporterJSON() {
           </button>
         </div>
       </details>
+
+      <div v-if="appInstallee" class="border-t border-hairline px-4 pt-3 pb-4">
+        <InstallCard />
+      </div>
     </div>
 
     <button @click="toggleTheme"
@@ -316,13 +336,6 @@ async function exporterJSON() {
           :style="{ left: store.dark ? '22px' : '2px' }" />
       </span>
     </button>
-
-    <div class="rounded-2xl p-4 mb-3 bg-surface border border-hairline">
-      <p class="text-[10px] uppercase tracking-widest text-muted mb-2">Mes carnets ({{ store.carnets.length }})</p>
-      <div class="flex flex-wrap gap-1.5">
-        <span v-for="c in store.carnets" :key="c.id" class="rounded-full px-3 py-1.5 text-xs font-medium bg-soft text-accent">{{ c.nom }}</span>
-      </div>
-    </div>
 
 
     <p class="text-[11px] text-muted text-center leading-relaxed">

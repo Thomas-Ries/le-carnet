@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.30 — Lisibilité : toasts opaques, icônes de partage, photo plein cadre, profil réordonné
+
+- Toasts : fond opaque (surface) + liseré or — plus de transparence, « Carnet créé » se lit parfaitement sur tout fond.
+- Partage : bulle WhatsApp redessinée (points bien inscrits dans la bulle) et vraie icône SMS (bulle carrée de message) au lieu du smartphone.
+- Photo d'une note : cadre 4:3 plein tapé moins tronqué, et tap = visionneuse plein écran (tap à nouveau pour fermer).
+- Profil : « Mes carnets » remonte juste sous Mon activité avec un bouton « Gérer et partager mes carnets » ; l'invitation suit juste après ; une fois la PWA installée, sa carte descend en bas des réglages.
+
 ## 0.4.29 — Super admin : reprise globale par phrase de passe
 
 - Écran d'accueil : lien discret « C'est ton appli à toi ? Reprends tous tes carnets » → la phrase de passe du créateur restaure des sessions admin sur TOUS les carnets, sur n'importe quel appareil (même après un drop de base ou un téléphone neuf).

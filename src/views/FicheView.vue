@@ -40,6 +40,7 @@ function onFile(e) {
   reader.readAsDataURL(file);
 }
 const confirmSuppr = ref(false);
+const zoom = ref(false);
 const pop = ref(false);
 
 function startEdit() {
@@ -74,7 +75,11 @@ async function supprimer() {
       </div>
     </div>
 
-    <img v-if="fiche.photo" :src="fiche.photo" alt="" class="w-full rounded-2xl mb-3 object-cover max-h-52" />
+    <button v-if="fiche.photo" @click="zoom = true" class="block w-full rounded-2xl mb-3 overflow-hidden relative group">
+      <img :src="fiche.photo" alt="" class="w-full aspect-[4/3] object-cover" />
+      <span class="absolute bottom-2 right-2 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white"
+        style="background: rgba(30, 23, 20, .55)">Agrandir</span>
+    </button>
 
     <div class="flex items-start justify-between gap-3 mb-1">
       <h1 class="text-xl font-serif leading-tight">{{ fiche.titre }}</h1>
@@ -141,6 +146,13 @@ async function supprimer() {
     <p v-if="!edit && pop && likers.length" class="text-center text-[11px] text-muted mt-2">
       {{ likers.join(", ") }} {{ likers.length > 1 ? "aiment" : "aime" }} ça
     </p>
+
+    <!-- Visionneuse plein écran : tap sur la photo -->
+    <div v-if="zoom" @click="zoom = false"
+      class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+      style="background: rgba(20, 14, 12, .94)">
+      <img :src="fiche.photo" alt="" class="max-w-full max-h-full object-contain rounded-xl" @click.stop />
+    </div>
 
     <ConfirmModal :open="confirmSuppr"
       :title="'Supprimer « ' + fiche.titre + ' » ?'"
