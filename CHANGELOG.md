@@ -1,5 +1,10 @@
 # Changelog
 
+## V0.4.49 — Anti-doublon + relance douce J+8
+
+- **Anti-doublon à la note** : pendant la saisie du titre, les fiches du même type déjà notées dans le(s) carnet(s) visé(s) apparaissent sous le champ (« Déjà noté par Sophie — 92/100 ») ; un tap ouvre la fiche existante au lieu d'en recréer une. Comparaison normalisée (minuscules, sans accents ni ponctuation, inclusion dans un sens ou l'autre) à partir de 4 caractères.
+- **Relance douce J+8** : un appareil qui n'a pas ouvert l'app depuis 8 jours et dont un carnet s'est rempli depuis reçoit « 3 nouvelles adresses t'attendent — dans “Les Copains”, depuis ton dernier passage ♥ ». Déclenchée par n'importe quel bootstrap (comme le rappel J-6), au plus une fois tous les 2 jours par appareil (événement `relance_j8`).
+
 ## V0.4.48 — Inspiration : « Brunch à la maison »
 
 - L'ambiance Brunch devient **« Brunch à la maison »** — plus honnête quand la sélection pioche dans les fiches Boulangerie et Fromagerie (les ingrédients du brunch maison), en plus du thème Brunch.

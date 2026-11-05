@@ -32,6 +32,22 @@ const recette = ref("");
 
 const cats = computed(() => (type.value === "recette" ? ["Recette"] : CATS));
 
+/* Anti-doublon : pendant la saisie du titre, on cherche les fiches du meme type
+   deja notees dans le(s) carnet(s) vise(s) dont le titre ressemble (normalise :
+   minuscules, sans accents ni ponctuation, inclusion dans un sens ou l'autre). */
+const normTitre = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+const doublons = computed(() => {
+  const q = normTitre(titre.value);
+  if (q.length < 4) return [];
+  return store.fiches
+    .filter((f) => f.type === type.value && f.carnets.some((cid) => sel.value.includes(cid)))
+    .filter((f) => {
+      const n = normTitre(f.titre);
+      return n.length >= 4 && (n === q || n.includes(q) || q.includes(n));
+    })
+    .slice(0, 2);
+});
+
 function toggle(id) {
   sel.value = sel.value.includes(id)
     ? (sel.value.length > 1 ? sel.value.filter((x) => x !== id) : sel.value)
@@ -124,6 +140,12 @@ async function valider() {
     <div class="space-y-2.5">
       <input v-model="titre" :placeholder="type === 'adresse' ? 'Nom du lieu…' : 'Nom du plat…'"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
+      <!-- Doublon probable : deja note par quelqu'un dans le(s) carnet(s) vise(s) -->
+      <button v-for="d in doublons" :key="d.id" @click="router.push('/fiche/' + d.id)"
+        class="w-full rounded-xl px-3 py-2.5 text-left bg-soft border border-hairline">
+        <p class="text-xs font-semibold text-accent">Déjà noté par {{ d.auteur }}<template v-if="d.note"> — {{ d.note }}/100</template></p>
+        <p class="text-[10px] text-muted mt-0.5 leading-snug">« {{ d.titre }} » — tape pour le voir au lieu d'en recréer une fiche</p>
+      </button>
       <input v-if="type === 'adresse'" v-model="lieu" placeholder="Ville, quartier…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="2" placeholder="« Punaise, c'était bon » — ton commentaire…"

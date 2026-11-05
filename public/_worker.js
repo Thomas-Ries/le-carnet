@@ -249,6 +249,45 @@ export default {
             await db.prepare(`UPDATE Flashes SET reminded_at=? WHERE id=?`).bind(new Date().toISOString(), fl.id).run();
           }
         }
+        // Relance douce J+8 : un appareil qui n'a pas ouvert l'app depuis 8 jours
+        // et dont un carnet s'est rempli depuis -> une petite notif pour le ramener.
+        // Declenchee par n'importe quel bootstrap (comme le rappel J-6), au plus
+        // une fois tous les 2 jours par appareil (event relance_j8 dans Events).
+        if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+          const avant = new Date(Date.now() - 8 * 864e5).toISOString();
+          const { results: absents } = await db.prepare(
+            `SELECT device_id, MAX(created_at) AS dernier FROM Events WHERE type='open' GROUP BY device_id HAVING dernier <= ?`
+          ).bind(avant).all();
+          const throttle = new Date(Date.now() - 2 * 864e5).toISOString();
+          for (const ab of absents) {
+            const deja = await db.prepare(
+              `SELECT 1 FROM Events WHERE type='relance_j8' AND device_id=? AND created_at > ?`
+            ).bind(ab.device_id, throttle).first();
+            if (deja) continue;
+            const { results: ses } = await db.prepare(
+              `SELECT carnet_id FROM Sessions WHERE device_id=?`
+            ).bind(ab.device_id).all();
+            let meilleur = null;
+            for (const se of ses) {
+              const r = await db.prepare(
+                `SELECT COUNT(*) AS n FROM Fiches f JOIN FichesCarnets l ON l.fiche_id = f.id
+                 WHERE l.carnet_id=? AND f.created_at > ?`
+              ).bind(se.carnet_id, ab.dernier).first();
+              if (r.n && (!meilleur || r.n > meilleur.n)) {
+                const c = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(se.carnet_id).first();
+                meilleur = { n: r.n, nom: c ? c.nom : "", id: se.carnet_id };
+              }
+            }
+            if (meilleur) {
+              sendPushTo(env, db, [ab.device_id], {
+                title: meilleur.n > 1 ? meilleur.n + " nouvelles adresses t'attendent" : "Une nouvelle adresse t'attend",
+                body: "dans « " + cleanText(meilleur.nom, 24) + " », depuis ton dernier passage ♥",
+                url: "/",
+              }).catch(() => {});
+              logEvent(db, "relance_j8", { device: ab.device_id, carnet: meilleur.id, meta: { n: meilleur.n } });
+            }
+          }
+        }
         const flashes = flashesRaw.map((fl) => ({
           id: fl.id, carnets: [fl.carnet_id], auteur: fl.auteur, photo: fl.photo, com: fl.com || null,
           date: fl.created_at, reacts: reactsByFlash[fl.id] || [],
