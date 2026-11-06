@@ -9,6 +9,9 @@
 - Menu de tri de l'accueil : nouvelle section « Afficher » (Tous / Adresses / Recettes / Cocktails) au-dessus du tri ; le filtre se réinitialise au changement de carnet.
 - FicheRow : icône verre pour les cocktails.
 - Migration des fiches existantes : UPDATE Fiches SET type='cocktail' WHERE titre IN ('Negroni Automne','Old Fashioned','Michelada');
+0.4.92 — Fix notifications jamais livrées après purge du stockage
+- Diagnostic : le profil affiche « Activées » (l'abonnement navigateur survit), mais la ligne PushSubscriptions en base reste sous l'ancien device_id quand iOS purge le stockage → le serveur ne trouve aucun abonnement pour les device_ids courants → notifs perdues en silence.
+- Fix : à chaque bootstrap réussi, l'app renvoie l'abonnement push existant au serveur (upsert par endpoint UNIQUE) — la ligne se répare toute seule, aucun geste des membres.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

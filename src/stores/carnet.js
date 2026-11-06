@@ -156,6 +156,18 @@ export const useCarnetStore = defineStore("carnet", {
         } else if (this.profil.avatar && !this.demoMode) {
           api.setAvatar(this.profil.avatar, this.deviceId).catch(() => null);
         }
+        // V0.4.92 : re-synchronise l'abonnement push à chaque bootstrap réussi.
+        // L'abonnement navigateur survit aux purges de stockage iOS, mais la ligne
+        // en base reste rattachée à l'ancien device_id -> notifs jamais livrées,
+        // alors que le profil affiche « Activées ». L'upsert serveur (INSERT OR
+        // REPLACE, endpoint UNIQUE) répare la ligne silencieusement.
+        if (!this.demoMode) {
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) api.subscribePush(sub.toJSON()).catch(() => null);
+          } catch (e) { /* pas de service worker / pas de support push : rien à faire */ }
+        }
       } catch (e) { /* réseau KO : on retentera au prochain retour au premier plan */ }
       finally { this._refreshing = false; }
     },
