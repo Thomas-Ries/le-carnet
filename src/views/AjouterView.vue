@@ -155,7 +155,7 @@ async function valider() {
     </div>
 
     <div class="space-y-2.5">
-      <input v-model="titre" :placeholder="type === 'adresse' ? 'Nom du lieu…' : 'Nom du plat…'"
+      <input v-model="titre" :placeholder="type === 'adresse' ? t('Nom du lieu…') : t('Nom du plat ou du cocktail…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       
       <button v-for="d in doublons" :key="d.id" @click="router.push('/fiche/' + d.id)"

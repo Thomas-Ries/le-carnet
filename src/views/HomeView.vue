@@ -429,7 +429,7 @@ async function confirmerPartage() {
           <span class="rounded-full w-9 h-9 flex items-center justify-center shrink-0 bg-gold/15 text-gold"><Ic name="book" class="w-4 h-4" /></span>
           <span class="min-w-0">
             <span class="block text-[15px] font-serif leading-tight">{{ t("Partager une recette") }}</span>
-            <span class="block text-[10px] leading-tight text-muted">{{ t("le tiramisu de Chetto…") }}</span>
+            <span class="block text-[10px] leading-tight text-muted">{{ t("un cocktail, le tiramisu de Chetto…") }}</span>
           </span>
         </button>
       </div>

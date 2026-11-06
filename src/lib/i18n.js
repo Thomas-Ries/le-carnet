@@ -372,6 +372,9 @@ const EN = {
   "Régénérer le lien d'invitation ?": "Regenerate the invite link?",
   "Tu ne recevras plus rien de ce carnet et toutes ses publications disparaissent de ton fil. Aucune récupération possible — pour revenir, il faudra une nouvelle invitation.": "You'll no longer receive anything from this notebook and all its posts disappear from your feed. No recovery possible — to come back, you'll need a new invitation.",
   "Ça l'enlève de tous les carnets. Pas de retour arrière.": "This removes it from every notebook. No going back.",
+  "Nom du lieu…": "Name of the place…",
+  "Nom du plat ou du cocktail…": "Name of the dish or cocktail…",
+  "un cocktail, le tiramisu de Chetto…": "a cocktail, Chetto's tiramisu…",
 };
 
 export function t(s) {
