@@ -306,7 +306,7 @@ async function exporterJSON() {
           </span>
           <span class="min-w-0">
             <span class="block text-base font-serif leading-none">{{ b.val }}</span>
-            <span class="block text-[10px] text-muted truncate">{{ b.label }}</span>
+            <span class="block text-[10px] text-muted truncate">{{ t(b.label) }}</span>
           </span>
         </div>
       </div>
@@ -379,10 +379,10 @@ async function exporterJSON() {
 
       <template v-else>
         <div class="flex flex-wrap gap-2 mb-3">
-          <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">✓ {{ resultatImport.importes }} importés</span>
+          <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">✓ {{ resultatImport.importes }} {{ t("importés") }}</span>
           <span v-if="resultatImport.ignores" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
-            :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.ignores }} doublons ignorés</span>
-          <span v-if="resultatImport.rattaches" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">★ {{ resultatImport.rattaches }} avis rattachés</span>
+            :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.ignores }} {{ t("doublons ignorés") }}</span>
+          <span v-if="resultatImport.rattaches" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" :style="{ background: 'var(--c-accent)' }">★ {{ resultatImport.rattaches }} {{ t("avis rattachés") }}</span>
           <span v-if="resultatImport.orphelins && resultatImport.orphelins.length" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
             :style="{ border: '1px solid var(--c-hairline)' }">{{ resultatImport.orphelins.length }} avis sans lieu correspondant</span>
           <span v-if="resultatImport.sansLieu" class="rounded-full px-2.5 py-1 text-[11px] font-semibold text-muted"
@@ -391,7 +391,7 @@ async function exporterJSON() {
         
         <button class="w-full rounded-xl py-3 text-sm font-semibold text-white bg-accent flex items-center justify-center gap-1.5"
           @click="ouvrirMesAdresses">
-          <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
+          <Ic name="book" class="w-4 h-4" /> {{ t("Ouvrir Mon G-Maps") }}{{ nbMesAdresses ? " (" + nbMesAdresses + ")" : "" }} →
         </button>
         <p class="text-[11px] text-muted text-center mt-2.5 mb-1">
           {{ t("Pour offrir une adresse à un carnet : appui long sur une fiche dans la liste, puis « Partager ».") }}
@@ -402,7 +402,7 @@ async function exporterJSON() {
 
       <button v-if="store.mesAdresses && !resultatImport" class="mt-3 w-full rounded-xl py-2.5 text-sm font-semibold text-accent bg-soft flex items-center justify-center gap-1.5"
         @click="ouvrirMesAdresses">
-        <Ic name="book" class="w-4 h-4" /> Ouvrir Mon G-Maps ({{ nbMesAdresses }}) →
+        <Ic name="book" class="w-4 h-4" /> {{ t("Ouvrir Mon G-Maps") }} ({{ nbMesAdresses }}) →
       </button>
       <p class="text-[10px] text-muted mt-2">{{ t("Export : takeout.google.com → « Maps (vos adresses) » — un seul produit contient tes lieux ET tes avis. Aucun compte Google requis.") }}</p>
       </template>
@@ -463,7 +463,7 @@ async function exporterJSON() {
             <Ic name="chevron" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
           </div>
           <p v-if="exportCarnet" class="text-[11px] text-muted mb-2.5 leading-relaxed">
-            Fichier JSON du carnet « {{ exportCarnet.nom }} » : fiches, notes et commentaires. Sur iPhone, la feuille de partage natif s'ouvre.
+            {{ t("Fichier JSON du carnet «") }} {{ exportCarnet.nom }} » : {{ t("fiches, notes et commentaires. Sur iPhone, la feuille de partage natif s'ouvre.") }}
           </p>
           <button @click="exporterJSON"
             class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5"

@@ -16,13 +16,13 @@ const emit = defineEmits(["confirm", "cancel"]);
     style="background: rgba(43,35,32,.45)" @click.self="emit('cancel')">
     <div class="w-full max-w-[430px] rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl"
       style="border-top: 1px solid var(--c-hairline)">
-      <p class="font-serif text-lg mb-1">{{ title }}</p>
-      <p class="text-xs text-muted mb-4 leading-relaxed">{{ text }}</p>
+      <p class="font-serif text-lg mb-1">{{ t(title) }}</p>
+      <p class="text-xs text-muted mb-4 leading-relaxed">{{ t(text) }}</p>
       <div class="grid grid-cols-2 gap-2">
         <button @click="emit('cancel')"
           class="rounded-xl py-3 text-sm font-semibold border border-hairline">{{ t("Annuler") }}</button>
         <button @click="emit('confirm')"
-          class="rounded-xl py-3 text-sm font-semibold text-white bg-accent">{{ confirmLabel }}</button>
+          class="rounded-xl py-3 text-sm font-semibold text-white bg-accent">{{ t(confirmLabel) }}</button>
       </div>
     </div>
   </div>

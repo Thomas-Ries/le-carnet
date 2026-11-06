@@ -356,7 +356,7 @@ async function exporterJSON() {
       <button @click="exporterJSON"
         class="w-full rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 mb-4"
         :style="{ color: 'var(--c-green)', background: 'color-mix(in srgb, var(--c-green) 12%, transparent)' }">
-        <Ic name="share" class="w-4 h-4" /> Exporter « {{ store.carnet.nom }} » en JSON
+        <Ic name="share" class="w-4 h-4" /> {{ t("Exporter «") }} {{ store.carnet.nom }} » {{ t("en JSON") }}
       </button>
 
       <p class="text-[11px] text-muted text-center leading-relaxed">
@@ -365,13 +365,13 @@ async function exporterJSON() {
       </p>
 
       <ConfirmModal :open="popinQuitter"
-        :title="'Quitter « ' + (store.carnet?.nom || '') + ' » ?'"
+        :title="t('Quitter') + ' « ' + (store.carnet?.nom || '') + ' » ?'"
         text="Tu ne recevras plus rien de ce carnet et toutes ses publications disparaissent de ton fil. Aucune récupération possible — pour revenir, il faudra une nouvelle invitation."
         confirmLabel="Quitter"
         @confirm="quitter" @cancel="popinQuitter = false" />
 
       <ConfirmModal :open="!!pendingRetrait"
-        :title="'Retirer ' + (pendingRetrait || '') + ' ?'"
+        :title="t('Retirer') + ' ' + (pendingRetrait || '') + ' ?'"
         text="Il ne verra plus ce carnet. Il garde ses autres carnets."
         confirmLabel="Retirer"
         @confirm="confirmerRetrait" @cancel="pendingRetrait = null" />

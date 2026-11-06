@@ -260,7 +260,7 @@ async function supprimer() {
     </div>
 
     <ConfirmModal :open="confirmSuppr"
-      :title="'Supprimer « ' + fiche.titre + ' » ?'"
+      :title="t('Supprimer') + ' « ' + fiche.titre + ' » ?'"
       text="Ça l'enlève de tous les carnets. Pas de retour arrière."
       @confirm="supprimer" @cancel="confirmSuppr = false" />
   </div>

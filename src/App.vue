@@ -111,7 +111,7 @@ onMounted(async () => {
           :style="{ color: route.path === n.to ? 'var(--c-accent)' : 'var(--c-muted)' }">
           <Ic :name="n.icon" :filled="route.path === n.to" :sw="route.path === n.to ? 2.3 : 2"
             class="w-6 h-6 transition-transform" :class="route.path === n.to ? 'scale-110' : ''" />
-          <span class="text-[10px]" :class="route.path === n.to ? 'font-semibold' : 'font-medium'">{{ n.label }}</span>
+          <span class="text-[10px]" :class="route.path === n.to ? 'font-semibold' : 'font-medium'">{{ t(n.label) }}</span>
         </router-link>
       </div>
     </nav>

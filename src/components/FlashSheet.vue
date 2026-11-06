@@ -86,7 +86,7 @@ async function envoyer() {
       <button @click="envoyer" :disabled="!photo"
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
         :style="{ background: photo ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
-        {{ t("Envoyer le flash") }}<template v-if="sel.length > 1"> à {{ sel.length }} carnets</template>
+        {{ t("Envoyer le flash") }}<template v-if="sel.length > 1"> {{ t("à") }} {{ sel.length }} {{ t("carnets") }}</template>
       </button>
       <p class="text-center text-[10px] text-muted mt-2">{{ t("Tu pourras le compléter en fiche notée — badge éclair en attendant.") }}</p>
     </div>

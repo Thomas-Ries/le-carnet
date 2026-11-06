@@ -90,7 +90,7 @@ const paysChips = computed(() => {
   }
   return [...n.entries()]
     .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
-    .map(([p, c]) => ({ pays: p || "?", label: p || "Non précisé", n: c }));
+    .map(([p, c]) => ({ pays: p || "?", label: p || t("Non précisé"), n: c }));
 });
 const villesChips = computed(() => {
   if (!filtrePays.value) return [];
@@ -452,10 +452,10 @@ async function confirmerPartage() {
         style="background: rgba(20, 14, 12, .55)" @click.self="fermerNouveaute">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
           <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">{{ t("Nouveauté") }}</p>
-          <p class="text-lg font-serif leading-tight mb-3">{{ NOUVEAUTE.titre }}</p>
+          <p class="text-lg font-serif leading-tight mb-3">{{ t(NOUVEAUTE.titre) }}</p>
           <div class="flex items-start gap-3 mb-4">
             <span class="rounded-full w-8 h-8 flex items-center justify-center shrink-0 bg-soft text-accent"><Ic name="pin" class="w-4 h-4" /></span>
-            <p class="text-xs leading-relaxed flex-1">{{ NOUVEAUTE.texte }}</p>
+            <p class="text-xs leading-relaxed flex-1">{{ t(NOUVEAUTE.texte) }}</p>
           </div>
           <button @click="voirNouveaute"
             class="w-full rounded-xl py-3 text-sm font-semibold text-white mb-2 flex items-center justify-center gap-1.5"
@@ -471,7 +471,7 @@ async function confirmerPartage() {
         style="background: rgba(20, 14, 12, .6)">
         <div class="w-full max-w-sm rounded-2xl p-5 bg-bg border border-hairline">
           <p class="text-lg font-serif text-center mb-0.5">{{ t("Bienvenue dans Le Carnet") }}</p>
-          <p class="text-[11px] text-muted text-center mb-4">Le carnet « {{ store.carnet?.nom }} » est à toi aussi, maintenant.</p>
+          <p class="text-[11px] text-muted text-center mb-4">{{ t("Le carnet «") }} {{ store.carnet?.nom }} » {{ t("est à toi aussi, maintenant.") }}</p>
 
           <div class="space-y-2.5 mb-4">
             <div class="flex items-start gap-3">
@@ -529,10 +529,10 @@ async function confirmerPartage() {
             <p class="text-base font-serif mb-1">{{ t("Ce soir, l'ambiance est plutôt…") }}</p>
             <p class="text-[11px] text-muted mb-3.5 leading-relaxed">{{ t("Pioche un thème — on te sort les adresses les mieux notées du carnet, à ouvrir ou à partager.") }}</p>
             <div class="flex flex-wrap gap-1.5 mb-1">
-              <button v-for="t in themesDispos" :key="t.t" @click="store.inspir.theme = t.t; store.inspir.tri = 'note'"
+              <button v-for="th in themesDispos" :key="th.t" @click="store.inspir.theme = th.t; store.inspir.tri = 'note'"
                 class="rounded-full px-3 py-2 text-xs font-medium"
                 :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)', border: '1px solid var(--c-accent)' }">
-                {{ t.t }} <span class="text-[10px] opacity-70">{{ t.c }}</span>
+                {{ t(th.t) }} <span class="text-[10px] opacity-70">{{ th.c }}</span>
               </button>
             </div>
           </template>
@@ -541,7 +541,7 @@ async function confirmerPartage() {
               <button @click="store.inspir.theme = null" class="rounded-full p-2 bg-surface border border-hairline">
                 <Ic name="back" class="w-4 h-4" />
               </button>
-              <p class="text-sm font-serif flex-1 text-center">Envie de {{ (ambianceChoisie ? ambianceChoisie.t : "").toLowerCase() }} ?</p>
+              <p class="text-sm font-serif flex-1 text-center">{{ t("Envie de") }} {{ (ambianceChoisie ? t(ambianceChoisie.t) : "").toLowerCase() }} ?</p>
               <button @click="inspirFermer" class="rounded-full p-2 bg-surface border border-hairline">
                 <Ic name="x" class="w-4 h-4" />
               </button>
@@ -554,7 +554,7 @@ async function confirmerPartage() {
                   background: store.inspir.tri === fl.id ? 'var(--c-soft)' : 'var(--c-surface)',
                   color: store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-muted)',
                   border: '1px solid ' + (store.inspir.tri === fl.id ? 'var(--c-accent)' : 'var(--c-hairline)'),
-                }">{{ fl.label }}</button>
+                }">{{ t(fl.label) }}</button>
               
               <button @click="inspirMode = !inspirMode; inspirSel = []" :title="t('Partager une sélection')"
                 class="ml-auto w-7 h-7 rounded-full flex items-center justify-center transition"
@@ -670,7 +670,7 @@ async function confirmerPartage() {
                 @click="tri = tr.id; triOpen = false"
                 class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
                 :style="{ color: tr.id === tri ? 'var(--c-accent)' : 'var(--c-ink)', background: tr.id === tri ? 'var(--c-soft)' : 'transparent' }">
-                <span>{{ tr.label }}<span v-if="tr.defaut" class="text-[10px] text-muted ml-1">{{ t("défaut") }}</span></span>
+                <span>{{ t(tr.label) }}<span v-if="tr.defaut" class="text-[10px] text-muted ml-1">{{ t("défaut") }}</span></span>
                 <Ic v-if="tr.id === tri" name="check" class="w-3.5 h-3.5" />
               </button>
             </div>
@@ -689,10 +689,10 @@ async function confirmerPartage() {
         </div>
       </div>
 
-      <p v-if="affiches.length < fichesTri.length" class="text-center text-[10px] text-muted pt-2">Fais défiler pour découvrir les {{ fichesTri.length }} adresses du carnet…</p>
+      <p v-if="affiches.length < fichesTri.length" class="text-center text-[10px] text-muted pt-2">{{ t("Fais défiler pour découvrir les") }} {{ fichesTri.length }} {{ t("adresses du carnet…") }}</p>
 
       <p v-if="!fiches.length" class="text-center text-sm text-muted py-8 leading-relaxed">
-        Le carnet « {{ store.carnet?.nom }} » attend sa première adresse aimée.<br />
+        {{ t("Le carnet «") }} {{ store.carnet?.nom }} » {{ t("attend sa première adresse aimée.") }}<br />
         {{ t("Sois celui qui note le premier.") }}
       </p>
     </template>
@@ -732,7 +732,7 @@ async function confirmerPartage() {
     </div>
 
     <ConfirmModal :open="confirmPartage" :title="t('Partager tes fiches privées ?')"
-      :text="'Tu vas partager tes fiches privées avec : ' + carnetIdsChoisis.map((id) => store.carnets.find((c) => c.id === id)?.nom).filter(Boolean).join(' et ')"
-      confirmLabel="Valider" @confirm="confirmerPartage" @cancel="confirmPartage = false" />
+      :text="t('Tu vas partager tes fiches privées avec : ') + carnetIdsChoisis.map((id) => store.carnets.find((c) => c.id === id)?.nom).filter(Boolean).join(t('et'))"
+      :confirmLabel="t('Valider')" @confirm="confirmerPartage" @cancel="confirmPartage = false" />
   </div>
 </template>

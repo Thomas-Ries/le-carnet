@@ -161,7 +161,7 @@ async function valider() {
       <button v-for="d in doublons" :key="d.id" @click="router.push('/fiche/' + d.id)"
         class="w-full rounded-xl px-3 py-2.5 text-left bg-soft border border-hairline">
         <p class="text-xs font-semibold text-accent">{{ t("Déjà noté par") }} {{ d.auteur }}<template v-if="d.note"> — {{ d.note }}/100</template></p>
-        <p class="text-[10px] text-muted mt-0.5 leading-snug">« {{ d.titre }} » — tape pour le voir au lieu d'en recréer une fiche</p>
+        <p class="text-[10px] text-muted mt-0.5 leading-snug">« {{ d.titre }} » — {{ t("tape pour le voir au lieu d'en recréer une fiche") }}</p>
       </button>
       <input v-if="type === 'adresse'" v-model="lieu" :placeholder="t('Ville, quartier…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
