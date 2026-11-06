@@ -12,6 +12,12 @@
 0.4.92 — Fix notifications jamais livrées après purge du stockage
 - Diagnostic : le profil affiche « Activées » (l'abonnement navigateur survit), mais la ligne PushSubscriptions en base reste sous l'ancien device_id quand iOS purge le stockage → le serveur ne trouve aucun abonnement pour les device_ids courants → notifs perdues en silence.
 - Fix : à chaque bootstrap réussi, l'app renvoie l'abonnement push existant au serveur (upsert par endpoint UNIQUE) — la ligne se répare toute seule, aucun geste des membres.
+0.4.93 — Le mode démo ne s'active plus en production
+- Incident : une testeuse hors réseau a vu les carnets factices du mode démo (Famille / La bande / Boulot) — inacceptable au lancement.
+- La démo (données locales seedées) ne s'active plus qu'en dev (import.meta.env.DEV). En prod, un échec réseau garde l'état réel et affiche le bandeau « Connexion au serveur perdue — touche ici pour réessayer » (cliquable → refresh).
+- Les mutations en échec réseau retournent une erreur explicite au lieu d'une fausse réussite locale.
+- La base démo (lc-demo-db) est purgée du navigateur au premier bootstrap réussi en prod.
+- Popin « pass super-admin » du Profil réservée au mode démo.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

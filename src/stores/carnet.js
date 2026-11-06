@@ -108,7 +108,15 @@ export const useCarnetStore = defineStore("carnet", {
 
       // Identité de l'appareil : UUID persistant, c'est lui qui authentifie
       this.deviceId = api.getDeviceId();
-      const data = await api.bootstrap(this.deviceId);
+      // V0.4.93 : en prod, un échec réseau au tout premier lancement ne casse
+      // plus rien — état vide + bandeau « connexion perdue » (posé juste après
+      // via api.state, retry au retour au premier plan).
+      let data;
+      try {
+        data = await api.bootstrap(this.deviceId);
+      } catch (e) {
+        data = { carnets: [], fiches: [], flashes: [], roles: {} };
+      }
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
       this.carnets = data.carnets || [];
@@ -168,7 +176,7 @@ export const useCarnetStore = defineStore("carnet", {
             if (sub) api.subscribePush(sub.toJSON()).catch(() => null);
           } catch (e) { /* pas de service worker / pas de support push : rien à faire */ }
         }
-      } catch (e) { /* réseau KO : on retentera au prochain retour au premier plan */ }
+      } catch (e) { this.connexionPerdue = api.state.connexionPerdue; /* réseau KO : état conservé, bandeau posé, retry au premier plan */ }
       finally { this._refreshing = false; }
     },
 

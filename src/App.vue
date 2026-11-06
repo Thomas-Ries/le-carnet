@@ -76,9 +76,9 @@ onMounted(async () => {
 
   <template v-else>
     
-    <div v-if="store.demoMode && store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30"
-      :style="{ background: '#7A2E3E', color: '#fff' }">
-      {{ t("Connexion au serveur perdue — tes dernières actions restent sur cet appareil uniquement.       Si ça persiste, préviens l'admin de ton carnet.") }}
+    <div v-if="store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30 cursor-pointer"
+      :style="{ background: '#7A2E3E', color: '#fff' }" @click="store.refresh()">
+      {{ t("Connexion au serveur perdue — tes carnets sont intacts. Touche ici pour réessayer.") }}
     </div>
     <div v-else-if="store.demoMode" class="w-full py-1.5 text-center text-[10px] uppercase tracking-widest sticky top-0 z-30"
       :style="{ background: 'var(--c-soft)', color: 'var(--c-accent)' }">

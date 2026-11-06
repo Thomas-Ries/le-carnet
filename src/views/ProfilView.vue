@@ -533,8 +533,8 @@ async function exporterJSON() {
 
 
     <p class="text-[11px] text-muted text-center leading-relaxed select-none"
-      @touchstart="demoStart" @touchmove="demoMove" @touchend="demoEnd"
-      @mousedown="demoStart" @mousemove="demoMove" @mouseup="demoEnd">
+      @touchstart="store.demoMode && demoStart($event)" @touchmove="store.demoMode && demoMove($event)" @touchend="store.demoMode && demoEnd()"
+      @mousedown="store.demoMode && demoStart($event)" @mousemove="store.demoMode && demoMove($event)" @mouseup="store.demoMode && demoEnd()">
       {{ t("Tes données t'appartiennent — export disponible à tout moment.") }}<br />
       Le Carnet · V{{ pkg.version }}
     </p>

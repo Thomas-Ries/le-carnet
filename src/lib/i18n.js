@@ -384,6 +384,7 @@ const EN = {
   "Trier": "Sort",
   "Nom du cocktail…": "Cocktail name…",
   "Nom du plat…": "Dish name…",
+  "Connexion au serveur perdue — tes carnets sont intacts. Touche ici pour réessayer.": "Connection to the server lost — your notebooks are safe. Tap here to retry.",
 };
 
 export function t(s) {

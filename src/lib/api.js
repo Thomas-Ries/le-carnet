@@ -35,8 +35,19 @@ async function api(path, body) {
   return res.json();
 }
 
+// V0.4.93 : le mode démo (données factices) ne s'active QU'EN DEV (Vite local).
+// En prod, un échec réseau ne doit JAMAIS montrer de faux carnets : on pose le
+// bandeau « connexion perdue » (récupérable au prochain refresh) et on propage
+// l'erreur — l'app conserve son état réel.
+const DEV_DEMO = import.meta.env.DEV;
 function fallback(err) {
+  if (!DEV_DEMO) {
+    state.demoMode = false;
+    state.connexionPerdue = true;
+    throw err;
+  }
   state.demoMode = true;
+  etaitDemo = true;
   return demo.load();
 }
 
@@ -59,9 +70,11 @@ export async function bootstrap(deviceId) {
     // même avec toutes les lectures suivantes en pleine santé.)
     state.demoMode = false;
     state.connexionPerdue = false;
+    // Prod : purge l'éventuelle base démo locale (reliquat d'une install dev ou
+    // d'une ancienne version) — elle ne doit plus jamais s'afficher.
+    if (!DEV_DEMO) { try { localStorage.removeItem("lc-demo-db"); } catch (e2) { /* ok */ } }
     return r;
   } catch (e) {
-    etaitDemo = true;
     return fallback(e);
   }
 }
@@ -81,6 +94,10 @@ async function mutate(action, payload) {
     // de serveur, pas un refus — on bascule en démo comme au bootstrap.
     if (e && e.status >= 400 && e.status < 500 && !etaitDemo) {
       return e.body || { error: "refusé par le serveur (" + e.status + ")" };
+    }
+    if (!DEV_DEMO) {
+      state.connexionPerdue = true;
+      return { error: "Connexion au serveur perdue — réessaie quand le réseau revient." };
     }
     const db = fallbackConnexion(e);
     return demoMutate(db, action, payload);
