@@ -184,7 +184,7 @@ async function supprimer() {
     </blockquote>
 
     
-    <div v-if="fiche.type === 'recette'">
+    <div v-if="fiche.type === 'recette' || fiche.type === 'cocktail'">
       <div v-if="fiche.recette" class="rounded-xl p-3.5 bg-surface border border-hairline mb-4">
         <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">{{ t("La recette de") }} {{ fiche.auteur }}</p>
         <p class="text-sm leading-relaxed whitespace-pre-line">{{ fiche.recette }}</p>
@@ -206,9 +206,9 @@ async function supprimer() {
           ? { background: 'var(--c-gold)', color: '#fff', border: '1px solid var(--c-gold)' }
           : { color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">
         <Ic name="heart" class="w-4 h-4" :filled="liked" />
-        {{ liked ? "Tu aimes" : "J'aime" }}{{ likers.length ? " · " + likers.length : "" }}
+        {{ liked ? t("Tu aimes") : t("J'aime") }}{{ likers.length ? " · " + likers.length : "" }}
       </button>
-      <a v-if="fiche.type !== 'recette'" :href="lienMaps" target="_blank" rel="noopener"
+      <a v-if="fiche.type !== 'recette' && fiche.type !== 'cocktail'" :href="lienMaps" target="_blank" rel="noopener"
         @click="noterGo"
         class="rounded-full px-4 py-2.5 text-[13px] font-semibold flex items-center gap-1.5 transition"
         :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)', border: '1px solid var(--c-hairline)' }">

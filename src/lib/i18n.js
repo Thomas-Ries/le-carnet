@@ -387,6 +387,8 @@ const EN = {
   "Connexion au serveur perdue — tes carnets sont intacts. Touche ici pour réessayer.": "Connection to the server lost — your notebooks are safe. Tap here to retry.",
   "Tes carnets arrivent…": "Your notebooks are on their way…",
   "Une petite seconde — on retrouve tes adresses aimées.": "Just a second — fetching your loved addresses.",
+  "Tu aimes": "You like it",
+  "J'aime": "I like it",
 };
 
 export function t(s) {

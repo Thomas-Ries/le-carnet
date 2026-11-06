@@ -23,6 +23,10 @@
 - Le boot réessaie maintenant 3 fois (1,2 s puis 3 s d'attente) avant de déclarer une panne ; pendant ce temps : loader plein écran (verre bordeaux qui se remplit, « Tes carnets arrivent… »).
 - Le bandeau « connexion perdue » ne se pose qu'après l'échec des 3 essais.
 - Timeout 8 s sur chaque requête API (plus de fetch qui pend indéfiniment).
+0.4.95 — Fix : la recette s'affiche aussi pour les cocktails
+- Après la migration en type « cocktail », la fiche n'affichait plus le bloc recette (condition résiduelle type==='recette') — la donnée était intacte, simplement cachée.
+- Le lien Maps n'apparaît plus pour les cocktails (pas de lieu).
+- Bouton « J'aime / Tu aimes » traduit (i18n oublié).
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
