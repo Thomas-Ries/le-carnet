@@ -27,6 +27,9 @@
 - Après la migration en type « cocktail », la fiche n'affichait plus le bloc recette (condition résiduelle type==='recette') — la donnée était intacte, simplement cachée.
 - Le lien Maps n'apparaît plus pour les cocktails (pas de lieu).
 - Bouton « J'aime / Tu aimes » traduit (i18n oublié).
+0.4.96 — Fix : texte du bouton « Idées de sorties » aligné à gauche
+- Le texte du toggle héritait de l'alignement centré par défaut des <button> ; quand le sous-titre passait sur deux lignes, l'effet était « quasi centré ».
+- Le span texte reçoit le même pattern que le bloc Notifications (flex-1 text-left leading-tight) ; les boutons « Mode sombre » et « Langue » blindés avec text-left par précaution.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

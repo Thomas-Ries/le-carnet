@@ -498,7 +498,7 @@ async function exporterJSON() {
 
     <button @click="toggleTheme"
       class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
-      <span class="flex items-center gap-2.5 text-sm"><Ic name="moon" class="w-4 h-4 text-muted" /> {{ t("Mode sombre") }}</span>
+      <span class="flex items-center gap-2.5 text-sm text-left"><Ic name="moon" class="w-4 h-4 text-muted" /> {{ t("Mode sombre") }}</span>
       <span class="relative rounded-full w-11 h-6 transition" :style="{ background: store.dark ? '#7A2E3E' : 'var(--c-hairline)' }">
         <span class="absolute top-0.5 rounded-full w-5 h-5 bg-white transition-all"
           :style="{ left: store.dark ? '22px' : '2px' }" />
@@ -507,7 +507,7 @@ async function exporterJSON() {
 
     <button @click="setLang(i18n.lang === 'fr' ? 'en' : 'fr')"
       class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
-      <span class="flex items-center gap-2.5 text-sm"><Ic name="globe" class="w-4 h-4 text-muted" /> {{ t("Langue") }}</span>
+      <span class="flex items-center gap-2.5 text-sm text-left"><Ic name="globe" class="w-4 h-4 text-muted" /> {{ t("Langue") }}</span>
       <span class="flex gap-1">
         <span class="px-2.5 py-1 rounded-full text-xs font-semibold transition"
           :class="i18n.lang === 'fr' ? 'bg-accent text-white' : 'text-muted'">FR</span>
@@ -520,7 +520,7 @@ async function exporterJSON() {
       class="w-full rounded-2xl p-4 mb-3 bg-surface border border-hairline flex items-center justify-between">
       <span class="flex items-center gap-2.5 text-sm">
         <Ic name="sparkle" class="w-4 h-4 text-muted" />
-        <span class="min-w-0">
+        <span class="flex-1 text-left leading-tight min-w-0">
           <span class="block">{{ t("Idées de sorties") }}</span>
           <span class="block text-[10px] text-muted leading-tight">{{ t("le bandeau d'inspiration sur l'accueil") }}</span>
         </span>
