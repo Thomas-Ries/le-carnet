@@ -4,6 +4,11 @@
 - Toggle FR/EN dans le Profil (pastilles actives), à côté du bouton thème. Icône « globe » ajoutée (icons.js).
 - Jamais traduit : noms des carnets, prénoms, pays/villes, titres des fiches, commentaires, mots-clés.
 - Server-side (worker) et notifications restent en français pour l'instant.
+0.4.91 — Troisième type « Cocktail » + filtre dans le tri
+- Nouveau type de fiche « cocktail » (icône verre, comme le splash) à côté d'adresse et recette — placeholder dédié, la zone recette s'affiche aussi.
+- Menu de tri de l'accueil : nouvelle section « Afficher » (Tous / Adresses / Recettes / Cocktails) au-dessus du tri ; le filtre se réinitialise au changement de carnet.
+- FicheRow : icône verre pour les cocktails.
+- Migration des fiches existantes : UPDATE Fiches SET type='cocktail' WHERE titre IN ('Negroni Automne','Old Fashioned','Michelada');
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

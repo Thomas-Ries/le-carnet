@@ -17,7 +17,7 @@ const store = useCarnetStore();
     <div class="w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0 relative"
       :style="{ border: '2px solid var(--c-riesling)', background: 'var(--c-soft)', color: 'var(--c-accent)' }">
       <img v-if="fiche.photo" :src="fiche.photo" alt="" class="absolute inset-0 w-full h-full object-cover rounded-full" style="border: 1.5px solid var(--c-bg)" />
-      <Ic v-else :name="fiche.type === 'recette' ? 'book' : 'pin'" />
+      <Ic v-else :name="fiche.type === 'cocktail' ? 'glass' : fiche.type === 'recette' ? 'book' : 'pin'" />
     </div>
     <div class="flex-1 min-w-0">
       <p class="truncate text-[15px] font-serif">{{ fiche.titre }}</p>

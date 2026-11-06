@@ -12,7 +12,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = inject("toast");
 
-const type = ref(route.query.type === "recette" ? "recette" : "adresse");
+const type = ref(["recette", "cocktail"].includes(route.query.type) ? route.query.type : "adresse");
 const titre = ref("");
 const lieu = ref("");
 const com = ref("");
@@ -31,7 +31,7 @@ const photo = ref(null);
 const sel = ref([store.carnetId]);
 const recette = ref("");
 
-const cats = computed(() => (type.value === "recette" ? ["Recette"] : CATS));
+const cats = computed(() => (type.value === "recette" || type.value === "cocktail" ? [type.value === "cocktail" ? "Cocktail" : "Recette"] : CATS));
 
 /* Anti-doublon : pendant la saisie du titre, on cherche les fiches du meme type
    deja notees dans le(s) carnet(s) vise(s) dont le titre ressemble (normalise :
@@ -82,13 +82,13 @@ async function valider() {
   const r = await store.noter({
     carnets: sel.value,
     type: type.value,
-    cat: type.value === "recette" ? "Recette" : selCats.value.join(", "),
+    cat: type.value === "recette" ? "Recette" : type.value === "cocktail" ? "Cocktail" : selCats.value.join(", "),
     titre: titre.value.trim(),
     lieu: type.value === "adresse" ? lieu.value.trim() : "",
     note: note.value,
     com: com.value.trim(),
     photo: photo.value,
-    recette: type.value === "recette" && recette.value.trim() ? recette.value.trim() : null,
+    recette: (type.value === "recette" || type.value === "cocktail") && recette.value.trim() ? recette.value.trim() : null,
   });
   if (r && r.error === "fiche_doublon") {
     doublonErr.value = "« " + r.titre + " » est déjà noté dans ce carnet — c'est probablement le même lieu. Ouvre la fiche existante ci-dessus, ou précise le titre (ville, quartier) pour le distinguer.";
@@ -131,7 +131,7 @@ async function valider() {
 
     
     <div class="grid grid-cols-2 gap-2 mb-4">
-      <button v-for="t in [['adresse','Adresse','pin'],['recette','Recette','book']]" :key="t[0]"
+      <button v-for="t in [['adresse','Adresse','pin'],['recette','Recette','book'],['cocktail','Cocktail','glass']]" :key="t[0]"
         @click="type = t[0]"
         class="rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-1.5"
         :style="{
@@ -155,7 +155,7 @@ async function valider() {
     </div>
 
     <div class="space-y-2.5">
-      <input v-model="titre" :placeholder="type === 'adresse' ? t('Nom du lieu…') : t('Nom du plat ou du cocktail…')"
+      <input v-model="titre" :placeholder="type === 'adresse' ? t('Nom du lieu…') : type === 'cocktail' ? t('Nom du cocktail…') : t('Nom du plat…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       
       <button v-for="d in doublons" :key="d.id" @click="router.push('/fiche/' + d.id)"
@@ -167,7 +167,7 @@ async function valider() {
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none" />
       <textarea v-model="com" rows="2" placeholder="« Punaise, c'était bon » — ton commentaire…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
-      <textarea v-if="type === 'recette'" v-model="recette" rows="3" :placeholder="t('La recette, si tu veux la partager tout de suite (optionnel)…')"
+      <textarea v-if="type === 'recette' || type === 'cocktail'" v-model="recette" rows="3" :placeholder="t('La recette, si tu veux la partager tout de suite (optionnel)…')"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none resize-none"></textarea>
 
       

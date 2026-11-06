@@ -375,6 +375,15 @@ const EN = {
   "Nom du lieu…": "Name of the place…",
   "Nom du plat ou du cocktail…": "Name of the dish or cocktail…",
   "un cocktail, le tiramisu de Chetto…": "a cocktail, Chetto's tiramisu…",
+  "Cocktail": "Cocktail",
+  "Cocktails": "Cocktails",
+  "Adresses": "Places",
+  "Tous": "All",
+  "Recettes": "Recipes",
+  "Afficher": "Show",
+  "Trier": "Sort",
+  "Nom du cocktail…": "Cocktail name…",
+  "Nom du plat…": "Dish name…",
 };
 
 export function t(s) {

@@ -18,6 +18,13 @@ const q = ref("");
 const flashComplet = ref(null);
 const menuCarnets = ref(false);
 const tri = ref("recent"); // recent | aime | az — tri façon e-commerce (CTA + menu)
+const filtreType = ref("tous"); // tous | adresse | recette | cocktail
+const FILTRES_TYPE = [
+  { id: "tous", label: "Tous" },
+  { id: "adresse", label: "Adresses" },
+  { id: "recette", label: "Recettes" },
+  { id: "cocktail", label: "Cocktails" },
+];
 const triOpen = ref(false);
 const TRIS = [
   { id: "recent", label: "Le plus récent", defaut: true },
@@ -109,6 +116,7 @@ const villesChips = computed(() => {
   return out;
 });
 const passeFiltre = (f) => {
+  if (filtreType.value !== "tous" && f.type !== filtreType.value) return false;
   if (!filtrePays.value) return true;
   const z = zoneFiche(f);
   if ((z.pays || "") !== (filtrePays.value === "?" ? "" : filtrePays.value)) return false;
@@ -246,7 +254,7 @@ async function activerNotifsBienvenue() {
 const PARC = 20;
 const page = ref(1);
 const affiches = computed(() => fichesTri.value.slice(0, page.value * PARC));
-watch([tri, () => store.carnetId], () => { page.value = 1; });
+watch([tri, filtreType, () => store.carnetId], () => { page.value = 1; });
 function surScroll() {
   if (page.value * PARC >= fichesTri.value.length) return;
   if (window.innerHeight + window.scrollY > document.body.offsetHeight - 500) page.value += 1;
@@ -259,7 +267,7 @@ onUnmounted(() => { window.removeEventListener("scroll", surScroll); document.bo
 
 /* Sélection longue-press sur une card → partage de la sélection.
    1 card = sa carte PNG ; plusieurs = un PDF qui les regroupe (pas de flood). */
-watch(() => store.carnet?.id, () => { filtrePays.value = ""; filtreVille.value = ""; });
+watch(() => store.carnet?.id, () => { filtrePays.value = ""; filtreVille.value = ""; filtreType.value = "tous"; });
 const selMode = ref(false);
 const selIds = ref([]);
 const estSel = (id) => selIds.value.includes(id);
@@ -661,11 +669,20 @@ async function confirmerPartage() {
           <div class="relative">
             <button @click="triOpen = !triOpen; lieuOpen = false" :title="t('Choisir le tri')"
               class="w-8 h-8 rounded-full border border-hairline bg-surface flex items-center justify-center active:scale-95 transition"
-              :style="triOpen || tri !== 'recent' ? 'border-color: var(--c-accent)' : ''">
-              <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' ? 'text-accent' : 'text-muted'" :sw="2" />
+              :style="triOpen || tri !== 'recent' || filtreType !== 'tous' ? 'border-color: var(--c-accent)' : ''">
+              <Ic name="sort" class="w-4 h-4" :class="triOpen || tri !== 'recent' || filtreType !== 'tous' ? 'text-accent' : 'text-muted'" :sw="2" />
             </button>
             <div v-if="triOpen" class="absolute top-full right-0 mt-1 rounded-xl overflow-hidden z-30 w-52 bg-surface border border-hairline"
               style="box-shadow: 0 8px 24px rgba(43,35,32,.25)">
+              <p class="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted">{{ t("Afficher") }}</p>
+              <button v-for="ft in FILTRES_TYPE" :key="ft.id"
+                @click="filtreType = ft.id"
+                class="w-full text-left px-3.5 py-2 text-sm flex items-center justify-between"
+                :style="{ color: ft.id === filtreType ? 'var(--c-accent)' : 'var(--c-ink)', background: ft.id === filtreType ? 'var(--c-soft)' : 'transparent' }">
+                <span>{{ t(ft.label) }}</span>
+                <Ic v-if="ft.id === filtreType" name="check" class="w-3.5 h-3.5" />
+              </button>
+              <p class="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-muted">{{ t("Trier") }}</p>
               <button v-for="tr in TRIS" :key="tr.id"
                 @click="tri = tr.id; triOpen = false"
                 class="w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between"
