@@ -217,3 +217,12 @@ summary.lc-sum:active { background: var(--c-soft); }
 /* V0.4.76 — Barres de défilement masquées pour les rangées de chips filtres. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* V0.4.94 — Loader « verre qui se remplit » (premier chargement) */
+@keyframes lc-remplir {
+  0% { transform: translateY(11px); }
+  100% { transform: translateY(0); }
+}
+.lc-remplissage {
+  animation: lc-remplir 1.4s ease-in-out infinite alternate;
+}

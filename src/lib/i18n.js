@@ -385,6 +385,8 @@ const EN = {
   "Nom du cocktail…": "Cocktail name…",
   "Nom du plat…": "Dish name…",
   "Connexion au serveur perdue — tes carnets sont intacts. Touche ici pour réessayer.": "Connection to the server lost — your notebooks are safe. Tap here to retry.",
+  "Tes carnets arrivent…": "Your notebooks are on their way…",
+  "Une petite seconde — on retrouve tes adresses aimées.": "Just a second — fetching your loved addresses.",
 };
 
 export function t(s) {

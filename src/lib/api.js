@@ -19,11 +19,22 @@ export function getDeviceId() {
 }
 
 async function api(path, body) {
-  const res = await fetch(path, {
-    method: body ? "POST" : "GET",
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // V0.4.94 : timeout — un fetch qui pend (réseau iOS juste réveillé) ne doit
+  // plus suspendre l'app à l'infini ; l'abort est traité comme une panne réseau
+  // (statut absent) et le boot réessaie.
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
+  let res;
+  try {
+    res = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl ? ctrl.signal : undefined,
+    });
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   if (!res.ok) {
     // Le statut et le corps d'erreur voyagent avec l'exception : la mutate()
     // distingue un REFUS serveur (4xx) d'une vraie panne réseau.

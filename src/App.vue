@@ -76,7 +76,18 @@ onMounted(async () => {
 
   <template v-else>
     
-    <div v-if="store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30 cursor-pointer"
+    <div v-if="store.chargement && !store.splash" class="fixed inset-0 z-[80] flex flex-col items-center justify-center gap-3 bg-bg">
+      <svg viewBox="0 0 24 24" class="w-14 h-14">
+        <defs>
+          <clipPath id="lc-verre"><path d="M12 15a3 3 0 003-3V4H9v8a3 3 0 003 3z" /></clipPath>
+        </defs>
+        <rect x="8.5" y="4" width="7" height="11" fill="var(--c-accent)" clip-path="url(#lc-verre)" class="lc-remplissage" />
+        <path d="M12 15a3 3 0 003-3V4H9v8a3 3 0 003 3zM12 15v7M8 22h8" fill="none" stroke="var(--c-accent)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <p class="font-serif text-lg text-ink">{{ t("Tes carnets arrivent…") }}</p>
+      <p class="text-xs text-muted">{{ t("Une petite seconde — on retrouve tes adresses aimées.") }}</p>
+    </div>
+    <div v-else-if="store.connexionPerdue" class="w-full py-2 px-4 text-center text-[11px] leading-relaxed sticky top-0 z-30 cursor-pointer"
       :style="{ background: '#7A2E3E', color: '#fff' }" @click="store.refresh()">
       {{ t("Connexion au serveur perdue — tes carnets sont intacts. Touche ici pour réessayer.") }}
     </div>

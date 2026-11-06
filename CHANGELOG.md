@@ -18,6 +18,11 @@
 - Les mutations en échec réseau retournent une erreur explicite au lieu d'une fausse réussite locale.
 - La base démo (lc-demo-db) est purgée du navigateur au premier bootstrap réussi en prod.
 - Popin « pass super-admin » du Profil réservée au mode démo.
+0.4.94 — Loader « verre qui se remplit » au premier chargement
+- Incident : au lancement, la PWAiOS affichait « connexion au serveur perdue » avec zéro notes, puis tout apparaissait ~10 s plus tard (réseau pas prêt au réveil, refresh déclenché par l'événement online).
+- Le boot réessaie maintenant 3 fois (1,2 s puis 3 s d'attente) avant de déclarer une panne ; pendant ce temps : loader plein écran (verre bordeaux qui se remplit, « Tes carnets arrivent… »).
+- Le bandeau « connexion perdue » ne se pose qu'après l'échec des 3 essais.
+- Timeout 8 s sur chaque requête API (plus de fetch qui pend indéfiniment).
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

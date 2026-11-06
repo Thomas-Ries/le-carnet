@@ -24,6 +24,7 @@ export const useCarnetStore = defineStore("carnet", {
     roles: {}, // { carnetId: "admin" | "member" }
     installEvent: null, // événement beforeinstallprompt (Android/Chrome) — capturé par App.vue
     connexionPerdue: false, // true = une mutation n'a pas atteint le serveur (bascule démo en cours de session)
+    chargement: false, // V0.4.94 : premier chargement en cours — loader « verre qui se remplit », PAS le bandeau d'erreur
     inspir: { open: false, theme: null, tri: "note" }, // modale inspiration : survit à la navigation (retour du détail)
     inspirOn: true, // réglage profil : bandeau idées de sorties visible ou non
   }),
@@ -108,15 +109,21 @@ export const useCarnetStore = defineStore("carnet", {
 
       // Identité de l'appareil : UUID persistant, c'est lui qui authentifie
       this.deviceId = api.getDeviceId();
-      // V0.4.93 : en prod, un échec réseau au tout premier lancement ne casse
-      // plus rien — état vide + bandeau « connexion perdue » (posé juste après
-      // via api.state, retry au retour au premier plan).
-      let data;
-      try {
-        data = await api.bootstrap(this.deviceId);
-      } catch (e) {
-        data = { carnets: [], fiches: [], flashes: [], roles: {} };
+      // V0.4.94 : le premier chargement réessaie tout seul (réseau iOS pas prêt
+      // au réveil de la PWA). Tant qu'on réessaie, l'app montre le loader
+      // « verre qui se remplit » ; le bandeau « connexion perdue » ne se pose
+      // qu'après le dernier essai — s'il s'agit vraiment d'une panne.
+      let data = null;
+      this.chargement = true;
+      for (let essai = 0; essai < 3 && !data; essai++) {
+        try {
+          data = await api.bootstrap(this.deviceId);
+        } catch (e) {
+          if (essai < 2) await new Promise((r) => setTimeout(r, 1200 + essai * 1800));
+        }
       }
+      this.chargement = false;
+      if (!data) data = { carnets: [], fiches: [], flashes: [], roles: {} };
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
       this.carnets = data.carnets || [];
