@@ -61,7 +61,7 @@ async function confirmerSuppr() {
         <button v-if="miens" @click="emit('completer')"
           class="flex-1 rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 transition active:scale-[.99]"
           :style="{ color: '#fff', background: '#7A2E3E' }">
-          <Ic name="bolt" class="w-4 h-4" /> {{ t("En faire une fiche notée") }}
+          <Ic name="bolt" class="w-4 h-4" /> {{ t("En faire une fiche") }}
         </button>
       </div>
       <p class="text-center text-[10px] text-muted mt-2.5 leading-relaxed">

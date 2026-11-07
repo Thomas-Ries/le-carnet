@@ -78,7 +78,7 @@ async function justeCommentaire() {
       <button @click="valider" :disabled="!titre.trim()"
         class="w-full rounded-xl py-3.5 text-sm font-semibold text-white active:scale-[.99] transition"
         :style="{ background: titre.trim() ? '#7A2E3E' : 'rgba(122,46,62,.3)' }">
-        {{ t("En faire une fiche notée") }}
+        {{ t("En faire une fiche") }}
       </button>
       <button v-if="com.trim() && com.trim() !== (flash.com || '')" @click="justeCommentaire"
         class="w-full rounded-xl py-3 text-xs font-semibold text-accent bg-soft mt-2">

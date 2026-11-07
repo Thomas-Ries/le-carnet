@@ -94,7 +94,7 @@ const EN = {
   "Demander la recette à": "Ask for the recipe from",
   "Déjà noté par": "Already rated by",
   "Déverrouiller": "Unlock",
-  "En faire une fiche notée": "Turn it into a rated card",
+  "En faire une fiche": "Turn it into a card",
   "En famille": "Family",
   "Encore une fois pour vérifier": "Once more to confirm",
   "Enregistrer": "Save",
