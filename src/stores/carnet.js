@@ -124,6 +124,10 @@ export const useCarnetStore = defineStore("carnet", {
       }
       this.chargement = false;
       if (!data) data = { carnets: [], fiches: [], flashes: [], roles: {} };
+      // V0.4.98 : le bootstrap a pu adopter l'identité du cookie de secours
+      // (localStorage purgé) — on resynchronise le device et le prénom du profil.
+      this.deviceId = api.getDeviceId();
+      if (!this.profil.prenom && data.prenom) this.setProfil(data.prenom, data.avatar || null);
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
       this.carnets = data.carnets || [];
@@ -149,6 +153,8 @@ export const useCarnetStore = defineStore("carnet", {
       this._refreshing = true;
       try {
         const data = await api.bootstrap(this.deviceId);
+        // V0.4.98 : identité de secours — resynchronisation après adoption.
+        this.deviceId = api.getDeviceId();
         this.demoMode = api.state.demoMode;
         this.connexionPerdue = api.state.connexionPerdue;
         this.carnets = data.carnets || [];

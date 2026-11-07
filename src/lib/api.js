@@ -18,6 +18,13 @@ export function getDeviceId() {
   return id;
 }
 
+// V0.4.98 : le serveur peut adopter l'identité du cookie de secours (localStorage
+// purgé par ITP) — il renvoie le device retenu, le client le persiste pour que
+// les mutations suivantes partent avec la bonne identité.
+export function setDeviceId(id) {
+  try { localStorage.setItem(DEVICE_KEY, id); } catch (e) { /* ok */ }
+}
+
 async function api(path, body) {
   // V0.4.94 : timeout — un fetch qui pend (réseau iOS juste réveillé) ne doit
   // plus suspendre l'app à l'infini ; l'abort est traité comme une panne réseau
@@ -84,6 +91,9 @@ export async function bootstrap(deviceId) {
     // Prod : purge l'éventuelle base démo locale (reliquat d'une install dev ou
     // d'une ancienne version) — elle ne doit plus jamais s'afficher.
     if (!DEV_DEMO) { try { localStorage.removeItem("lc-demo-db"); } catch (e2) { /* ok */ } }
+    // V0.4.98 : identité de secours — si le serveur a adopté le cookie (purge
+    // ITP du localStorage), on re-persiste le vrai device localement.
+    if (r.device && r.device !== deviceId) setDeviceId(r.device);
     return r;
   } catch (e) {
     return fallback(e);

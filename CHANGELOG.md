@@ -34,6 +34,11 @@
 - BUG : l'envoi d'un flash échouait (refusé par le serveur) depuis la sélection multi-carnets — le client envoyait carnets: [ids], le worker lisait fl.carnetId (indéfini) → pas de session → 403. Le worker crée désormais un flash par carnet (schéma 1 ligne = 1 carnet) et renvoie flashes: [...] ; le store insère la liste.
 - Après la création d'un carnet, une popin propose de sélectionner des notes des autres carnets pour l'alimenter — les invités ne tombent pas sur un carnet vide (plan de lancement : jamais d'invitation dans un carnet vierge). Rattachement par liens fiche↔carnet (INSERT OR IGNORE) : c'est la même fiche partagée, pas une copie.
 - Nouvelle mutation copierFiches (worker + démo) : vérifie la session sur le carnet cible et sur un carnet source de chaque fiche, refuse l'espace privé.
+0.4.98 — Identité insensible à la purge ITP (cookie HttpOnly de secours)
+- Problème récurrent : WebKit (iOS + macOS) purge le stockage scriptable des PWA après 7 jours sans usage — le deviceId (localStorage) disparaît et l'appareil redevient un inconnu (« perdu mes carnets »).
+- Fix structurel : le worker pose un cookie lc-device HttpOnly (1 an, posé PAR le serveur — donc non soumis à la purge ITP des cookies scriptés). Au bootstrap, si le device du payload est inconnu mais que le cookie porte un appareil avec des sessions, on adopte l'identité du cookie : les carnets reviennent tout seuls, sans code à retaper.
+- Le bootstrap renvoie désormais device + prenom : le client re-persiste le vrai device et restaure le prénom du profil (lui aussi purgé) automatiquement.
+- Première installation d'une app déjà perdue : toujours une seule fois « J'ai déjà mes carnets sur un autre appareil » (prénom + code personnel) — ensuite, plus jamais.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
