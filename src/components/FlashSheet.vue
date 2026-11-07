@@ -55,20 +55,29 @@ async function envoyer() {
         </button>
       </div>
 
-      <label class="block w-full rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition active:scale-[.99]"
-        :style="{ height: '150px', background: photo ? 'transparent' : 'var(--c-surface)', border: photo ? '1px solid var(--c-hairline)' : '2px dashed var(--c-accent)' }">
-        <input type="file" accept="image/*" capture="environment" class="hidden" @change="onFile" />
-        <template v-if="!photo">
-          <span class="w-11 h-11 rounded-full flex items-center justify-center bg-accent/10 text-accent">
-            <Ic name="camera" class="w-5 h-5" />
-          </span>
-          <span class="text-sm font-semibold text-accent">{{ t("Tape ici pour photographier") }}</span>
-          <span class="text-[11px] text-muted">{{ t("Une bouteille, un plat, une ambiance — ça part en 5 secondes") }}</span>
-        </template>
-        <template v-else>
-          <img :src="photo" class="w-full h-[150px] object-cover rounded-2xl" alt="Aperçu" />
-        </template>
+      <!-- V0.4.105 : deux portes d'entrée — appareil photo OU pellicule du téléphone
+           (avant : capture="environment" forçait l'appareil, impossible de choisir
+           une photo existante). Tap sur l'aperçu = recharger depuis la pellicule. -->
+      <div v-if="!photo" class="grid grid-cols-2 gap-2">
+        <label class="rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer py-5 transition active:scale-[.99]"
+          :style="{ border: '2px dashed var(--c-accent)', background: 'var(--c-soft)' }">
+          <input type="file" accept="image/*" capture="environment" class="hidden" @change="onFile" />
+          <Ic name="camera" class="w-5 h-5 text-accent" />
+          <span class="text-xs font-semibold text-accent">{{ t("Photographier") }}</span>
+        </label>
+        <label class="rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer py-5 transition active:scale-[.99]"
+          :style="{ border: '1.5px dashed var(--c-hairline)', background: 'var(--c-surface)' }">
+          <input type="file" accept="image/*" class="hidden" @change="onFile" />
+          <Ic name="image" class="w-5 h-5 text-muted" />
+          <span class="text-xs font-semibold">{{ t("Choisir dans la pellicule") }}</span>
+        </label>
+      </div>
+      <label v-else class="block w-full cursor-pointer rounded-2xl transition active:scale-[.99]" :style="{ border: '1px solid var(--c-hairline)' }">
+        <input type="file" accept="image/*" class="hidden" @change="onFile" />
+        <img :src="photo" class="w-full h-[150px] object-cover rounded-2xl" alt="Aperçu" />
+        <span class="block text-center text-[10px] text-muted mt-1">{{ t("Tape pour changer la photo") }}</span>
       </label>
+      <p v-if="!photo" class="text-center text-[11px] text-muted mt-2 mb-3">{{ t("Une bouteille, un plat, une ambiance — ça part en 5 secondes") }}</p>
       <p class="text-center text-[10px] text-muted mt-1.5 mb-3">{{ t("1. la photo · 2. pour qui · 3. envoyé") }}</p>
 
       <p class="text-[10px] uppercase tracking-widest text-muted mb-1.5">{{ t("Pour qui ?") }}</p>

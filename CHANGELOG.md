@@ -59,6 +59,9 @@
 - Côté worker, la mutation deleteFlash existait déjà (utilisée après complétion) et vérifie auteur OU admin du carnet — purge des réactions avec le flash.
 0.4.104 — Libellé raccourci : « En faire une fiche »
 - Le bouton de la visionneuse et le titre de la sheet de complétion disaient « En faire une fiche notée » — trop long sur un bouton. Raccourci en « En faire une fiche ».
+0.4.105 — Flash : photographier OU choisir dans la pellicule
+- La prise de flash forçait l'appareil photo (capture="environment") — impossible de partir d'une photo existante. Deux boutons côte à côte désormais : « Photographier » (appareil) et « Choisir dans la pellicule » (sélecteur du système).
+- Tap sur l'aperçu = recharger la photo depuis la pellicule. Nouvelle icône « image » (style Heroicons, toujours zéro emoji).
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
