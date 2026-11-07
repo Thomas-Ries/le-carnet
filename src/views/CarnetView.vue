@@ -118,6 +118,10 @@ async function creer() {
   if (r && r.id) {
     modeCreer.value = false; nom.value = ""; codeInvite.value = ""; codeAdmin.value = ""; codeAdmin2.value = "";
     toast(t("Carnet créé — tu es admin"));
+    // V0.4.97 : proposer tout de suite de nourrir le carnet avec des notes
+    // existantes — les invités ne tombent pas sur un carnet vide.
+    const autres = store.fiches.filter((f) => !f.carnets.includes(r.id));
+    if (autres.length) { seedCarnet.value = r; seedPicks.value = new Set(); seedOuvert.value = true; }
   } else {
     // Le serveur a refusé (ou code dupliqué) : message réel, rien n'est créé en local
     if (r && r.error === "code_different") {
@@ -127,6 +131,32 @@ async function creer() {
     err.value = (r && r.error) || "Ce code existe déjà, choisis-en un autre.";
   }
 }
+/* V0.4.97 : nourrir un carnet fraîchement créé — sélection de notes existantes
+   (rattachement de liens fiche↔carnet, la fiche reste dans son carnet d'origine). */
+const seedOuvert = ref(false);
+const seedCarnet = ref(null);
+const seedPicks = ref(new Set());
+const seedPossibles = computed(() =>
+  seedCarnet.value
+    ? store.fiches.filter((f) => !f.carnets.includes(seedCarnet.value.id)).slice(0, 100)
+    : []);
+function toggleSeed(id) {
+  const s = new Set(seedPicks.value);
+  if (s.has(id)) s.delete(id); else s.add(id);
+  seedPicks.value = s;
+}
+function seedFermer() { seedOuvert.value = false; seedCarnet.value = null; }
+async function seedConfirmer() {
+  const ids = [...seedPicks.value];
+  const cible = seedCarnet.value;
+  seedOuvert.value = false;
+  if (!ids.length || !cible) return;
+  const r = await store.copierFiches(ids, cible.id);
+  if (r && r.error) { toast(r.error); return; }
+  toast(t("Notes ajoutées au carnet"));
+  seedCarnet.value = null;
+}
+
 function copier() {
   navigator.clipboard?.writeText(lien.value);
   toast(t("Lien copié — envoie-le à qui tu veux"));
@@ -376,5 +406,39 @@ async function exporterJSON() {
         confirmLabel="Retirer"
         @confirm="confirmerRetrait" @cancel="pendingRetrait = null" />
     </template>
+
+    <!-- V0.4.97 : nourrir le carnet fraîchement créé avec des notes existantes -->
+    <div v-if="seedOuvert" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      :style="{ background: 'rgba(0,0,0,.45)' }" @click.self="seedFermer">
+      <div class="w-full max-w-[430px] rounded-t-3xl sm:rounded-2xl bg-surface p-5 max-h-[80vh] flex flex-col" @click.stop>
+        <p class="text-lg font-serif mb-1">{{ t('Nourrir') }} « {{ seedCarnet?.nom }} »</p>
+        <p class="text-xs text-muted mb-4 leading-relaxed text-left">{{ t("Sélectionne des notes de tes autres carnets pour l'ouvrir avec de la matière — tes invités ne tomberont pas sur un carnet vide.") }}</p>
+        <div class="flex-1 overflow-y-auto -mx-1 px-1 space-y-1.5 mb-4">
+          <button v-for="f in seedPossibles" :key="f.id" @click="toggleSeed(f.id)"
+            class="w-full flex items-center gap-3 rounded-xl p-2.5 border transition"
+            :style="{ borderColor: seedPicks.has(f.id) ? 'var(--c-accent)' : 'var(--c-hairline)', background: seedPicks.has(f.id) ? 'var(--c-soft)' : 'transparent' }">
+            <span class="w-5 h-5 rounded-md border flex items-center justify-center shrink-0"
+              :style="{ borderColor: seedPicks.has(f.id) ? 'var(--c-accent)' : 'var(--c-hairline)', background: seedPicks.has(f.id) ? 'var(--c-accent)' : 'transparent' }">
+              <Ic v-if="seedPicks.has(f.id)" name="check" class="w-3.5 h-3.5 text-white" />
+            </span>
+            <span class="flex-1 text-left leading-tight min-w-0">
+              <span class="block text-sm font-semibold truncate">{{ f.titre }}</span>
+              <span class="block text-[10px] text-muted truncate">{{ f.lieu || t(f.type === 'recette' ? 'Recette' : f.type === 'cocktail' ? 'Cocktail' : 'Adresse') }}</span>
+            </span>
+            <span v-if="f.note >= 70" class="text-xs font-semibold shrink-0" :style="{ color: 'var(--c-accent)' }">{{ f.note }}</span>
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button @click="seedFermer" class="flex-1 rounded-xl py-3 text-sm font-semibold"
+            :style="{ color: 'var(--c-muted)', border: '1px solid var(--c-hairline)' }">{{ t("Plus tard") }}</button>
+          <button @click="seedConfirmer" :disabled="!seedPicks.size"
+            class="flex-1 rounded-xl py-3 text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40"
+            :style="{ color: 'var(--c-accent)', background: 'var(--c-soft)' }">
+            <Ic name="share" class="w-4 h-4" />
+            {{ t("Ajouter la sélection") }}<template v-if="seedPicks.size"> ({{ seedPicks.size }})</template>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

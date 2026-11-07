@@ -270,6 +270,17 @@ export const useCarnetStore = defineStore("carnet", {
       return r.carnet;
     },
 
+    // V0.4.97 : rattacher des fiches existantes à un carnet (nourrir un carnet
+    // fraîchement créé pour que les invités ne tombent pas sur un carnet vide).
+    async copierFiches(ficheIds, vers) {
+      const r = await api.copierFiches(ficheIds, vers);
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      if (r && r.error) return r;
+      await this.refresh();
+      return r;
+    },
+
     // V0.4.84 : prénom + code personnel -> l'appareil retrouve TOUS ses carnets
     // (et l'espace G-Maps). Le remède aux purges de stockage iOS et aux changements
     // d'appareil : on ne retape plus jamais ses carnets.
@@ -384,8 +395,10 @@ export const useCarnetStore = defineStore("carnet", {
       });
       this.demoMode = api.state.demoMode;
       this.connexionPerdue = api.state.connexionPerdue;
-      this.flashes.unshift(r.flash);
-      return r.flash;
+      // V0.4.97 : le serveur crée un flash par carnet (schéma 1 ligne = 1 carnet).
+      const created = (r.flashes && r.flashes.length ? r.flashes : (r.flash ? [r.flash] : []));
+      if (created.length) this.flashes.unshift(...created);
+      return created[0] || r;
     },
 
     async quitterCarnet(carnetId) {

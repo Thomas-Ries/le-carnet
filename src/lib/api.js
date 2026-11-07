@@ -331,6 +331,17 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { ok: true };
     }
+    case "copierFiches": {
+      // V0.4.97 (démo) : mêmes règles — on rattache la fiche, sans doublon.
+      let copiees = 0;
+      for (const f of db.fiches) {
+        if ((p.ficheIds || []).includes(f.id) && !(f.carnets || []).includes(p.vers)) {
+          f.carnets.push(p.vers); copiees++;
+        }
+      }
+      demo.save(db);
+      return { ok: true, copiees };
+    }
     case "commentFlash": {
       const fl = db.flashes.find((x) => x.id === p.id);
       if (!fl) return { error: "introuvable" };
@@ -418,6 +429,7 @@ export const addFiche = (fiche) => mutate("addFiche", { fiche });
 export const importAdresses = (carnetId, items, deviceId) => mutate("importAdresses", { carnetId, items, deviceId });
 export const rattacherAvis = (carnetId, items, deviceId) => mutate("rattacherAvis", { carnetId, items, deviceId });
 export const partagerFiches = (ficheIds, carnetIds, deviceId) => mutate("partagerFiches", { ficheIds, carnetIds, deviceId });
+export const copierFiches = (ficheIds, vers) => mutate("copierFiches", { ficheIds, vers });
 export const demoPrive = (pass) => mutate("demoPrive", { pass });
 export const updateFiche = (id, patch) => mutate("updateFiche", { id, patch });
 export const deleteFiche = (id) => mutate("deleteFiche", { id });

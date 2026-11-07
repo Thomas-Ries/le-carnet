@@ -30,6 +30,10 @@
 0.4.96 — Fix : texte du bouton « Idées de sorties » aligné à gauche
 - Le texte du toggle héritait de l'alignement centré par défaut des <button> ; quand le sous-titre passait sur deux lignes, l'effet était « quasi centré ».
 - Le span texte reçoit le même pattern que le bloc Notifications (flex-1 text-left leading-tight) ; les boutons « Mode sombre » et « Langue » blindés avec text-left par précaution.
+0.4.97 — Fix flash multi-carnet + nourrir un carnet créé avec des notes existantes
+- BUG : l'envoi d'un flash échouait (refusé par le serveur) depuis la sélection multi-carnets — le client envoyait carnets: [ids], le worker lisait fl.carnetId (indéfini) → pas de session → 403. Le worker crée désormais un flash par carnet (schéma 1 ligne = 1 carnet) et renvoie flashes: [...] ; le store insère la liste.
+- Après la création d'un carnet, une popin propose de sélectionner des notes des autres carnets pour l'alimenter — les invités ne tombent pas sur un carnet vide (plan de lancement : jamais d'invitation dans un carnet vierge). Rattachement par liens fiche↔carnet (INSERT OR IGNORE) : c'est la même fiche partagée, pas une copie.
+- Nouvelle mutation copierFiches (worker + démo) : vérifie la session sur le carnet cible et sur un carnet source de chaque fiche, refuse l'espace privé.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
