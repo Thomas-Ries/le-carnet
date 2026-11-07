@@ -1,12 +1,12 @@
 <script setup>
 import { t } from "../lib/i18n.js";
-import { ref, computed, inject } from "vue";
+import { ref, computed, inject, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
-import { exporterFichierJSON, texteInvitation, partagerWhatsapp, partagerSms } from "../lib/util.js";
+import { exporterFichierJSON, texteInvitation, partagerWhatsapp, partagerSms, lockScroll } from "../lib/util.js";
 
 const store = useCarnetStore();
 const router = useRouter();
@@ -146,6 +146,9 @@ function toggleSeed(id) {
   seedPicks.value = s;
 }
 function seedFermer() { seedOuvert.value = false; seedCarnet.value = null; }
+// V0.4.100 : la page derrière ne scrolle pas pendant la sélection.
+watch(seedOuvert, (v) => lockScroll(!!v));
+onUnmounted(() => lockScroll(false));
 async function seedConfirmer() {
   const ids = [...seedPicks.value];
   const cible = seedCarnet.value;
@@ -408,7 +411,7 @@ async function exporterJSON() {
     </template>
 
     <!-- V0.4.97 : nourrir le carnet fraîchement créé avec des notes existantes -->
-    <div v-if="seedOuvert" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+    <div v-if="seedOuvert" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center pt-4 px-4 pb-[calc(var(--lc-nav-h)+var(--lc-safe-b)+16px)] sm:pb-4"
       :style="{ background: 'rgba(0,0,0,.45)' }" @click.self="seedFermer">
       <div class="w-full max-w-[430px] rounded-t-3xl sm:rounded-2xl bg-surface p-5 max-h-[80vh] flex flex-col" @click.stop>
         <p class="text-lg font-serif mb-1">{{ t('Nourrir') }} « {{ seedCarnet?.nom }} »</p>

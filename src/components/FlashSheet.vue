@@ -45,7 +45,7 @@ async function envoyer() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/45" @click="emit('close')">
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center pt-4 px-4 pb-[calc(var(--lc-nav-h)+var(--lc-safe-b)+16px)] sm:pb-4 bg-black/45" @click="emit('close')">
     <div class="w-full max-w-[430px] mx-auto rounded-t-3xl sm:rounded-2xl bg-cream p-5 sm:shadow-2xl" @click.stop>
       <div class="w-10 h-1 rounded-full bg-hairline mx-auto mb-4" />
       <div class="flex items-center justify-between mb-4">
