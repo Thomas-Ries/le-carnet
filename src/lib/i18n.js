@@ -139,6 +139,7 @@ const EN = {
   "Nourrir": "Fill",
   "Sélectionne des notes de tes autres carnets pour l'ouvrir avec de la matière — tes invités ne tomberont pas sur un carnet vide.": "Pick notes from your other notebooks to open it with some substance — your guests won't land on an empty notebook.",
   "Notes ajoutées au carnet": "Notes added to the notebook",
+  "Aucune note à proposer pour l'instant — note ta première adresse, ou retrouve tes carnets depuis Profil si tu viens de changer d'appareil.": "Nothing to suggest yet — add your first note, or recover your notebooks from the Profile page if you switched devices.",
   "Ajouter la sélection": "Add selection",
   "Adresse": "Address",
   "Recette": "Recipe",

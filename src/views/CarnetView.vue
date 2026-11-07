@@ -120,8 +120,14 @@ async function creer() {
     toast(t("Carnet créé — tu es admin"));
     // V0.4.97 : proposer tout de suite de nourrir le carnet avec des notes
     // existantes — les invités ne tombent pas sur un carnet vide.
-    const autres = store.fiches.filter((f) => !f.carnets.includes(r.id));
-    if (autres.length) { seedCarnet.value = r; seedPicks.value = new Set(); seedOuvert.value = true; }
+    // V0.4.102 : la popin s'ouvre TOUJOURS — même sur un appareil neuf ou purgé
+    // (fiches vides), avec un état vide explicatif. Avant, la condition
+    // autres.length la gardait fermée silencieusement et le créateur croyait
+    // à un bug. Garde défensive (f.carnets || []) : une fiche sans liens ne
+    // fait plus planter l'ouverture.
+    const autres = store.fiches.filter((f) => !(f.carnets || []).includes(r.id));
+    seedCarnet.value = r; seedPicks.value = new Set(); seedOuvert.value = true;
+    void autres;
   } else {
     // Le serveur a refusé (ou code dupliqué) : message réel, rien n'est créé en local
     if (r && r.error === "code_different") {
@@ -138,7 +144,7 @@ const seedCarnet = ref(null);
 const seedPicks = ref(new Set());
 const seedPossibles = computed(() =>
   seedCarnet.value
-    ? store.fiches.filter((f) => !f.carnets.includes(seedCarnet.value.id)).slice(0, 100)
+    ? store.fiches.filter((f) => !(f.carnets || []).includes(seedCarnet.value.id)).slice(0, 100)
     : []);
 function toggleSeed(id) {
   const s = new Set(seedPicks.value);
@@ -464,6 +470,9 @@ async function exporterJSON() {
         <p class="text-lg font-serif mb-1">{{ t('Nourrir') }} « {{ seedCarnet?.nom }} »</p>
         <p class="text-xs text-muted mb-4 leading-relaxed text-left">{{ t("Sélectionne des notes de tes autres carnets pour l'ouvrir avec de la matière — tes invités ne tomberont pas sur un carnet vide.") }}</p>
         <div class="flex-1 overflow-y-auto -mx-1 px-1 space-y-1.5 mb-4">
+          <p v-if="!seedPossibles.length" class="text-xs text-muted leading-relaxed py-6 text-center">
+            {{ t("Aucune note à proposer pour l'instant — note ta première adresse, ou retrouve tes carnets depuis Profil si tu viens de changer d'appareil.") }}
+          </p>
           <button v-for="f in seedPossibles" :key="f.id" @click="toggleSeed(f.id)"
             class="w-full flex items-center gap-3 rounded-xl p-2.5 border transition"
             :style="{ borderColor: seedPicks.has(f.id) ? 'var(--c-accent)' : 'var(--c-hairline)', background: seedPicks.has(f.id) ? 'var(--c-soft)' : 'transparent' }">

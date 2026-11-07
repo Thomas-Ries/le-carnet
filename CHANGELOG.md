@@ -50,6 +50,10 @@
 - Sur chaque carte de carnet de la liste : icône crayon et poubelle pour l'admin, croix pour quitter quand on n'est qu'un membre. Confirmations obligatoires pour les actes définitifs.
 - Nouvelles mutations worker : renameCarnet (admin, UPDATE Carnets) et deleteCarnet (admin ; les fiches partagées avec un autre carnet y survivent, seules celles exclusives au carnet sont purgées avec likes/commentaires/demandes ; flashes, sessions et membres supprimés).
 - Diagnostic notifs : chaque envoi push est désormais journalisé dans Events (type push : cible / abonnements trouvés / envoyés / échoués / purgés) — après un flash sans notif, SELECT * FROM Events WHERE type='push' ORDER BY id DESC LIMIT 5 ; dit exactement ce qui s'est passé (abonnement absent = l'appareil n'a pas rouvert l'app depuis la V0.4.92, échec = endpoint invalide).
+0.4.102 — La popin « Nourrir » s'ouvre toujours après création d'un carnet
+- Cause du « disparition » : sur un appareil aux fiches vides (identité purgée — le cas du Mac, ou appareil neuf), la condition autres.length gardait la popin fermée sans aucune erreur. Le carnet se créait, mais rien ne s'ouvrait.
+- La popin s'ouvre désormais à CHAQUE création de carnet ; si aucune note n'est à proposer, elle affiche un état vide explicatif (« note ta première adresse, ou retrouve tes carnets depuis Profil »).
+- Garde défensive (f.carnets || []) sur les deux filtres (creer + seedPossibles) : une fiche sans liens ne peut plus faire planter l'ouverture.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
