@@ -5,6 +5,7 @@ import { t } from "../lib/i18n.js";
 // Le scroll de la page derrière est verrouillé tant que la visionneuse est ouverte.
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import Ic from "./Ic.vue";
+import ConfirmModal from "./ConfirmModal.vue";
 import { useCarnetStore } from "../stores/carnet.js";
 import { lockScroll } from "../lib/util.js";
 
@@ -12,12 +13,20 @@ const props = defineProps({ flash: { type: Object, required: true } });
 const emit = defineEmits(["close", "completer"]);
 const store = useCarnetStore();
 const plein = ref(false);
+const suppr = ref(false);
 const aime = computed(() => (props.flash.reacts || []).includes(store.profil.prenom));
 const miens = computed(() => props.flash.auteur === store.profil.prenom);
 const nbAmours = computed(() => (props.flash.reacts || []).length);
 onMounted(() => lockScroll(true));
 onUnmounted(() => lockScroll(false));
 function aimer() { store.liker(props.flash.id, !aime.value); }
+// V0.4.103 : l'auteur peut effacer son flash avant les 7 jours.
+async function confirmerSuppr() {
+  suppr.value = false;
+  const r = await store.supprimerFlash(props.flash.id);
+  if (r && r.error) { emit('close'); return; }
+  emit('close');
+}
 </script>
 
 <template>
@@ -58,6 +67,17 @@ function aimer() { store.liker(props.flash.id, !aime.value); }
       <p class="text-center text-[10px] text-muted mt-2.5 leading-relaxed">
         {{ t("Il vit 7 jours — aime-le, et l'auteur en fera peut-être une fiche.") }}
       </p>
+      <button v-if="miens" @click="suppr = true"
+        class="w-full rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 mt-1 transition active:scale-[.99]"
+        :style="{ color: 'var(--c-muted)', border: '1px solid var(--c-hairline)' }">
+        <Ic name="trash" class="w-3.5 h-3.5" /> {{ t("Supprimer ce flash") }}
+      </button>
+
+      <ConfirmModal :open="suppr"
+        :title="t('Supprimer ce flash') + ' ?'"
+        :text="t('Le flash disparaît pour tous les membres du carnet. Aucune récupération possible.')"
+        confirmLabel="Supprimer"
+        @confirm="confirmerSuppr" @cancel="suppr = false" />
     </div>
   </div>
 

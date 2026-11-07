@@ -54,6 +54,9 @@
 - Cause du « disparition » : sur un appareil aux fiches vides (identité purgée — le cas du Mac, ou appareil neuf), la condition autres.length gardait la popin fermée sans aucune erreur. Le carnet se créait, mais rien ne s'ouvrait.
 - La popin s'ouvre désormais à CHAQUE création de carnet ; si aucune note n'est à proposer, elle affiche un état vide explicatif (« note ta première adresse, ou retrouve tes carnets depuis Profil »).
 - Garde défensive (f.carnets || []) sur les deux filtres (creer + seedPossibles) : une fiche sans liens ne peut plus faire planter l'ouverture.
+0.4.103 — L'auteur peut supprimer son flash
+- Dans la visionneuse, un bouton poubelle apparaît sous les actions (visible seulement de l'auteur) : confirmation obligatoire, le flash disparaît pour tous les membres du carnet.
+- Côté worker, la mutation deleteFlash existait déjà (utilisée après complétion) et vérifie auteur OU admin du carnet — purge des réactions avec le flash.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

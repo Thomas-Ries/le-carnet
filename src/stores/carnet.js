@@ -454,6 +454,16 @@ export const useCarnetStore = defineStore("carnet", {
       return { ok: true };
     },
 
+    // V0.4.103 : l'auteur peut supprimer son flash avant les 7 jours.
+    async supprimerFlash(id) {
+      const r = await api.deleteFlash(id);
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      if (r && r.error) return r;
+      this.flashes = this.flashes.filter((f) => f.id !== id);
+      return r;
+    },
+
     async commenterFlash(id, com) {
       const r = await api.commentFlash(id, com);
       const fl = this.flashes.find((f) => f.id === id);
