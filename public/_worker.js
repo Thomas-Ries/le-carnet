@@ -7,8 +7,18 @@ const CORS = {
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...CORS } });
+// V0.4.98 : identité de secours par cookie serveur. Le localStorage des PWA
+// WebKit (iOS + macOS) est purgé après 7 jours sans usage (ITP) — le deviceId
+// disparaît et l'appareil devient un inconnu. Un cookie posé PAR LE SERVEUR
+// (Set-Cookie, HttpOnly) n'est PAS soumis à cette purge : il porte l'identité
+// en secours et le bootstrap adopte automatiquement si le localStorage a sauté.
+let devCookie = null;
+const json = (data, status = 200) => {
+  const headers = { "Content-Type": "application/json", ...CORS };
+  if (devCookie)
+    headers["Set-Cookie"] = "lc-device=" + devCookie + "; Max-Age=31536000; Path=/; HttpOnly; Secure; SameSite=Lax";
+  return new Response(JSON.stringify(data), { status, headers });
+};
 
 const enc = new TextEncoder();
 async function sha256hex(s) {
@@ -299,7 +309,17 @@ export default {
     // ---------- Lecture ----------
     if (url.pathname === "/api/bootstrap" && request.method === "GET") {
       try {
-        const device = cleanText(url.searchParams.get("device"), 64);
+        // V0.4.98 : résolution d'identité — payload vs cookie de secours.
+        const cookieDev = (String(request.headers.get("Cookie") || "").match(/(?:^|;\s*)lc-device=([A-Za-z0-9-]{8,64})/) || [])[1] || null;
+        let device = cleanText(url.searchParams.get("device"), 64);
+        if (cookieDev && cookieDev !== device) {
+          const rC = await db.prepare(`SELECT COUNT(*) AS n FROM Sessions WHERE device_id=?`).bind(cookieDev).first();
+          const rD = await db.prepare(`SELECT COUNT(*) AS n FROM Sessions WHERE device_id=?`).bind(device).first();
+          // Le localStorage a été purgé (nouveau UUID inconnu) mais le cookie
+          // porte encore un appareil connu -> on adopte l'identité du cookie.
+          if (rC && rC.n > 0 && rD && rD.n === 0) device = cookieDev;
+        }
+        devCookie = device;
         await ensureEvents(db);
         await ensureComments(db);
         await ensurePrive(db);
@@ -473,14 +493,18 @@ export default {
 
         // V0.4.78 : avatar serveur du membre (sync entre appareils)
         let avatarMoi = null;
+        // V0.4.98 : prénom du membre — restaure le profil après une purge ITP.
+        let prenomMoi = null;
         {
           const { results: av } = await db.prepare(
             `SELECT m.avatar FROM Membres m JOIN Sessions s ON s.carnet_id=m.carnet_id AND s.prenom=m.prenom
              WHERE s.device_id=? AND m.avatar IS NOT NULL AND m.avatar<>'' LIMIT 1`
           ).bind(device).all();
           if (av.length) avatarMoi = av[0].avatar;
+          const pr = await db.prepare(`SELECT prenom FROM Sessions WHERE device_id=? LIMIT 1`).bind(device).first();
+          if (pr) prenomMoi = pr.prenom;
         }
-        return json({ carnets: carnetsOut, fiches, flashes, roles, avatar: avatarMoi, avatars: avatarsByPrenom });
+        return json({ device, prenom: prenomMoi, carnets: carnetsOut, fiches, flashes, roles, avatar: avatarMoi, avatars: avatarsByPrenom });
       } catch (e) {
         return json({ error: "bootstrap: " + String((e && e.message) || e) }, 500);
       }
@@ -501,6 +525,8 @@ export default {
       const p = payload || (action ? body : {});
       const now = new Date().toISOString();
       const device = cleanText(p.deviceId, 64);
+      // V0.4.98 : rafraîchit le cookie d'identité de secours à chaque mutation.
+      if (device) devCookie = device;
 
       const sessionOf = async (carnetId) => {
         const r = await db.prepare(
