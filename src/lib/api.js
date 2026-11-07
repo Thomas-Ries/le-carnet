@@ -279,6 +279,21 @@ function demoMutate(db, action, p) {
       demo.save(db);
       return { ok: true };
     }
+    case "renameCarnet": {
+      const c = db.carnets.find((x) => x.id === p.carnetId);
+      if (!c) return { error: "introuvable" };
+      c.nom = String(p.nom || "").slice(0, 24);
+      demo.save(db);
+      return { ok: true, nom: c.nom };
+    }
+    case "deleteCarnet": {
+      db.carnets = db.carnets.filter((x) => x.id !== p.carnetId);
+      for (const f of db.fiches) f.carnets = (f.carnets || []).filter((cid) => cid !== p.carnetId);
+      db.fiches = db.fiches.filter((f) => (f.carnets || []).length > 0);
+      db.flashes = db.flashes.filter((fl) => !(fl.carnets || []).includes(p.carnetId));
+      demo.save(db);
+      return { ok: true };
+    }
     case "rename": {
       // Même logique que le worker : doublon d'abord, renommage partout ensuite.
       const nv = String(p.nouveau || "").trim().slice(0, 20);
@@ -457,6 +472,8 @@ export const deleteAccount = (purge) => mutate("deleteAccount", { purge });
 export const demandeRecette = (id, prenom) => mutate("demandeRecette", { id, prenom });
 export const removeMember = (carnetId, membre) => mutate("removeMember", { carnetId, membre });
 export const leaveCarnet = (carnetId, prenom) => mutate("leaveCarnet", { carnetId, prenom });
+export const renameCarnet = (carnetId, nom) => mutate("renameCarnet", { carnetId, nom });
+export const deleteCarnet = (carnetId) => mutate("deleteCarnet", { carnetId });
 export const rename = (ancien, nouveau) => mutate("rename", { ancien, nouveau });
 export const subscribePush = (sub) => mutate("subscribePush", { sub });
 export const unsubscribePush = (endpoint) => mutate("unsubscribePush", { endpoint });

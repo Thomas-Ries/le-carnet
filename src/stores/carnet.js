@@ -407,6 +407,33 @@ export const useCarnetStore = defineStore("carnet", {
       return created[0] || r;
     },
 
+    // V0.4.101 : l'admin renomme son carnet.
+    async renommerCarnet(carnetId, nom) {
+      const r = await api.renameCarnet(carnetId, nom);
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      if (r && r.error) return r;
+      const c = this.carnets.find((x) => x.id === carnetId);
+      if (c) c.nom = r.nom || nom;
+      return r;
+    },
+
+    // V0.4.101 : l'admin supprime son carnet (définitif, pour tout le monde).
+    async supprimerCarnet(carnetId) {
+      const r = await api.deleteCarnet(carnetId);
+      this.demoMode = api.state.demoMode;
+      this.connexionPerdue = api.state.connexionPerdue;
+      if (r && r.error) return r;
+      this.carnets = this.carnets.filter((c) => c.id !== carnetId);
+      delete this.roles[carnetId];
+      this.fiches = this.fiches
+        .map((f) => ({ ...f, carnets: f.carnets.filter((cid) => cid !== carnetId) }))
+        .filter((f) => f.carnets.length > 0);
+      this.flashes = this.flashes.filter((f) => !f.carnets.includes(carnetId));
+      if (this.carnetId === carnetId) this.switchCarnet(this.carnets[0]?.id || null);
+      return r;
+    },
+
     async quitterCarnet(carnetId) {
       const r = await api.leaveCarnet(carnetId, this.profil.prenom);
       if (r && r.error) return r;

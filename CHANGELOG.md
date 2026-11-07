@@ -46,6 +46,10 @@
 0.4.100 — Sheets mobiles : CTA visibles au-dessus de la nav + scroll verrouillé (popin « Nourrir »)
 - Toutes les sheets en bas d'écran (popin Nourrir, visionneuse flash, prise de flash, complétion) remontent au-dessus de la nav de base : marge basse = hauteur nav + safe-area + 16 px (desktop inchangé).
 - La popin « Nourrir » verrouille maintenant aussi le scroll de la page derrière (lockScroll).
+0.4.101 — Gestion des carnets (renommer / supprimer / quitter) + journal des envois push
+- Sur chaque carte de carnet de la liste : icône crayon et poubelle pour l'admin, croix pour quitter quand on n'est qu'un membre. Confirmations obligatoires pour les actes définitifs.
+- Nouvelles mutations worker : renameCarnet (admin, UPDATE Carnets) et deleteCarnet (admin ; les fiches partagées avec un autre carnet y survivent, seules celles exclusives au carnet sont purgées avec likes/commentaires/demandes ; flashes, sessions et membres supprimés).
+- Diagnostic notifs : chaque envoi push est désormais journalisé dans Events (type push : cible / abonnements trouvés / envoyés / échoués / purgés) — après un flash sans notif, SELECT * FROM Events WHERE type='push' ORDER BY id DESC LIMIT 5 ; dit exactement ce qui s'est passé (abonnement absent = l'appareil n'a pas rouvert l'app depuis la V0.4.92, échec = endpoint invalide).
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

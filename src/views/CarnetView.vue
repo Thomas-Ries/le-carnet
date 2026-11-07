@@ -160,6 +160,36 @@ async function seedConfirmer() {
   seedCarnet.value = null;
 }
 
+/* V0.4.101 : gestion des carnets depuis la liste — renommer/supprimer (admin),
+   quitter (membre). Confirmation obligatoire pour les actes définitifs. */
+const renomme = ref(null);
+const renommeNom = ref("");
+const supprCarnet = ref(null);
+const pendingQuitter = ref(null);
+function ouvrirRenommer(c) { renomme.value = c; renommeNom.value = c.nom; }
+async function validerRenommer() {
+  const c = renomme.value; renomme.value = null;
+  const nom = renommeNom.value.trim();
+  if (!c || !nom || nom === c.nom) return;
+  const r = await store.renommerCarnet(c.id, nom);
+  if (r && r.error) { toast(r.error); return; }
+  toast(t("Carnet renommé"));
+}
+async function confirmerSupprCarnet() {
+  const c = supprCarnet.value; supprCarnet.value = null;
+  if (!c) return;
+  const r = await store.supprimerCarnet(c.id);
+  if (r && r.error) { toast(r.error); return; }
+  toast(t("Carnet supprimé"));
+}
+async function confirmerQuitterCarnet() {
+  const c = pendingQuitter.value; pendingQuitter.value = null;
+  if (!c) return;
+  const r = await store.quitterCarnet(c.id);
+  if (r && r.error) { toast(r.error); return; }
+  toast(t("Tu as quitté ce carnet"));
+}
+
 function copier() {
   navigator.clipboard?.writeText(lien.value);
   toast(t("Lien copié — envoie-le à qui tu veux"));
@@ -222,21 +252,38 @@ async function exporterJSON() {
     </button>
 
     <div class="space-y-2 mb-6">
-      <button v-for="c in carnetsCercles" :key="c.id"
-        @click="store.switchCarnet(c.id)"
-        class="w-full rounded-2xl p-4 flex items-center gap-3 text-left"
+      <div v-for="c in carnetsCercles" :key="c.id"
+        class="w-full rounded-2xl p-4 flex items-center gap-3 text-left cursor-pointer transition"
         :style="{
           background: c.id === store.carnetId ? 'var(--c-soft)' : 'var(--c-surface)',
           border: '1px solid ' + (c.id === store.carnetId ? 'var(--c-accent)' : 'var(--c-hairline)'),
-        }">
-        <span class="rounded-full w-10 h-10 flex items-center justify-center font-serif text-accent"
+        }"
+        @click="store.switchCarnet(c.id)">
+        <span class="rounded-full w-10 h-10 flex items-center justify-center font-serif text-accent shrink-0"
           :style="{ background: c.id === store.carnetId ? 'var(--c-surface)' : 'var(--c-soft)' }">{{ c.nom[0] }}</span>
-        <span class="flex-1">
-          <span class="block text-sm font-semibold">{{ c.nom }}</span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-sm font-semibold truncate">{{ c.nom }}</span>
           <span class="block text-[11px] text-muted">{{ c.membres.length }} {{ t("membre(s) · code :") }} {{ c.code }}</span>
         </span>
-        <Ic v-if="c.id === store.carnetId" name="check" class="w-4 h-4 text-accent" />
-      </button>
+        <Ic v-if="c.id === store.carnetId" name="check" class="w-4 h-4 text-accent shrink-0" />
+        <span class="flex items-center gap-1 shrink-0" @click.stop>
+          <button v-if="store.roles[c.id] === 'admin'" @click="ouvrirRenommer(c)"
+            class="rounded-full p-2 bg-surface border border-hairline" :title="t('Renommer le carnet')"
+            :aria-label="t('Renommer le carnet')">
+            <Ic name="pencil" class="w-3.5 h-3.5 text-muted" />
+          </button>
+          <button v-if="store.roles[c.id] === 'admin'" @click="supprCarnet = c"
+            class="rounded-full p-2 bg-surface border border-hairline" :title="t('Supprimer le carnet')"
+            :aria-label="t('Supprimer le carnet')">
+            <Ic name="trash" class="w-3.5 h-3.5 text-muted" />
+          </button>
+          <button v-else @click="pendingQuitter = c"
+            class="rounded-full p-2 bg-surface border border-hairline" :title="t('Quitter ce carnet')"
+            :aria-label="t('Quitter ce carnet')">
+            <Ic name="x" class="w-3.5 h-3.5 text-muted" />
+          </button>
+        </span>
+      </div>
       <button @click="modeCreer = !modeCreer; modeRejoindre = false"
         class="w-full rounded-2xl py-3.5 text-sm font-semibold text-accent flex items-center justify-center gap-1.5"
         style="border: 1.5px dashed var(--c-hairline)">
@@ -443,5 +490,35 @@ async function exporterJSON() {
         </div>
       </div>
     </div>
+
+    <!-- V0.4.101 : renommer un carnet (admin) -->
+    <div v-if="renomme" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center pt-4 px-4 pb-[calc(var(--lc-nav-h)+var(--lc-safe-b)+16px)] sm:pb-4"
+      :style="{ background: 'rgba(0,0,0,.45)' }" @click.self="renomme = null">
+      <div class="w-full max-w-[430px] mx-auto rounded-t-3xl sm:rounded-2xl bg-surface p-5" @click.stop>
+        <div class="w-10 h-1 rounded-full bg-hairline mx-auto mb-4" />
+        <p class="text-lg font-serif mb-1 text-left">{{ t("Renommer le carnet") }}</p>
+        <input v-model="renommeNom" maxlength="24" class="w-full rounded-xl px-3 py-3 text-sm bg-cream border border-hairline outline-none mb-4 mt-2"
+          :placeholder="t('Le nom du carnet…')" @keyup.enter="validerRenommer" />
+        <div class="flex gap-2">
+          <button @click="renomme = null" class="flex-1 rounded-xl py-3 text-sm font-semibold"
+            :style="{ color: 'var(--c-muted)', border: '1px solid var(--c-hairline)' }">{{ t("Annuler") }}</button>
+          <button @click="validerRenommer" :disabled="!renommeNom.trim()"
+            class="flex-1 rounded-xl py-3 text-sm font-semibold disabled:opacity-40"
+            :style="{ color: '#fff', background: '#7A2E3E' }">{{ t("Enregistrer") }}</button>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmModal :open="!!supprCarnet"
+      :title="t('Supprimer') + ' « ' + (supprCarnet?.nom || '') + ' » ?'"
+      :text="t('Le carnet et toutes ses données disparaissent pour tous les membres. Aucune récupération possible. Les fiches partagées avec un autre carnet y survivent.')"
+      confirmLabel="Supprimer"
+      @confirm="confirmerSupprCarnet" @cancel="supprCarnet = null" />
+
+    <ConfirmModal :open="!!pendingQuitter"
+      :title="t('Quitter') + ' « ' + (pendingQuitter?.nom || '') + ' » ?'"
+      text="Tu ne recevras plus rien de ce carnet et toutes ses publications disparaissent de ton fil. Aucune récupération possible — pour revenir, il faudra une nouvelle invitation."
+      confirmLabel="Quitter"
+      @confirm="confirmerQuitterCarnet" @cancel="pendingQuitter = null" />
   </div>
 </template>
