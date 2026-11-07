@@ -70,11 +70,18 @@ async function wpVapidHeader(endpoint, privB64, pubB64) {
   return { auth: "vapid t=" + unsigned + "." + wpB64u(der), cryptoKey: "p256ecdsa=" + pubB64 };
 }
 async function sendPushTo(env, db, deviceIds, payload) {
-  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !deviceIds || !deviceIds.length) return;
+  // V0.4.101 : chaque envoi est journalisé dans Events (type "push") —
+  // cible = appareils destinataires, subs = abonnements trouvés en base,
+  // sent/failed/purged = résultats réels. Diagnostic notif impossible sans ça.
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !deviceIds || !deviceIds.length) {
+    logEvent(db, "push", { meta: { cible: (deviceIds || []).length, subs: 0, sent: 0, failed: 0, purged: 0, raison: "VAPID absente ou aucun destinataire" } });
+    return;
+  }
   const uniq = [...new Set(deviceIds)];
   const { results: subs } = await db.prepare(
     `SELECT * FROM PushSubscriptions WHERE device_id IN (${uniq.map(() => "?").join(",")})`
   ).bind(...uniq).all();
+  let sent = 0, failed = 0, purged = 0;
   for (const sub of subs) {
     try {
       const body = await wpEncrypt(JSON.stringify(payload), sub.p256dh, sub.auth);
@@ -86,9 +93,12 @@ async function sendPushTo(env, db, deviceIds, payload) {
       });
       if (res.status === 404 || res.status === 410) {
         await db.prepare(`DELETE FROM PushSubscriptions WHERE endpoint=?`).bind(sub.endpoint).run();
-      }
-    } catch (e) { /* une notif échouée ne doit jamais bloquer la mutation */ }
+        purged++;
+      } else if (res.ok) sent++;
+      else failed++;
+    } catch (e) { failed++; /* une notif échouée ne doit jamais bloquer la mutation */ }
   }
+  logEvent(db, "push", { meta: { cible: uniq.length, subs: subs.length, sent, failed, purged } });
 }
 const devicesOfCarnet = async (db, carnetId, exceptPrenom) => {
   const { results } = await db.prepare(
@@ -1455,6 +1465,45 @@ export default {
             await db.prepare(`DELETE FROM Sessions WHERE carnet_id=? AND device_id=?`).bind(c.id, device).run();
             const autre = await db.prepare(`SELECT 1 FROM Sessions WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).first();
             if (!autre) await db.prepare(`DELETE FROM Membres WHERE carnet_id=? AND prenom=?`).bind(c.id, s.prenom).run();
+            return json({ ok: true });
+          }
+
+          case "renameCarnet": {
+            // V0.4.101 : l'admin renomme son carnet.
+            const cRn = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!cRn) return json({ error: "carnet introuvable" }, 404);
+            if (!(await isAdminOf(cRn.id))) return json({ error: "réservé à l'admin" }, 403);
+            const nomRn = cleanText(p.nom, 24).trim();
+            if (!nomRn) return json({ error: "Le nom du carnet est manquant." }, 400);
+            await db.prepare(`UPDATE Carnets SET nom=? WHERE id=?`).bind(nomRn, cRn.id).run();
+            logEvent(db, "rename_carnet", { device, prenom: cRn.admin, carnet: cRn.id });
+            return json({ ok: true, nom: nomRn });
+          }
+
+          case "deleteCarnet": {
+            // V0.4.101 : l'admin supprime son carnet (définitif). Une fiche partagée
+            // avec un autre carnet y survit — seule le lien disparaît.
+            const cDel = await db.prepare(`SELECT * FROM Carnets WHERE id=?`).bind(p.carnetId).first();
+            if (!cDel) return json({ ok: true });
+            if (!(await isAdminOf(cDel.id))) return json({ error: "réservé à l'admin" }, 403);
+            const cidDel = cDel.id;
+            const { results: liensDel } = await db.prepare(`SELECT fiche_id FROM FichesCarnets WHERE carnet_id=?`).bind(cidDel).all();
+            for (const l of liensDel) {
+              const autres = await db.prepare(`SELECT 1 FROM FichesCarnets WHERE fiche_id=? AND carnet_id<>?`).bind(l.fiche_id, cidDel).first();
+              if (!autres) {
+                await db.prepare(`DELETE FROM FicheLikes WHERE fiche_id=?`).bind(l.fiche_id).run();
+                await db.prepare(`DELETE FROM DemandesRecette WHERE fiche_id=?`).bind(l.fiche_id).run();
+                await db.prepare(`DELETE FROM FicheComments WHERE fiche_id=?`).bind(l.fiche_id).run();
+                await db.prepare(`DELETE FROM Fiches WHERE id=?`).bind(l.fiche_id).run();
+              }
+            }
+            await db.prepare(`DELETE FROM FichesCarnets WHERE carnet_id=?`).bind(cidDel).run();
+            await db.prepare(`DELETE FROM FlashReactions WHERE flash_id IN (SELECT id FROM Flashes WHERE carnet_id=?)`).bind(cidDel).run();
+            await db.prepare(`DELETE FROM Flashes WHERE carnet_id=?`).bind(cidDel).run();
+            await db.prepare(`DELETE FROM Sessions WHERE carnet_id=?`).bind(cidDel).run();
+            await db.prepare(`DELETE FROM Membres WHERE carnet_id=?`).bind(cidDel).run();
+            await db.prepare(`DELETE FROM Carnets WHERE id=?`).bind(cidDel).run();
+            logEvent(db, "delete_carnet", { device, prenom: cDel.admin, carnet: cidDel, meta: { fiches: liensDel.length } });
             return json({ ok: true });
           }
 
