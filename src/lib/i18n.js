@@ -121,6 +121,8 @@ const EN = {
   "Fichier téléchargé — partage-le depuis ton téléphone": "File downloaded — share it from your phone",
   "Filtrer par lieu": "Filter by place",
   "Flash": "Flash",
+  "Flash de": "Flash from",
+  "Il vit 7 jours — aime-le, et l'auteur en fera peut-être une fiche.": "It lives for 7 days — show it some love, and its author may turn it into a card.",
   "Flash — photo éclair": "Flash — lightning photo",
   "Flashes, adresses notées, rappel J-6": "Flashes, rated addresses, D-6 reminder",
   "Flashes, adresses notées, rappel J-6. À activer une fois l'app installée en ligne — pas disponible en mode démo.": "Flashes, rated addresses, D-6 reminder. Enable once the app is installed online — not available in demo mode.",

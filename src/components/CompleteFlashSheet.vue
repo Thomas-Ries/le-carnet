@@ -1,10 +1,10 @@
 <script setup>
 import { t } from "../lib/i18n.js";
 // Complétion d'un flash : nom, catégorie, note -> devient fiche permanente.
-import { ref, inject } from "vue";
+import { ref, inject, onMounted, onUnmounted } from "vue";
 import Ic from "./Ic.vue";
 import { useCarnetStore } from "../stores/carnet.js";
-import { noteLabel } from "../lib/util.js";
+import { noteLabel, lockScroll } from "../lib/util.js";
 
 const props = defineProps({ flash: { type: Object, required: true } });
 const emit = defineEmits(["close", "done"]);
@@ -15,6 +15,9 @@ const com = ref(props.flash.com || "");
 const cat = ref("Resto");
 const note = ref(80);
 const cats = ["Resto", "Caviste", "Bar", "Fromagerie", "Boulangerie", "Recette"];
+// V0.4.99 : la page derrière ne scrolle pas pendant la complétion.
+onMounted(() => lockScroll(true));
+onUnmounted(() => lockScroll(false));
 
 async function valider() {
   if (!titre.value.trim()) return;
@@ -47,7 +50,7 @@ async function justeCommentaire() {
           <Ic name="x" class="w-4 h-4" />
         </button>
       </div>
-      <img v-if="flash.photo" :src="flash.photo" class="w-full h-24 object-cover rounded-2xl mb-4" alt="Flash" />
+      <img v-if="flash.photo" :src="flash.photo" class="w-full aspect-[4/3] object-cover rounded-2xl mb-4" alt="Flash" />
 
       <input v-model="titre" placeholder="C'était où ? Le nom du lieu…"
         class="w-full rounded-xl px-3 py-3 text-sm bg-surface border border-hairline outline-none mb-2.5" />

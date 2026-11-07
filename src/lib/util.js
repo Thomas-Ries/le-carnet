@@ -319,3 +319,13 @@ export function zoneFiche(f) {
   if (f && f.pays) return { pays: f.pays, ville: f.ville || "" };
   return detecterZone(f && f.lieu);
 }
+
+/* V0.4.99 : verrou de scroll pour les overlays plein écran — empêche la page
+   derrière (homepage) de scroller pendant qu'une modale/sheet est ouverte.
+   Compteur de référence : plusieurs overlays peuvent se superposer. */
+let scrollLocks = 0;
+export function lockScroll(on) {
+  scrollLocks = Math.max(0, scrollLocks + (on ? 1 : -1));
+  if (typeof document !== "undefined")
+    document.body.style.overflow = scrollLocks > 0 ? "hidden" : "";
+}

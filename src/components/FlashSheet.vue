@@ -1,10 +1,14 @@
 <script setup>
 import { t } from "../lib/i18n.js";
 // Flash : photo -> carnet(s) -> envoyé. Photo = dataURL compressé (pas de stockage en démo).
-import { ref, inject } from "vue";
+import { ref, inject, onMounted, onUnmounted } from "vue";
 import Ic from "./Ic.vue";
 import { useCarnetStore } from "../stores/carnet.js";
-import { chargerPhoto } from "../lib/util.js";
+import { chargerPhoto, lockScroll } from "../lib/util.js";
+
+// V0.4.99 : la page derrière ne scrolle pas pendant la prise de flash.
+onMounted(() => lockScroll(true));
+onUnmounted(() => lockScroll(false));
 
 const emit = defineEmits(["close"]);
 const store = useCarnetStore();

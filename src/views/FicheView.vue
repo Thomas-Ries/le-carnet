@@ -1,11 +1,11 @@
 <script setup>
 import { t } from "../lib/i18n.js";
-import { ref, computed, inject, onUnmounted } from "vue";
+import { ref, computed, inject, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCarnetStore } from "../stores/carnet.js";
 import Ic from "../components/Ic.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
-import { noteLabel, fmtDate, chargerPhoto, partagerFiche } from "../lib/util.js";
+import { noteLabel, fmtDate, chargerPhoto, partagerFiche, lockScroll } from "../lib/util.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -46,6 +46,9 @@ function noterGo() {
   store.noterGo(fiche.value.id);
 }
 const zoom = ref(false);
+// V0.4.99 : la page derrière ne scrolle pas pendant l'agrandissement photo.
+watch(zoom, (v) => lockScroll(!!v));
+onUnmounted(() => lockScroll(false));
 const newCom = ref("");
 const comInput = ref(null);
 const editComId = ref(null);

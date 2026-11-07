@@ -39,6 +39,10 @@
 - Fix structurel : le worker pose un cookie lc-device HttpOnly (1 an, posé PAR le serveur — donc non soumis à la purge ITP des cookies scriptés). Au bootstrap, si le device du payload est inconnu mais que le cookie porte un appareil avec des sessions, on adopte l'identité du cookie : les carnets reviennent tout seuls, sans code à retaper.
 - Le bootstrap renvoie désormais device + prenom : le client re-persiste le vrai device et restaure le prénom du profil (lui aussi purgé) automatiquement.
 - Première installation d'une app déjà perdue : toujours une seule fois « J'ai déjà mes carnets sur un autre appareil » (prénom + code personnel) — ensuite, plus jamais.
+0.4.99 — Visionneuse de flash (photo grand format + agrandissement) + verrou de scroll des overlays
+- Taper un flash ouvre désormais une visionneuse : photo en 4:3 comme les fiches, badge « Agrandir » et plein écran au tap, auteur, commentaire, bouton cœur (like) — et « En faire une fiche notée » pour l'auteur (la complétion reste dans sa sheet, avec la photo en grand au lieu des 24 px de haut d'avant).
+- Auparavant, toucher le flash d'un autre ne faisait qu'un like à l'aveugle : aucune façon de voir la photo.
+- Verrou de scroll : quand une sheet/visionneuse est ouverte (flash, complétion, prise de flash, zoom photo d'une fiche), la page derrière ne scrolle plus (body overflow hidden, compteur de référence lockScroll dans util.js).
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

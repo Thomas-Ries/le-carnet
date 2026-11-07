@@ -7,6 +7,7 @@ import Ic from "../components/Ic.vue";
 import Avatar from "../components/Avatar.vue";
 import FicheRow from "../components/FicheRow.vue";
 import CompleteFlashSheet from "../components/CompleteFlashSheet.vue";
+import FlashView from "../components/FlashView.vue";
 import ConfirmModal from "../components/ConfirmModal.vue";
 import * as api from "../lib/api.js";
 import { partagerSelectionFiches, zoneFiche } from "../lib/util.js";
@@ -16,6 +17,8 @@ const router = useRouter();
 const toast = inject("toast");
 const q = ref("");
 const flashComplet = ref(null);
+// V0.4.99 : visionneuse de flash — voir la photo en grand, aimer, compléter.
+const flashOuvert = ref(null);
 const menuCarnets = ref(false);
 const tri = ref("recent"); // recent | aime | az — tri façon e-commerce (CTA + menu)
 const filtreType = ref("tous"); // tous | adresse | recette | cocktail
@@ -401,7 +404,7 @@ async function confirmerPartage() {
         <p class="text-xs uppercase tracking-widest text-muted mb-2">{{ t("Moments — pas encore notés") }}</p>
         <div class="flex gap-3 overflow-x-auto pb-1">
           <button v-for="fl in flashes" :key="fl.id" class="flex flex-col items-center gap-1 shrink-0 transition active:scale-95"
-            @click="miens(fl) ? (flashComplet = fl) : store.liker(fl.id, !fl.reacts.includes(store.profil.prenom))">
+            @click="flashOuvert = fl">
             <span class="relative rounded-full p-[2.5px]" style="background: linear-gradient(135deg, #D9C589, #7A2E3E)">
               <span class="rounded-full overflow-hidden flex items-center justify-center w-[60px] h-[60px]"
                 style="border: 2.5px solid var(--c-bg); background: linear-gradient(140deg, rgba(217,197,137,.55), rgba(122,46,62,.3))">
@@ -714,6 +717,9 @@ async function confirmerPartage() {
       </p>
     </template>
 
+    <FlashView v-if="flashOuvert" :flash="flashOuvert"
+      @close="flashOuvert = null"
+      @completer="(flashComplet = flashOuvert), (flashOuvert = null)" />
     <CompleteFlashSheet v-if="flashComplet" :flash="flashComplet" @close="flashComplet = null" @done="flashComplet = null" />
 
     
