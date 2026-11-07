@@ -1090,25 +1090,62 @@ export default {
           }
 
           case "addFlash": {
+            // V0.4.97 : le client envoie carnets: [ids] (multi-carnet) — un flash
+            // par carnet en base (schéma : carnet_id unique par ligne Flashes).
             const fl = p.flash || {};
-            const s = await sessionOf(fl.carnetId);
-            if (!s) return json({ error: "pas membre" }, 403);
-            const id = crypto.randomUUID();
+            const carnetIds = (Array.isArray(fl.carnets) ? fl.carnets : []).filter(Boolean);
+            if (!carnetIds.length && fl.carnetId) carnetIds.push(fl.carnetId);
+            if (!carnetIds.length) return json({ error: "aucun carnet" }, 400);
             const expires = new Date(Date.now() + 7 * 864e5).toISOString();
-            await db.prepare(
-              `INSERT INTO Flashes (id, carnet_id, auteur, photo, com, created_at, expires_at) VALUES (?,?,?,?,?,?,?)`
-            ).bind(id, fl.carnetId, s.prenom, typeof fl.photo === "string" ? fl.photo.slice(0, 400000) : "",
-              typeof fl.com === "string" ? fl.com.slice(0, 500) : null, now, expires).run();
-            const cnom = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(fl.carnetId).first();
-            devicesOfCarnet(db, fl.carnetId, s.prenom).then((devs) =>
-              sendPushTo(env, db, devs, {
-                title: s.prenom + " a flashé",
-                body: "Nouveau flash dans « " + (cnom ? cnom.nom : "un carnet") + " » — 7 jours pour l’aimer ♥",
-                url: "/",
-              })
-            ).catch(() => {});
-            logEvent(db, "flash", { device, prenom: s.prenom, carnet: fl.carnetId });
-            return json({ flash: { id, carnets: [fl.carnetId], auteur: s.prenom, photo: fl.photo, com: fl.com || null, date: now, reacts: [] } });
+            const created = [];
+            for (const cid of carnetIds) {
+              const s = await sessionOf(cid);
+              if (!s) continue; // pas membre de ce carnet : on l'ignore, pas d'échec global
+              const id = crypto.randomUUID();
+              await db.prepare(
+                `INSERT INTO Flashes (id, carnet_id, auteur, photo, com, created_at, expires_at) VALUES (?,?,?,?,?,?,?)`
+              ).bind(id, cid, s.prenom, typeof fl.photo === "string" ? fl.photo.slice(0, 400000) : "",
+                typeof fl.com === "string" ? fl.com.slice(0, 500) : null, now, expires).run();
+              created.push({ id, carnets: [cid], auteur: s.prenom, photo: fl.photo, com: fl.com || null, date: now, reacts: [] });
+              const cnom = await db.prepare(`SELECT nom FROM Carnets WHERE id=?`).bind(cid).first();
+              devicesOfCarnet(db, cid, s.prenom).then((devs) =>
+                sendPushTo(env, db, devs, {
+                  title: s.prenom + " a flashé",
+                  body: "Nouveau flash dans « " + (cnom ? cnom.nom : "un carnet") + " » — 7 jours pour l’aimer ♥",
+                  url: "/",
+                })
+              ).catch(() => {});
+            }
+            if (!created.length) return json({ error: "pas membre" }, 403);
+            logEvent(db, "flash", { device, prenom: created[0].auteur, carnet: carnetIds.join(",") });
+            return json({ flashes: created, flash: created[0] });
+          }
+
+          case "copierFiches": {
+            // V0.4.97 : nourrir un carnet fraîchement créé avec des fiches existantes.
+            // On ajoute des LIENS fiche↔carnet (INSERT OR IGNORE idempotent) — la
+            // fiche reste dans son carnet d'origine, c'est la même fiche partagée
+            // (modifications et likes communs), pas une copie.
+            const ficheIds = (Array.isArray(p.ficheIds) ? p.ficheIds : []).slice(0, 100);
+            const vers = String(p.vers || "");
+            if (!ficheIds.length || !vers) return json({ error: "rien a copier" }, 400);
+            const sVers = await sessionOf(vers);
+            if (!sVers) return json({ error: "pas membre" }, 403);
+            const vPriv = await db.prepare(`SELECT prive FROM Carnets WHERE id=?`).bind(vers).first();
+            if (vPriv && vPriv.prive === "1") return json({ error: "carnet prive" }, 403);
+            let copiees = 0;
+            for (const fid of ficheIds) {
+              const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(fid).all();
+              if (!liens.length) continue;
+              // Droit : l'appareil doit être membre d'au moins un carnet qui contient la fiche.
+              let autorise = false;
+              for (const l of liens) { if (await sessionOf(l.carnet_id)) { autorise = true; break; } }
+              if (!autorise) continue;
+              await db.prepare(`INSERT OR IGNORE INTO FichesCarnets (fiche_id, carnet_id) VALUES (?,?)`).bind(fid, vers).run();
+              copiees++;
+            }
+            logEvent(db, "copier_fiches", { device, prenom: sVers.prenom, carnet: vers, meta: { n: copiees } });
+            return json({ ok: true, copiees });
           }
 
           case "commentFlash": {
