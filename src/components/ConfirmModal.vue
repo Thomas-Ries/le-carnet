@@ -12,6 +12,10 @@ const emit = defineEmits(["confirm", "cancel"]);
 </script>
 
 <template>
+  <!-- V0.4.106 : Teleport vers <body> — sinon la popin hérite du contexte
+       d'empilement de son parent (une sheet z-50) et la nav z-50, plus
+       tardive dans le DOM, peint par-dessus elle : boutons invisibles. -->
+  <Teleport to="body">
   <div v-if="open" class="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4"
     style="background: rgba(43,35,32,.45)" @click.self="emit('cancel')">
     <div class="w-full max-w-[430px] rounded-t-2xl sm:rounded-2xl bg-surface p-5 pb-7 sm:shadow-2xl"
@@ -26,4 +30,5 @@ const emit = defineEmits(["confirm", "cancel"]);
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
