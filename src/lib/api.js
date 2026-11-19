@@ -347,6 +347,9 @@ function demoMutate(db, action, p) {
     }
     case "updateFiche": {
       const f = db.fiches.find((x) => x.id === p.id);
+      if (!f) return { error: "introuvable" };
+      // V0.4.110 : seul le créateur modifie sa fiche (idem worker).
+      if (f.auteur && p.prenom && f.auteur !== p.prenom) return { error: "réservé à l'auteur de la fiche" };
       Object.assign(f, p.patch);
       demo.save(db);
       return { fiche: f };
@@ -456,7 +459,7 @@ export const rattacherAvis = (carnetId, items, deviceId) => mutate("rattacherAvi
 export const partagerFiches = (ficheIds, carnetIds, deviceId) => mutate("partagerFiches", { ficheIds, carnetIds, deviceId });
 export const copierFiches = (ficheIds, vers) => mutate("copierFiches", { ficheIds, vers });
 export const demoPrive = (pass) => mutate("demoPrive", { pass });
-export const updateFiche = (id, patch) => mutate("updateFiche", { id, patch });
+export const updateFiche = (id, patch, prenom) => mutate("updateFiche", { id, patch, prenom });
 export const deleteFiche = (id) => mutate("deleteFiche", { id });
 export const setAvatar = (avatar, deviceId) => mutate("setAvatar", { avatar, deviceId });
 export const recuperer = (prenom, code, deviceId) => mutate("recuperer", { prenom, code, deviceId });

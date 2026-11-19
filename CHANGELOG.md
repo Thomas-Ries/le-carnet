@@ -71,6 +71,8 @@
 0.4.109 — Fini la fausse sélection : « Mon G-Maps » ne paraît plus actif en permanence
 - Le bouton Mon G-Maps portait TOUJOURS la bordure riesling, sélectionné ou non : il semblait rester sélectionné en permanence et masquait l'état réel de la liste. Bordure hairline par défaut, accent uniquement quand c'est lui le carnet courant (comme les autres cartes).
 - La section de détail s'ouvre désormais sous une étiquette « Carnet sélectionné » : explicite que membres/invitation/export suivent le carnet choisi dans la liste.
+0.4.110 — Une fiche ne se modifie que par son créateur
+- Avant, l'admin du carnet pouvait modifier la fiche de quelqu'un d'autre, et l'UI montrait le crayon à tout le monde. Désormais : crayon visible uniquement du créateur ; côté serveur, updateFiche refuse quiconque n'est pas l'auteur (session vérifiée, 403) — pas même l'admin. La suppression d'une fiche reste possible à l'auteur OU à l'admin (gouvernance). Même règle en mode démo.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

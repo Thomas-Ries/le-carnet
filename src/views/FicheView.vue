@@ -129,8 +129,10 @@ async function supprimer() {
       </button>
       <div class="flex gap-1.5">
         <button v-if="!edit" class="rounded-full p-2 bg-surface border border-hairline" @click="partager"><Ic name="share" class="w-4 h-4 text-accent" /></button>
-        <button class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
-        <button class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
+        <!-- V0.4.110 : une fiche ne se modifie que par son créateur ;
+             la suppression reste à l'auteur ou à l'admin du carnet. -->
+        <button v-if="fiche.auteur === store.profil.prenom" class="rounded-full p-2 bg-surface border border-hairline" @click="startEdit"><Ic name="pencil" class="w-4 h-4" /></button>
+        <button v-if="fiche.auteur === store.profil.prenom || isAdminIci" class="rounded-full p-2 bg-surface border border-hairline" @click="confirmSuppr = true"><Ic name="trash" class="w-4 h-4 text-muted" /></button>
       </div>
     </div>
 

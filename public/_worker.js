@@ -1009,11 +1009,9 @@ export default {
             const f = await db.prepare(`SELECT * FROM Fiches WHERE id=?`).bind(p.id).first();
             if (!f) return json({ error: "introuvable" }, 404);
             const patch = p.patch || {};
-            const adminNimporte = await (async () => {
-              const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(p.id).all();
-              for (const l of liens) if (await isAdminOf(l.carnet_id)) return true;
-              return false;
-            })();
+            // V0.4.110 : une fiche ne se modifie QUE par son créateur — plus
+            // personne d'autre, pas même l'admin du carnet (la suppression
+            // reste, elle, possible à l'auteur ou à l'admin).
             const s = f.auteur ? await (async () => {
               const { results: liens } = await db.prepare(`SELECT carnet_id FROM FichesCarnets WHERE fiche_id=?`).bind(p.id).all();
               for (const l of liens) {
@@ -1022,7 +1020,7 @@ export default {
               }
               return null;
             })() : null;
-            if (!adminNimporte && !s) return json({ error: "réservé à l'auteur ou l'admin" }, 403);
+            if (!s) return json({ error: "réservé à l'auteur de la fiche" }, 403);
             await db.prepare(
               `UPDATE Fiches SET titre=COALESCE(?,titre), com=COALESCE(?,com), recette=COALESCE(?,recette), note=COALESCE(?,note), photo=COALESCE(?,photo), lieu=COALESCE(?,lieu) WHERE id=?`
             ).bind(patch.titre != null ? cleanText(patch.titre, 60) : null,

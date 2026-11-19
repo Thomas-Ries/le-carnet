@@ -379,7 +379,7 @@ export const useCarnetStore = defineStore("carnet", {
     },
 
     async majFiche(id, patch) {
-      const r = await api.updateFiche(id, patch);
+      const r = await api.updateFiche(id, patch, this.profil.prenom);
       const i = this.fiches.findIndex((f) => f.id === id);
       if (i !== -1) this.fiches[i] = { ...this.fiches[i], ...patch };
       return r;
