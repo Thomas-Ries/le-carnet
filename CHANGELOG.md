@@ -64,6 +64,8 @@
 - Tap sur l'aperçu = recharger la photo depuis la pellicule. Nouvelle icône « image » (style Heroicons, toujours zéro emoji).
 0.4.106 — Popin de confirmation au-dessus de la nav (suppression d'un flash)
 - La confirmation « Supprimer ce flash » restait coincée derrière la nav : la popin (z-80) est un enfant de la sheet flash (z-50) — un z-index dans un parent positionné ne compte que dans son contexte, et la nav (z-50, plus tardive dans le DOM) gagnait le duel. ConfirmModal est désormais téléportée au <body> (Teleport) : elle s'affiche au-dessus de tout, quel que soit l'endroit d'où elle est ouverte.
+0.4.107 — Appui long fiabilisé (partage de fiches)
+- Le mode sélection ne dépendait plus que d'un timer de 450 ms : le moindre tremblement du doigt (>10 px) ou un pointercancel de scroll l'annulait en silence. Deux déclencheurs désormais : le timer ET l'événement contextmenu natif (celui que l'appui long iOS/Android déclenche tout seul, et le clic droit sur desktop). Tolérance de mouvement portée à 12 px, menu contextuel du navigateur bloqué.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

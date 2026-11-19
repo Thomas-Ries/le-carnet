@@ -275,26 +275,40 @@ const selMode = ref(false);
 const selIds = ref([]);
 const estSel = (id) => selIds.value.includes(id);
 let pressTimer = null, pressPos = null, pressFired = false;
-function pressStart(e, f) {
-  pressPos = { x: e.clientX, y: e.clientY };
-  pressTimer = setTimeout(() => {
-    pressFired = true;
-    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) { /* ok */ } }
-    selMode.value = true;
-    if (!selIds.value.includes(f.id)) selIds.value.push(f.id);
-    toast(t("Sélection — tape les cards, partage en haut"));
-  }, 450);
-}
-function pressMove(e) {
-  if (!pressPos) return;
-  if (Math.abs(e.clientX - pressPos.x) > 10 || Math.abs(e.clientY - pressPos.y) > 10) {
-    clearTimeout(pressTimer); pressTimer = null;
-  }
-}
-function pressEnd() {
+function pressReset() {
   if (pressTimer) clearTimeout(pressTimer);
   pressTimer = null; pressPos = null;
 }
+function pressFire(f) {
+  // V0.4.107 : deux déclencheurs — le timer (450 ms) OU le contextmenu natif
+  // (l'appui long prolongé d'iOS/Android le déclenche tout seul, même si le
+  // doigt a bougé de quelques pixels — plus fiable que le timer seul, que le
+  // moindre tremblement ou un pointercancel de scroll tuait).
+  pressReset();
+  pressFired = true;
+  if (navigator.vibrate) { try { navigator.vibrate(12); } catch (err) { /* ok */ } }
+  selMode.value = true;
+  if (!selIds.value.includes(f.id)) selIds.value.push(f.id);
+  toast(t("Sélection — tape les cards, partage en haut"));
+}
+function pressStart(e, f) {
+  // clic droit souris : ne déclenche pas le timer, contextmenu s'en charge.
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  pressFired = false;
+  pressPos = { x: e.clientX, y: e.clientY };
+  pressTimer = setTimeout(() => pressFire(f), 450);
+}
+function pressMove(e) {
+  if (!pressPos || !pressTimer) return;
+  if (Math.abs(e.clientX - pressPos.x) > 12 || Math.abs(e.clientY - pressPos.y) > 12) pressReset();
+}
+function pressContext(e, f) {
+  // Appui long natif (touch) ou clic droit (desktop) : entrée directe en
+  // sélection — et on bloque le menu contextuel du navigateur.
+  e.preventDefault();
+  if (!pressFired) pressFire(f);
+}
+function pressEnd() { pressReset(); }
 function tapCard(e, f) {
   // le click qui suit l'appui long ne doit rien faire (ni naviguer, ni décocher)
   if (pressFired) { pressFired = false; e.preventDefault(); e.stopPropagation(); return; }
@@ -704,6 +718,7 @@ async function confirmerPartage() {
           style="-webkit-touch-callout: none; user-select: none"
           @pointerdown="pressStart($event, f)" @pointermove="pressMove"
           @pointerup="pressEnd" @pointercancel="pressEnd"
+          @contextmenu="pressContext($event, f)"
           @click.capture="tapCard($event, f)">
           <FicheRow :fiche="f" />
         </div>
