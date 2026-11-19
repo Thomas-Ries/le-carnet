@@ -258,9 +258,16 @@ export async function partagerFiche(fiche) {
 
 /* Invitation : message prêt à envoyer + partage WhatsApp / SMS — le lien et le code
    voyagent dans le message, plus besoin de copier-coller. */
+/* V0.4.111 : le message d'invitation explique le déroulé — le lien seul
+   laissait le destinataire devant un formulaire sans repères. */
 export const texteInvitation = (prenom, carnet, lien) =>
-  (prenom ? prenom + " t'invite dans" : "Tu es invité dans") +
-  " le carnet « " + carnet.nom + " » sur Le Carnet — mot-clé « " + carnet.code + " ». Rejoins-le : " + lien;
+  (prenom ? prenom + " t'invite" : "Tu es invité") + " dans son carnet « " + carnet.nom + " » \uD83D\uDE4C\n" +
+  "Le Carnet, c'est l'app où l'on échange ses adresses aimées entre proches : restos, bars, recettes, bons plans — notés pour ne plus jamais les perdre.\n" +
+  "Pour rejoindre le carnet :\n" +
+  "1. Ouvre ce lien : " + lien + "\n" +
+  "2. Entre ton prénom, puis choisis ton code personnel (4 ou 6 chiffres) — retiens-le bien : c'est lui qui te permettra de retrouver tes carnets si tu changes de téléphone\n" +
+  "3. Quand on te propose d'ajouter l'app à ton écran d'accueil, accepte — c'est comme une vraie app\n" +
+  "Le mot-clé du carnet, si on te le demande : « " + carnet.code + " »";
 
 export function partagerWhatsapp(texte) {
   window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank");
