@@ -68,6 +68,9 @@
 - Le mode sélection ne dépendait plus que d'un timer de 450 ms : le moindre tremblement du doigt (>10 px) ou un pointercancel de scroll l'annulait en silence. Deux déclencheurs désormais : le timer ET l'événement contextmenu natif (celui que l'appui long iOS/Android déclenche tout seul, et le clic droit sur desktop). Tolérance de mouvement portée à 12 px, menu contextuel du navigateur bloqué.
 0.4.108 — Invitation depuis la popin du crayon
 - Ouvrir le crayon d'un carnet permettait seulement de le renommer — l'invitation restait introuvable pour qui cherchait « partager » ici. La popin propose désormais, sous le renommage : le mot-clé d'invitation lisible, et les boutons WhatsApp / SMS / Copier le lien (même texte d'invitation que la section admin).
+0.4.109 — Fini la fausse sélection : « Mon G-Maps » ne paraît plus actif en permanence
+- Le bouton Mon G-Maps portait TOUJOURS la bordure riesling, sélectionné ou non : il semblait rester sélectionné en permanence et masquait l'état réel de la liste. Bordure hairline par défaut, accent uniquement quand c'est lui le carnet courant (comme les autres cartes).
+- La section de détail s'ouvre désormais sous une étiquette « Carnet sélectionné » : explicite que membres/invitation/export suivent le carnet choisi dans la liste.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.

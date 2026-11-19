@@ -253,8 +253,8 @@ async function exporterJSON() {
 
     
     <button v-if="store.mesAdresses" @click="ouvrirEspaceGmaps"
-      class="w-full rounded-2xl p-4 mb-3 flex items-center gap-3 text-left bg-soft"
-      style="border: 1px solid var(--c-accent)">
+      class="w-full rounded-2xl p-4 mb-3 flex items-center gap-3 text-left bg-soft transition"
+      :style="{ border: '1px solid ' + (store.carnetId === store.mesAdresses.id ? 'var(--c-accent)' : 'var(--c-hairline)') }">
       <span class="rounded-full w-10 h-10 flex items-center justify-center shrink-0"
         :style="{ background: 'var(--c-accent)' }"><Ic name="pin" class="w-4 h-4 text-white" /></span>
       <span class="flex-1">
@@ -404,6 +404,9 @@ async function exporterJSON() {
 
     
     <template v-if="store.carnet">
+      <!-- V0.4.109 : la section suit le carnet SÉLECTIONNÉ dans la liste —
+           l'étiquette l'explicite, sinon on croit lire la fiche d'un autre. -->
+      <p class="text-[10px] uppercase tracking-widest text-muted mb-1">{{ t("Carnet sélectionné") }}</p>
       <h2 class="text-lg font-serif mb-1">« {{ store.carnet.nom }} »</h2>
       <p class="text-xs text-muted mb-3">{{ store.fichesDuCarnet.length }} {{ t("adresse(s) aimée(s)") }}</p>
 

@@ -86,6 +86,7 @@ const EN = {
   "Continuer": "Continue",
   "Copier": "Copy",
   "Copier le lien": "Copy link",
+  "Carnet sélectionné": "Selected notebook",
   "Créer": "Create",
   "Créer mon carnet": "Create my notebook",
   "Créer un carnet": "Create a notebook",
