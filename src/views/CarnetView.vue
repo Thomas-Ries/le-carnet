@@ -205,6 +205,13 @@ const texteInvit = computed(() =>
 );
 const whatsapp = () => partagerWhatsapp(texteInvit.value);
 const sms = () => partagerSms(texteInvit.value);
+// V0.4.108 : la popin du crayon fait aussi invitation — renommer ET partager
+// au même endroit (sinon l'admin qui ouvre le crayon ne trouve pas le lien).
+const lienRenomme = computed(() => renomme.value ? location.origin + "/join/" + renomme.value.code : "");
+const texteInvitRenomme = computed(() => renomme.value ? texteInvitation(store.profil.prenom, renomme.value, lienRenomme.value) : "");
+function copierInvite() { navigator.clipboard?.writeText(lienRenomme.value); toast(t("Lien copié — envoie-le à qui tu veux")); }
+const whatsappRenomme = () => partagerWhatsapp(texteInvitRenomme.value);
+const smsRenomme = () => partagerSms(texteInvitRenomme.value);
 const pendingRetrait = ref(null);
 const popinQuitter = ref(false);
 
@@ -514,6 +521,23 @@ async function exporterJSON() {
           <button @click="validerRenommer" :disabled="!renommeNom.trim()"
             class="flex-1 rounded-xl py-3 text-sm font-semibold disabled:opacity-40"
             :style="{ color: '#fff', background: '#7A2E3E' }">{{ t("Enregistrer") }}</button>
+        </div>
+        <!-- V0.4.108 : invitation au même endroit que le renommage -->
+        <div v-if="renomme?.code" class="mt-4 pt-4" style="border-top: 1px solid var(--c-hairline)">
+          <p class="text-[10px] uppercase tracking-widest text-muted mb-2">{{ t("Inviter") }}</p>
+          <p class="text-[11px] text-muted mb-2.5 leading-relaxed">{{ t("Partage ce lien — ou le code") }} <span class="font-semibold text-accent tracking-widest">{{ renomme.code }}</span> {{ t("à la main. Toute personne invitée peut aussi créer son propre carnet.") }}</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button @click="whatsappRenomme" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+              <Ic name="chat" class="w-4 h-4" /> {{ t("WhatsApp") }}
+            </button>
+            <button @click="smsRenomme" class="rounded-xl py-3 text-[13px] font-semibold text-accent bg-soft flex items-center justify-center gap-1.5">
+              <Ic name="sms" class="w-4 h-4" /> {{ t("SMS") }}
+            </button>
+            <button @click="copierInvite" class="rounded-xl py-3 text-[13px] font-semibold border border-hairline flex items-center justify-center gap-1.5"
+              :style="{ color: 'var(--c-muted)' }">
+              <Ic name="share" class="w-4 h-4" /> {{ t("Copier") }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
