@@ -75,6 +75,9 @@
 - Avant, l'admin du carnet pouvait modifier la fiche de quelqu'un d'autre, et l'UI montrait le crayon à tout le monde. Désormais : crayon visible uniquement du créateur ; côté serveur, updateFiche refuse quiconque n'est pas l'auteur (session vérifiée, 403) — pas même l'admin. La suppression d'une fiche reste possible à l'auteur OU à l'admin (gouvernance). Même règle en mode démo.
 0.4.111 — Message d'invitation explicatif
 - « Thomas t'invite... Rejoins-le : lien » ne disait rien du déroulé. Le message WhatsApp/SMS explique désormais ce qu'est Le Carnet, puis les 3 étapes : ouvrir le lien, prénom + code personnel (à retenir), accepter l'installation sur l'écran d'accueil — et rappelle le mot-clé du carnet.
+0.4.112 — Joindre un carnet, enfin guidé
+- Progression visible sur l'écran d'inscription (points + « Étape 1 sur 2 — ton prénom » / « Étape 2 sur 2 — le carnet et ton code ») : on sait où on en est avant même de lire les champs.
+- Bouton « Inviter » (icône partage) directement sur chaque carte de carnet, visible de TOUS les membres : popin avec mot-clé + WhatsApp / SMS / Copier le lien. Mêmes boutons partagés que la popin du crayon de l'admin.
 0.4.84 — Identité ancrée : « J'ai déjà mes carnets »
 - Diagnostic : iOS purge le stockage local des PWA → le deviceId (localStorage) disparaissait et il fallait retaper ses carnets ; l'espace G-Maps était par appareil, pas par personne.
 - Nouvelle action `recuperer` (worker) : prénom + code personnel → vérification contre Membres.code_recup, INSERT Sessions sur tous les carnets du prénom, backfill du code sur les espaces privés qui n'en avaient pas.
